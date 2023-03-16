@@ -6,9 +6,9 @@ import (
   "github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 )
 
-var (
+const (
   logFileName string = "/tmp/audiobook_creator_IA.log"
-  logLevel = "DEBUG"
+  logLevel = logger.DEBUG
 )
 
 func main() {

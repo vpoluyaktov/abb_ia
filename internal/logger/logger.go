@@ -1,55 +1,80 @@
 package logger
 
 import (
+	"fmt"
 	"os"
-  "time"
+	"time"
 )
 
+// singleton 
 var (
-  logLevelsOrder []string = []string{"FATAL", "ERROR", "WARN", "INFO", "DEBUG"}
-  currentlogFileName string
-  currentlogLevel string
-  logFile *os.File
-  err error
+	loggerInstance *Logger
 )
 
-func Init(logFileName string, logLevel string) {
-  currentlogLevel = logLevel
-  currentlogFileName = logFileName
-  logFile, err = os.Create(logFileName)
-  if err != nil {
-    panic(err)
-  }
+const (
+	DEBUG = 1 << iota
+	INFO
+	WARN
+	ERROR
+	FATAL
+)
+
+type logLevelType int
+type Logger struct {
+	logFileName string
+	logLevel    logLevelType
+	logFile     *os.File
+	err         error
+}
+
+func Init(logFileName string, logLevel logLevelType) {
+	var logger = Logger{}
+	logger.logLevel = logLevel
+	logger.logFileName = logFileName
+	var logFile, err = os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("Can not open log file: " + logFileName)
+		panic(err)
+	}
+	logger.logFile = logFile
+	loggerInstance = &logger
+}
+
+func SetLogLevel(logLevel logLevelType) {
+	loggerInstance.logLevel = logLevel
 }
 
 func Fatal(message string) {
-	writeMessage("FATAL", message)
+	if loggerInstance.logLevel <= FATAL {
+		loggerInstance.writeMessage("FATAL", message)
+	}
 }
 
 func Error(message string) {
-	writeMessage("ERROR", message)
+	if loggerInstance.logLevel <= ERROR {
+		loggerInstance.writeMessage("ERROR", message)
+	}
 }
 
 func Warn(message string) {
-	writeMessage("WARN", message)
+	if loggerInstance.logLevel <= WARN {
+		loggerInstance.writeMessage("WARN", message)
+	}
 }
 
 func Info(message string) {
-	writeMessage("INFO", message)
+	if loggerInstance.logLevel <= INFO {
+		loggerInstance.writeMessage("INFO", message)
+	}
 }
 
 func Debug(message string) {
-	writeMessage("DEBUG", message)
+	if loggerInstance.logLevel <= DEBUG {
+		loggerInstance.writeMessage("DEBUG", message)
+	}
 }
 
-func writeMessage(logLevel string, message string) {
-  for _, level := range logLevelsOrder {
-    if level == logLevel {
-      currentTime := time.Now().Format("2006-01-02 15:04:05")
-      logFile.WriteString(currentTime + " " + logLevel + ": " + message + "\n")       
-    }
-    if level == currentlogLevel {
-      break
-    }
-  }
+func (logger *Logger) writeMessage(logLevel string, message string) {
+	currentTime := time.Now().Format("2006-01-02 15:04:05")
+	loggerInstance.logFile.WriteString(currentTime + " " + logLevel + ": " + message + "\n")
 }

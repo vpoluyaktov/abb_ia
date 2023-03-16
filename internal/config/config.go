@@ -1,7 +1,9 @@
 package config
 
-import "github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+import (
+  log "github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+)
 
 func Load() {
-	logger.Info("Config loaded")
+	log.Info("Config loaded")
 }
