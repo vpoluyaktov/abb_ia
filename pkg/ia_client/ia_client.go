@@ -5,62 +5,66 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
+	log "github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 )
 
+const IA_BASE_URL = "https://archive.org"
 
 type IAClient struct {
 	restyClient *resty.Client 
-	
 }
 
 type SearchResult struct {
-	ResponseHeader ResponseHeader `json:"responseHeader"`
-	Response       Response       `json:"response"`
+	ResponseHeader struct {
+		Status int `json:"status"`
+		QTime  int `json:"QTime"`
+		Params struct {
+			Query  string `json:"query"`
+			Qin    string `json:"qin"`
+			Fields string `json:"fields"`
+			Wt     string `json:"wt"`
+			Rows   string `json:"rows"`
+			Start  int    `json:"start"`
+		} `json:"params"`
+	} `json:"responseHeader"`
+	Response struct {
+		NumFound int `json:"numFound"`
+		Start    int `json:"start"`
+		Docs     []struct {
+			Collection         []string    `json:"collection"`
+			Creator            string      `json:"creator,omitempty"`
+			Date               time.Time   `json:"date,omitempty"`
+			Description        string      `json:"description,omitempty"`
+			Downloads          int         `json:"downloads"`
+			Format             []string    `json:"format"`
+			Identifier         string      `json:"identifier"`
+			Indexflag          []string    `json:"indexflag"`
+			ItemSize           int         `json:"item_size"`
+			Mediatype          string      `json:"mediatype"`
+			Month              int         `json:"month"`
+			OaiUpdatedate      []time.Time `json:"oai_updatedate"`
+			Publicdate         time.Time   `json:"publicdate"`
+			Subject            strArray    `json:"subject,omitempty"`
+			Title              string      `json:"title"`
+			Week               int         `json:"week"`
+			Year               int         `json:"year,omitempty"`
+			BackupLocation     string      `json:"backup_location,omitempty"`
+			ExternalIdentifier string      `json:"external-identifier,omitempty"`
+			Genre              string      `json:"genre,omitempty"`
+			Language           string      `json:"language,omitempty"`
+			Licenseurl         string      `json:"licenseurl,omitempty"`
+			StrippedTags       strArray    `json:"stripped_tags,omitempty"`
+		} `json:"docs"`
+	} `json:"response"`
 }
-type Params struct {
-	Query  string `json:"query"`
-	Qin    string `json:"qin"`
-	Fields string `json:"fields"`
-	Wt     string `json:"wt"`
-	Rows   string `json:"rows"`
-	Start  int    `json:"start"`
-}
-type ResponseHeader struct {
-	Status int    `json:"status"`
-	QTime  int    `json:"QTime"`
-	Params Params `json:"params"`
-}
-type Docs struct {
-	Collection         []string    `json:"collection"`
-	Creator            string      `json:"creator,omitempty"`
-	Date               time.Time   `json:"date,omitempty"`
-	Description        string      `json:"description,omitempty"`
-	Downloads          int         `json:"downloads"`
-	Format             []string    `json:"format"`
-	Identifier         string      `json:"identifier"`
-	Indexflag          []string    `json:"indexflag"`
-	ItemSize           int         `json:"item_size"`
-	Mediatype          string      `json:"mediatype"`
-	Month              int         `json:"month"`
-	OaiUpdatedate      []time.Time `json:"oai_updatedate"`
-	Publicdate         time.Time   `json:"publicdate"`
-	Subject            strArray    `json:"subject,omitempty"`
-	Title              string      `json:"title"`
-	Week               int         `json:"week"`
-	Year               int         `json:"year,omitempty"`
-	BackupLocation     string      `json:"backup_location,omitempty"`
-	ExternalIdentifier string      `json:"external-identifier,omitempty"`
-	Genre              string      `json:"genre,omitempty"`
-	Language           string      `json:"language,omitempty"`
-	Licenseurl         string      `json:"licenseurl,omitempty"`
-	StrippedTags       string      `json:"stripped_tags,omitempty"`
-}
-type Response struct {
-	NumFound int    `json:"numFound"`
-	Start    int    `json:"start"`
-	Docs     []Docs `json:"docs"`
+
+// String representation of the SearchResult struct
+func (searchResult SearchResult) String() string {
+	str, _ := json.Marshal(searchResult)
+	return string(str)
 }
 
 // StrArray string array to be used on JSON UnmarshalJSON
@@ -99,26 +103,49 @@ func (sa *strArray) UnmarshalJSON(data []byte) error {
 	return ErrUnsupportedType
 }
 
-
-func init() {
-}
-
 func New() (* IAClient) {
 		var client IAClient
 		client.restyClient = resty.New()
 		return &client
 }
 
-func (client *IAClient) Search(query string) {
+func (client *IAClient) SearchByTitle(title string, mediaType string)(*SearchResult) {
 
-	var searchURL = "https://archive.org/advancedsearch.php?q=title:(%s)+AND+mediatype:(audio)&output=json&rows=25&page=1"
+	var searchURL = IA_BASE_URL + "/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=25&page=1"
 
 	result := &SearchResult{}
-	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, query))
+	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, title, mediaType))
 	if err != nil {
 		panic(err)
 	}
   
-	fmt.Println(result)
+	log.Debug("SearchByTitle response: " + result.String())
+
+	return result
 }
+
+func (client *IAClient) SearchByID(itemId string, mediaType string)(*SearchResult) {
+
+	var searchURL = IA_BASE_URL + "/advancedsearch.php?q=identifier:(%s)+AND+mediatype:(%s)&output=json&rows=25&page=1"
+
+	result := &SearchResult{}
+	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, itemId, mediaType))
+	if err != nil {
+		panic(err)
+	}
+  
+	log.Debug("SearchByID reqresponseuest: " + result.String())
+
+	return result
+}
+
+func (client *IAClient) Search(searchCondition string, mediaType string)(*SearchResult) {
+	if strings.Contains(searchCondition, IA_BASE_URL + "/details/") {
+		item_id := strings.Split(searchCondition, "/")[4]
+		return client.SearchByID(item_id, mediaType)
+	} else {
+		return client.SearchByTitle(searchCondition, mediaType)
+	}
+}
+
 
