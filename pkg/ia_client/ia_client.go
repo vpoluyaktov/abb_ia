@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
-	log "github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 )
 
 const IA_BASE_URL = "https://archive.org"
@@ -119,7 +119,7 @@ func (client *IAClient) SearchByTitle(title string, mediaType string)(*SearchRes
 		panic(err)
 	}
   
-	log.Debug("SearchByTitle response: " + result.String())
+	logger.Debug("SearchByTitle response: " + result.String())
 
 	return result
 }
@@ -134,7 +134,7 @@ func (client *IAClient) SearchByID(itemId string, mediaType string)(*SearchResul
 		panic(err)
 	}
   
-	log.Debug("SearchByID reqresponseuest: " + result.String())
+	logger.Debug("SearchByID reqresponseuest: " + result.String())
 
 	return result
 }
