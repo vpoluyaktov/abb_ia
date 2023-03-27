@@ -36,11 +36,35 @@ func TestSearch(t *testing.T) {
 
 func TestGetItemById(t *testing.T) {
 	ia := ia_client.New()
-	res := ia.GetItemById("OTRR_Frank_Race_Singles")
-	assert.NotNil(t, res)
+	item := ia.GetItemById("OTRR_Frank_Race_Singles")
+	assert.NotNil(t, item)
 	if logLevel == logger.DEBUG {
-		for file, meta := range res.Files {
-			fmt.Printf("%s -> %s\n", file, meta.Format)
-		} 
+		if item!= nil {
+			fmt.Printf("Title: %s\n", item.Metadata.Title[0])
+			fmt.Printf("Server: %s\n", item.Server)
+			fmt.Printf("Directory: %s\n", item.Dir)
+			fmt.Printf("Description: %s\n", item.Metadata.Description)
+			fmt.Printf("Creator: %s\n", item.Metadata.Creator[0])
+			fmt.Printf("Image: %s\n", item.Misc.Image)
+			
+			for file, meta := range item.Files {
+				fmt.Printf("%s -> %s\n", file, meta.Format)
+			} 
+		}
 	}
+}
+
+func TestDownloadItem(t *testing.T) {
+
+	outputDir := "/tmp/audiobook_creator_IA"
+	server := "ia800303.us.archive.org"
+	dir := "/21/items/OTRR_Frank_Race_Singles"
+	file := "/Frank_Race_49-xx-xx_ep24_The_Adventure_of_The_Sobbing_Bodyguard.png"
+
+	ia := ia_client.New()
+	ia.DownloadFile(outputDir, server, dir, file, UpdateProgress)
+}
+
+func UpdateProgress(percent int) {
+	fmt.Printf("\rDownloading... %d%%", percent)
 }

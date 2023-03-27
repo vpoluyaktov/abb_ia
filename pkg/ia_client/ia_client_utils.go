@@ -3,6 +3,7 @@ package ia_client
 import (
 	"encoding/json"
 	"errors"
+	"io"
 )
 
 // String representation of the GetItemResult struct
@@ -50,4 +51,25 @@ func (sa *strArray) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	return ErrUnsupportedType
+}
+
+type Fn func(int)
+
+// Progress Reader for file download progress
+type ProgressReader struct {
+	Reader   io.Reader
+	Size     int64
+	Pos      int64
+	Percent  int
+	Callback Fn
+}
+
+func (pr *ProgressReader) Read(p []byte) (int, error) {
+	n, err := pr.Reader.Read(p)
+	if err == nil {
+		pr.Pos += int64(n)
+		pr.Percent = int(float64(pr.Pos) / float64(pr.Size) * 100)
+		pr.Callback(pr.Percent)
+	}
+	return n, err
 }
