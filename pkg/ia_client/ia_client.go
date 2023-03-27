@@ -1,106 +1,20 @@
 package ia_client
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"time"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 )
 
-const IA_BASE_URL = "https://archive.org"
+const (
+	IA_BASE_URL = "https://archive.org"
+	MAX_RESULT_ROWS = 25
+)
 
 type IAClient struct {
 	restyClient *resty.Client 
-}
-
-type SearchResult struct {
-	ResponseHeader struct {
-		Status int `json:"status"`
-		QTime  int `json:"QTime"`
-		Params struct {
-			Query  string `json:"query"`
-			Qin    string `json:"qin"`
-			Fields string `json:"fields"`
-			Wt     string `json:"wt"`
-			Rows   string `json:"rows"`
-			Start  int    `json:"start"`
-		} `json:"params"`
-	} `json:"responseHeader"`
-	Response struct {
-		NumFound int `json:"numFound"`
-		Start    int `json:"start"`
-		Docs     []struct {
-			Collection         []string    `json:"collection"`
-			Creator            string      `json:"creator,omitempty"`
-			Date               time.Time   `json:"date,omitempty"`
-			Description        string      `json:"description,omitempty"`
-			Downloads          int         `json:"downloads"`
-			Format             []string    `json:"format"`
-			Identifier         string      `json:"identifier"`
-			Indexflag          []string    `json:"indexflag"`
-			ItemSize           int         `json:"item_size"`
-			Mediatype          string      `json:"mediatype"`
-			Month              int         `json:"month"`
-			OaiUpdatedate      []time.Time `json:"oai_updatedate"`
-			Publicdate         time.Time   `json:"publicdate"`
-			Subject            strArray    `json:"subject,omitempty"`
-			Title              string      `json:"title"`
-			Week               int         `json:"week"`
-			Year               int         `json:"year,omitempty"`
-			BackupLocation     string      `json:"backup_location,omitempty"`
-			ExternalIdentifier string      `json:"external-identifier,omitempty"`
-			Genre              string      `json:"genre,omitempty"`
-			Language           string      `json:"language,omitempty"`
-			Licenseurl         string      `json:"licenseurl,omitempty"`
-			StrippedTags       strArray    `json:"stripped_tags,omitempty"`
-		} `json:"docs"`
-	} `json:"response"`
-}
-
-// String representation of the SearchResult struct
-func (searchResult SearchResult) String() string {
-	str, _ := json.Marshal(searchResult)
-	return string(str)
-}
-
-// StrArray string array to be used on JSON UnmarshalJSON
-type strArray []string
-
-
-var (
-	// ErrUnsupportedType is returned if the type is not implemented
-	ErrUnsupportedType = errors.New("unsupported type")
-)
-
-// UnmarshalJSON convert JSON object array of string or
-// a string format strings to a golang string array
-func (sa *strArray) UnmarshalJSON(data []byte) error {
-	var jsonObj interface{}
-	err := json.Unmarshal(data, &jsonObj)
-	if err != nil {
-		return err
-	}
-	switch obj := jsonObj.(type) {
-	case string:
-		*sa = strArray([]string{obj})
-		return nil
-	case []interface{}:
-		s := make([]string, 0, len(obj))
-		for _, v := range obj {
-			value, ok := v.(string)
-			if !ok {
-				return ErrUnsupportedType
-			}
-			s = append(s, value)
-		}
-		*sa = strArray(s)
-		return nil
-	}
-	return ErrUnsupportedType
 }
 
 func New() (* IAClient) {
@@ -110,32 +24,24 @@ func New() (* IAClient) {
 }
 
 func (client *IAClient) SearchByTitle(title string, mediaType string)(*SearchResult) {
-
-	var searchURL = IA_BASE_URL + "/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=25&page=1"
-
+	var searchURL = IA_BASE_URL + "/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1"
 	result := &SearchResult{}
-	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, title, mediaType))
+	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, title, mediaType, MAX_RESULT_ROWS))
 	if err != nil {
 		panic(err)
 	}
-  
 	logger.Debug("SearchByTitle response: " + result.String())
-
 	return result
 }
 
 func (client *IAClient) SearchByID(itemId string, mediaType string)(*SearchResult) {
-
-	var searchURL = IA_BASE_URL + "/advancedsearch.php?q=identifier:(%s)+AND+mediatype:(%s)&output=json&rows=25&page=1"
-
+	var searchURL = IA_BASE_URL + "/advancedsearch.php?q=identifier:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1"
 	result := &SearchResult{}
-	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, itemId, mediaType))
+	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, itemId, mediaType, MAX_RESULT_ROWS))
 	if err != nil {
 		panic(err)
 	}
-  
-	logger.Debug("SearchByID reqresponseuest: " + result.String())
-
+	logger.Debug("SearchByID response: " + result.String())
 	return result
 }
 
@@ -148,4 +54,19 @@ func (client *IAClient) Search(searchCondition string, mediaType string)(*Search
 	}
 }
 
+func (client *IAClient) GetItemById(itemId string)(*GetItemResult) {
+	var getURL = IA_BASE_URL + "/details/%s/?output=json"
+	result := &GetItemResult{}
+	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(getURL, itemId))
+	if err != nil {
+		panic(err)
+	}
+	logger.Debug("GetItemById response: " + result.String())
+
+	return result
+}
+
+func (client *IAClient) DownloadFile() {
+	
+}
 

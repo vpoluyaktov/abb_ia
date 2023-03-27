@@ -12,17 +12,13 @@ func Execute() {
 
   ia := ia_client.New()
 
-  res := ia.SearchByTitle("NASA", "audio")
+  res := ia.Search("NASA", "audio")
 
   for i, doc := range res.Response.Docs {
-    logger.Debug(fmt.Sprintf("%d - %s", i, doc.Title))
+    fmt.Printf("%d - %s (%s)\n", i + 1, doc.Title, doc.Identifier)
   } 
 
-  res = ia.Search("https://archive.org/details/OTRR_Frank_Race_Singles", "audio") 
-
-  for i, doc := range res.Response.Docs {
-    logger.Debug(fmt.Sprintf("%d - %s", i, doc.Title))
-  }
+ 
 
   logger.Info("Application finished") 
 

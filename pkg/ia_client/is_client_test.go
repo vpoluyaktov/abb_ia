@@ -2,6 +2,7 @@ package ia_client_test
 
 import (
 	"os"
+	"fmt"
 	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/vpoluyaktov/audiobook_creator_IA/pkg/ia_client"
@@ -31,4 +32,15 @@ func TestSearch(t *testing.T) {
 	res = ia.Search("https://archive.org/details/OTRR_Frank_Race_Singles", "audio") // search by item ID
 	assert.NotNil(t, res)
 	assert.Equal(t, 1, len(res.Response.Docs))
+}
+
+func TestGetItemById(t *testing.T) {
+	ia := ia_client.New()
+	res := ia.GetItemById("OTRR_Frank_Race_Singles")
+	assert.NotNil(t, res)
+	if logLevel == logger.DEBUG {
+		for file, meta := range res.Files {
+			fmt.Printf("%s -> %s\n", file, meta.Format)
+		} 
+	}
 }
