@@ -1,9 +1,11 @@
 package ia_client
 
 import (
+	"strings"
 	"encoding/json"
 	"errors"
 	"io"
+	"jaytaylor.com/html2text"
 )
 
 // String representation of the GetItemResult struct
@@ -72,4 +74,14 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 		pr.Callback(pr.Percent)
 	}
 	return n, err
+}
+
+func (client *IAClient) Html2Text(html string) (string) {
+	html = strings.TrimPrefix(html, "<blockquote>")
+	html = strings.TrimSuffix(html, "</blockquote>")
+	text, err := html2text.FromString(html)
+	if err!= nil {
+    text = "HTML parsing error"
+  }
+	return text
 }

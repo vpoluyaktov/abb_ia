@@ -43,7 +43,7 @@ func TestGetItemById(t *testing.T) {
 			fmt.Printf("Title: %s\n", item.Metadata.Title[0])
 			fmt.Printf("Server: %s\n", item.Server)
 			fmt.Printf("Directory: %s\n", item.Dir)
-			fmt.Printf("Description: %s\n", item.Metadata.Description)
+			fmt.Printf("Description: %s\n", ia.Html2Text(item.Metadata.Description[0]))
 			fmt.Printf("Creator: %s\n", item.Metadata.Creator[0])
 			fmt.Printf("Image: %s\n", item.Misc.Image)
 			
@@ -56,15 +56,15 @@ func TestGetItemById(t *testing.T) {
 
 func TestDownloadItem(t *testing.T) {
 
-	outputDir := "/tmp/audiobook_creator_IA"
 	server := "ia800303.us.archive.org"
 	dir := "/21/items/OTRR_Frank_Race_Singles"
-	file := "/Frank_Race_49-xx-xx_ep24_The_Adventure_of_The_Sobbing_Bodyguard.png"
+	file := "/Frank_Race_49-xx-xx_ep13_The_Adventure_Of_The_Garrulous_Bartender_spectrogram.png"
+	outputDir := "/tmp/audiobook_creator_IA"
 
 	ia := ia_client.New()
 	ia.DownloadFile(outputDir, server, dir, file, UpdateProgress)
 }
 
 func UpdateProgress(percent int) {
-	fmt.Printf("\rDownloading... %d%%", percent)
+	fmt.Printf("Downloading... %d%%\n", percent)
 }
