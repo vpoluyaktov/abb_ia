@@ -7,6 +7,7 @@ import (
 
 func Execute() {
   logger.Info("Application started") 
+  ui := ui.NewTUI()
   ui.Run()
   logger.Info("Application finished") 
 }
