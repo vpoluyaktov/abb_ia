@@ -10,14 +10,12 @@ type footer struct {
 }
 
 func newFooter(colors *colors) *footer {
-
-	footer := &footer{}
-	footer.colors = colors
-	footer.view = cview.NewTextView()
-	footer.view.SetText("Footer")
-	footer.view.SetBorder(false)
-	footer.view.SetTextColor(colors.textColor)
-	footer.view.SetBackgroundColor(colors.textBgColor)
-
-	return footer
+	f := &footer{}
+	f.colors = colors
+	f.view = cview.NewTextView()
+	f.view.SetText("Footer")
+	f.view.SetBorder(false)
+	f.view.SetTextColor(colors.textColor)
+	f.view.SetBackgroundColor(colors.textBgColor)
+	return f
 }
