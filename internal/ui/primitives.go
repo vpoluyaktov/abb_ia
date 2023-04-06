@@ -4,7 +4,7 @@ import (
 	"code.rocketnine.space/tslocum/cview"
 )
 
-func newText (text string) *cview.TextView {
+func newText(text string) *cview.TextView {
 	tv := cview.NewTextView()
 	tv.SetTextAlign(cview.AlignCenter)
 	tv.SetText(text)

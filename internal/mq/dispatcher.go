@@ -1,4 +1,4 @@
-package event
+package mq
 
 import (
 	"container/list"
@@ -17,14 +17,6 @@ type messageQueue struct {
 
 type CallBackFunc func(*Message)
 
-type Message struct {
-	Sender    string
-	Recipient string
-	Type      string
-	Body      interface{}
-	Async     bool
-}
-
 func NewDispatcher() *Dispatcher {
 	d := &Dispatcher{}
 	d.recipients = make(map[string]messageQueue)
@@ -35,15 +27,15 @@ func NewDispatcher() *Dispatcher {
 func (d *Dispatcher) SendMessage(message *Message) {
 	if message.Async {
 		// push message to queue
-		if _, ok := d.recipients[message.Recipient]; !ok {
-			d.recipients[message.Recipient] = messageQueue{list.New()}
+		if _, ok := d.recipients[message.To]; !ok {
+			d.recipients[message.To] = messageQueue{list.New()}
 		}
 		d.mu.Lock()
-		d.recipients[message.Recipient].messages.PushFront(message)
+		d.recipients[message.To].messages.PushFront(message)
 		d.mu.Unlock()
-	} else if _, ok := d.listeners[message.Recipient]; ok {
+	} else if _, ok := d.listeners[message.To]; ok {
 		// call recepient method in blocking mode
-		d.listeners[message.Recipient](message)
+		d.listeners[message.To](message)
 	}
 }
 

@@ -33,4 +33,3 @@ func (f *frame) addPannel(name string, g *cview.Grid) {
 	}
 	f.pannels.AddPanel(name, g, true, true)
 }
-

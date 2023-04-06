@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"code.rocketnine.space/tslocum/cview"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/event"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
 
 type components interface {
@@ -13,7 +13,7 @@ type components interface {
 
 type TUI struct {
 	// Message dispatcher
-	dispatcher *event.Dispatcher
+	dispatcher *mq.Dispatcher
 	// UI components
 	components []components
 	app        *cview.Application
@@ -25,7 +25,7 @@ type TUI struct {
 
 type Fn func()
 
-func NewTUI(dispatcher *event.Dispatcher) *TUI {
+func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 
 	ui := TUI{}
 	ui.app = cview.NewApplication()

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// singleton 
+// singleton
 var (
 	loggerInstance *Logger
 )
