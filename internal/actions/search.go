@@ -1,8 +1,13 @@
 package controller
 
 import (
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/event"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+)
+
+const (
+	componentName = "SearchProcessor"
 )
 
 type SearchProcessor struct {
@@ -12,28 +17,30 @@ type SearchProcessor struct {
 func NewSearchProcessor(dispatcher *event.Dispatcher) *SearchProcessor {
 	sp := &SearchProcessor{}
 	sp.dispatcher = dispatcher
-	sp.dispatcher.RegisterListener("SearchController", sp.getMessage)
+	sp.dispatcher.RegisterListener(componentName, sp.processMessage)
 	return sp
 }
 
-func (p *SearchProcessor) ReadMessages() {
-	m := p.dispatcher.GetMessage("SearchController")
+func (p *SearchProcessor) readMessages() {
+	m := p.dispatcher.GetMessage(componentName)
 	if m != nil {
-		p.getMessage(m)
+		p.processMessage(m)
 	}
-}
-
-func (p *SearchProcessor) getMessage(message *event.Message) {
-	logger.Debug("SearchProcessor received a message from " + message.Sender)
-	p.sendMessage("Pressed")
 }
 
 func (p *SearchProcessor) sendMessage(body interface{}) {
 	m := &event.Message{}
-	m.Sender = "SearchProcessor"
+	m.Sender = componentName
 	m.Recipient = "SearchPanel"
-	m.Async = false
-	m.Priority = 100
+	m.Type = "Text"
+	m.Async = true
 	m.Body = body
 	p.dispatcher.SendMessage(m)	
+}
+
+func (p *SearchProcessor) processMessage(m *event.Message) {	
+	if b, ok := m.Body.(dto.Button); ok {
+		logger.Debug("SearchProcessor received a message from " + m.Sender + ": " + b.Name)
+    p.sendMessage(b.Name + "Pressed")
+  }
 }

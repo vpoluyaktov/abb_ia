@@ -1,61 +1,66 @@
 package event
 
+import (
+	"container/list"
+	"sync"
+)
+
 type Dispatcher struct {
-	eventQueue []*Message
-	listeners  map[string]Fn
+	mu sync.Mutex
+	recipients map[string]messageQueue
+	listeners  map[string]CallBackFunc
 }
+
+type messageQueue struct {
+	messages *list.List
+}
+
+type CallBackFunc func(*Message)
 
 type Message struct {
 	Sender    string
 	Recipient string
+	Type      string
 	Body      interface{}
-	Priority  int
 	Async     bool
 }
 
-type Fn func(*Message)
-
 func NewDispatcher() *Dispatcher {
 	d := &Dispatcher{}
+	d.recipients = make(map[string]messageQueue)
+	d.listeners  = make(map[string]CallBackFunc)
 	return d
 }
 
 func (d *Dispatcher) SendMessage(message *Message) {
-	if !message.Async && hasKey(d.listeners, message.Recipient) {
+	if message.Async {		
+		// push message to queue
+		if _, ok := d.recipients[message.Recipient]; !ok {
+			d.recipients[message.Recipient] = messageQueue{list.New()}
+		}
+		d.mu.Lock()
+		d.recipients[message.Recipient].messages.PushFront(message)
+		d.mu.Unlock()
+	} else if _, ok := d.listeners[message.Recipient]; ok {
+		// call recepient method in blocking mode
 		d.listeners[message.Recipient](message)
-	} else {
-		d.eventQueue = append(d.eventQueue, message)
 	}
 }
 
 func (d *Dispatcher) GetMessage(recipient string) *Message {
-	for i, m := range d.eventQueue {
-		if m.Recipient == recipient {
-			d.removeMessage(i)
-			return m
+	var m *Message
+	if _, ok := d.recipients[recipient]; ok {
+		d.mu.Lock()
+		e := d.recipients[recipient].messages.Front()
+		if e!= nil {
+      d.recipients[recipient].messages.Remove(e)
+			m = e.Value.(*Message)
 		}
+		d.mu.Unlock()
 	}
-	return nil
+	return m
 }
 
-func (d *Dispatcher) RegisterListener(recipient string, callBackFunc Fn) {
-	if d.listeners == nil {
-		d.listeners = make(map[string]Fn)
-	}
+func (d *Dispatcher) RegisterListener(recipient string, callBackFunc CallBackFunc) {
 	d.listeners[recipient] = callBackFunc
-}
-
-// Check if a map contains a given key
-func hasKey(m map[string]Fn, key string) bool {
-	_, ok := m[key]
-	return ok
-}
-
-func (d *Dispatcher) removeMessage(index int)  {
-	if index <= len(d.eventQueue) {
-		q := make([]*Message, 0)
-		q = append(q, d.eventQueue[:index]...)
-		q = append(q, d.eventQueue[index+1:]...)
-		d.eventQueue = q
-	} 
 }

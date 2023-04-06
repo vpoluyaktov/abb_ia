@@ -7,7 +7,7 @@ import (
 )
 
 type processor interface {
-	ReadMessages()
+	readMessages()
 }
 
 type Controller struct {
@@ -22,15 +22,15 @@ func NewController(dispatcher *event.Dispatcher) *Controller {
 	return c
 }
 
-func (c *Controller) ReadMessages() {
+func (c *Controller) startEventListener() {
 	for {
 		for _, p := range c.processors {
-			p.ReadMessages()
-			time.Sleep(100 * time.Millisecond)
+			p.readMessages()
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
 func (c *Controller) Run() {
-	go c.ReadMessages()
+	go c.startEventListener()
 }
