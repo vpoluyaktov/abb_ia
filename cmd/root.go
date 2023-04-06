@@ -9,12 +9,12 @@ import (
 
 func Execute() {
 	logger.Info("Application started")
-	
-  d := event.NewDispatcher()
-  ui := ui.NewTUI(d)
+
+	d := event.NewDispatcher()
+	ui := ui.NewTUI(d)
 	c := controller.NewController(d)
 
-  c.Run()
+	c.Run()
 	ui.Run()
 	logger.Info("Application finished")
 }

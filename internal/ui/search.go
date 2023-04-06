@@ -26,10 +26,9 @@ func newSearchPanel(dispatcher *event.Dispatcher) *searchPanel {
 	p.grid.SetColumns(0)
 	p.grid.AddItem(newText("SearchPanel"), 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(newText("Body Search"), 1, 0, 1, 1, 0, 0, true)
-	p.grid.AddItem(newButton("NextPanel", func() {p.sendMessage(dto.Button{Type: "Button", Name: "NextPanel", Event: "Pressed"})}), 3, 0, 1, 1, 0, 0, true)
+	p.grid.AddItem(newButton("NextPanel", func() { p.sendMessage(dto.Button{Type: "Button", Name: "NextPanel", Event: "Pressed"}) }), 3, 0, 1, 1, 0, 0, true)
 	return p
 }
-
 
 func (p *searchPanel) readMessages() {
 	m := p.dispatcher.GetMessage(componentName)
@@ -46,7 +45,7 @@ func (p *searchPanel) sendMessage(body interface{}) {
 	m.Async = true
 	m.Body = body
 	p.dispatcher.SendMessage(m)
-	
+
 }
 
 func (p *searchPanel) processMessage(m *event.Message) {

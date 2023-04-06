@@ -35,12 +35,12 @@ func (p *SearchProcessor) sendMessage(body interface{}) {
 	m.Type = "Text"
 	m.Async = true
 	m.Body = body
-	p.dispatcher.SendMessage(m)	
+	p.dispatcher.SendMessage(m)
 }
 
-func (p *SearchProcessor) processMessage(m *event.Message) {	
+func (p *SearchProcessor) processMessage(m *event.Message) {
 	if b, ok := m.Body.(dto.Button); ok {
 		logger.Debug("SearchProcessor received a message from " + m.Sender + ": " + b.Name)
-    p.sendMessage(b.Name + "Pressed")
-  }
+		p.sendMessage(b.Name + "Pressed")
+	}
 }
