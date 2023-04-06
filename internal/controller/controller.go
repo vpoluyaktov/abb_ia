@@ -10,19 +10,19 @@ type controller interface {
 	readMessages()
 }
 
-type Dispatcher struct {
+type Conductor struct {
 	dispatcher  *mq.Dispatcher
 	controllers []controller
 }
 
-func NewDispatcher(dispatcher *mq.Dispatcher) *Dispatcher {
-	c := &Dispatcher{}
+func NewConductor(dispatcher *mq.Dispatcher) *Conductor {
+	c := &Conductor{}
 	c.dispatcher = dispatcher
 	c.controllers = append(c.controllers, NewSearchProcessor(c.dispatcher))
 	return c
 }
 
-func (c *Dispatcher) startEventListener() {
+func (c *Conductor) startEventListener() {
 	for {
 		for _, p := range c.controllers {
 			p.readMessages()
@@ -31,6 +31,6 @@ func (c *Dispatcher) startEventListener() {
 	}
 }
 
-func (c *Dispatcher) Run() {
+func (c *Conductor) Run() {
 	go c.startEventListener()
 }
