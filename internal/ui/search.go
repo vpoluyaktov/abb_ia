@@ -50,8 +50,8 @@ func (p *searchPanel) sendMessage(from string, to string, dtoType string, dto dt
 
 func (p *searchPanel) dispatchMessage(m *mq.Message) {
 	switch t := m.Type; t {
-	case dto.SearchResultType:
-		if r, ok := m.Dto.(dto.SearchResult); ok {
+	case dto.IAItemType:
+		if r, ok := m.Dto.(*dto.IAItem); ok {
 			go p.updateSearchResult(r)
 		} else {
 			m.DtoCastError()
@@ -68,7 +68,6 @@ func (p *searchPanel) runSearch() {
 	p.sendMessage(uiComponentName, controllerName, dto.SearchCommandType, dto.SearchCommand{SearchCondition: searchCondition}, true)
 }
 
-func (p *searchPanel) updateSearchResult(r dto.SearchResult) {
-	logger.Debug(uiComponentName + ": Got SearchResult: " + r.ItemName)
-
+func (p *searchPanel) updateSearchResult(i *dto.IAItem) {
+	logger.Debug(uiComponentName + ": Got AI Item: " + i.Title)
 }

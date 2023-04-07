@@ -1,9 +1,13 @@
 package controller
 
 import (
+	"strconv"
+
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
+	"github.com/vpoluyaktov/audiobook_creator_IA/pkg/ia_client"
 )
 
 const (
@@ -15,7 +19,7 @@ type SearchController struct {
 	dispatcher *mq.Dispatcher
 }
 
-func NewSearchProcessor(dispatcher *mq.Dispatcher) *SearchController {
+func NewSearchController(dispatcher *mq.Dispatcher) *SearchController {
 	sp := &SearchController{}
 	sp.dispatcher = dispatcher
 	sp.dispatcher.RegisterListener(controllerName, sp.dispatchMessage)
@@ -55,6 +59,52 @@ func (p *SearchController) dispatchMessage(m *mq.Message) {
 
 func (p *SearchController) performSearch(c dto.SearchCommand) {
 	logger.Debug(controllerName + ": Received SearchCommand with condition: " + c.SearchCondition)
-	// TODO: Run IA search
-	p.sendMessage(controllerName, uiComponentName, dto.SearchResultType, dto.SearchResult{ItemName: "Some Item"}, true)
+	ia := ia_client.New()
+	resp := ia.Search(c.SearchCondition, "audio")
+	if resp == nil {
+		logger.Error(controllerName + ": Failed to perform IA search with condition: " + c.SearchCondition)
+	}
+
+	docs := resp.Response.Docs
+	for _, doc := range docs {
+		item := &dto.IAItem{}
+		item.ID = doc.Identifier
+		item.Title = doc.Title
+		item.Creator = doc.Creator
+		item.Description = doc.Description
+
+		// collect mp3 files
+		item.FilesCount = 0
+		item.Files = make([]dto.File, 0)
+		var totalSize int64 = 0
+		var totalLength float64 = 0.0
+		d := ia.GetItemDetails(doc.Identifier)
+		if d != nil {
+			item.Server = d.Server
+			item.Dir = d.Dir
+			for name, metadata := range d.Files {
+				format := metadata.Format
+				if utils.Contains(dto.FormatList, format) {
+					size, sErr := strconv.ParseInt(metadata.Size, 10, 64)
+					length, lErr := utils.TimeToSeconds(metadata.Length)
+					if sErr == nil && lErr == nil {
+						file := dto.File{}
+						file.Name = name
+						file.Size = size
+						file.Length = length
+						file.Format = metadata.Format
+						totalSize += size
+						totalLength += length
+						item.Files = append(item.Files, file)
+					}
+				}
+			}
+			item.TotalSize = totalSize
+			item.TotalLength = totalLength
+			item.FilesCount = len(item.Files)
+		}
+		if item.FilesCount > 0 {
+			p.sendMessage(controllerName, uiComponentName, dto.IAItemType, item, true)
+		}
+	}
 }

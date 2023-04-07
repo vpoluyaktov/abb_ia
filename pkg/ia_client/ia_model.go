@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type SearchResult struct {
+type SearchResponse struct {
 	ResponseHeader struct {
 		Status int `json:"status"`
 		QTime  int `json:"QTime"`
@@ -48,7 +48,7 @@ type SearchResult struct {
 	} `json:"response"`
 }
 
-type GetItemResult struct {
+type ItemDetails struct {
 	Server   string `json:"server"`
 	Dir      string `json:"dir"`
 	Metadata struct {
@@ -71,24 +71,24 @@ type GetItemResult struct {
 		AccessRestrictedItem []string `json:"access-restricted-item"`
 	} `json:"metadata"`
 	Files map[string]struct {
-			Source             string `json:"source"`
-			Format             string `json:"format"`
-			Length             string `json:"length"`
-			Mtime              string `json:"mtime"`
-			Size               string `json:"size"`
-			Md5                string `json:"md5"`
-			Crc32              string `json:"crc32"`
-			Sha1               string `json:"sha1"`
-			Title              string `json:"title"`
-			Creator            string `json:"creator"`
-			Album              string `json:"album"`
-			Artist             string `json:"artist"`
-			Genre              string `json:"genre"`
-			ExternalIdentifier string `json:"external-identifier"`
-			Height             string `json:"height"`
-			Width              string `json:"width"`
-			Track              string `json:"track"`
-			Comment            string `json:"comment"`
+		Source             string `json:"source"`
+		Format             string `json:"format"`
+		Length             string `json:"length"`
+		Mtime              string `json:"mtime"`
+		Size               string `json:"size"`
+		Md5                string `json:"md5"`
+		Crc32              string `json:"crc32"`
+		Sha1               string `json:"sha1"`
+		Title              string `json:"title"`
+		Creator            string `json:"creator"`
+		Album              string `json:"album"`
+		Artist             string `json:"artist"`
+		Genre              string `json:"genre"`
+		ExternalIdentifier string `json:"external-identifier"`
+		Height             string `json:"height"`
+		Width              string `json:"width"`
+		Track              string `json:"track"`
+		Comment            string `json:"comment"`
 	} `json:"files"`
 	Misc struct {
 		Image           string `json:"image"`

@@ -1,21 +1,22 @@
 package ia_client
 
 import (
-	"strings"
 	"encoding/json"
 	"errors"
 	"io"
+	"strings"
+
 	"jaytaylor.com/html2text"
 )
 
 // String representation of the GetItemResult struct
-func (getItemResult GetItemResult) String() string {
+func (getItemResult ItemDetails) String() string {
 	str, _ := json.Marshal(getItemResult)
 	return string(str)
 }
 
 // String representation of the SearchResult struct
-func (searchResult SearchResult) String() string {
+func (searchResult SearchResponse) String() string {
 	str, _ := json.Marshal(searchResult)
 	return string(str)
 }
@@ -76,12 +77,12 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-func (client *IAClient) Html2Text(html string) (string) {
+func (client *IAClient) Html2Text(html string) string {
 	html = strings.TrimPrefix(html, "<blockquote>")
 	html = strings.TrimSuffix(html, "</blockquote>")
 	text, err := html2text.FromString(html)
-	if err!= nil {
-    text = "HTML parsing error"
-  }
+	if err != nil {
+		text = "HTML parsing error"
+	}
 	return text
 }

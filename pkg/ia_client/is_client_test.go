@@ -1,31 +1,31 @@
 package ia_client_test
 
 import (
-	"os"
 	"fmt"
+	"os"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
-	"github.com/vpoluyaktov/audiobook_creator_IA/pkg/ia_client"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+	"github.com/vpoluyaktov/audiobook_creator_IA/pkg/ia_client"
 )
 
-
 const (
-  logFileName string = "/tmp/audiobook_creator_IA.test.log"
-  logLevel = logger.DEBUG
+	logFileName string = "/tmp/audiobook_creator_IA.test.log"
+	logLevel           = logger.DEBUG
 )
 
 func TestMain(m *testing.M) {
-  logger.Init(logFileName, logLevel)
-  config.Load()
+	logger.Init(logFileName, logLevel)
+	config.Load()
 	os.Exit(m.Run())
 }
 
 func TestSearch(t *testing.T) {
 	ia := ia_client.New()
 
-  res := ia.Search("NASA", "audio")  // search by title
+	res := ia.Search("NASA", "audio") // search by title
 	assert.NotNil(t, res)
 	assert.Equal(t, 25, len(res.Response.Docs))
 
@@ -36,20 +36,20 @@ func TestSearch(t *testing.T) {
 
 func TestGetItemById(t *testing.T) {
 	ia := ia_client.New()
-	item := ia.GetItemById("OTRR_Frank_Race_Singles")
+	item := ia.GetItemDetails("OTRR_Frank_Race_Singles")
 	assert.NotNil(t, item)
 	if logLevel == logger.DEBUG {
-		if item!= nil {
+		if item != nil {
 			fmt.Printf("Title: %s\n", item.Metadata.Title[0])
 			fmt.Printf("Server: %s\n", item.Server)
 			fmt.Printf("Directory: %s\n", item.Dir)
 			fmt.Printf("Description: %s\n", ia.Html2Text(item.Metadata.Description[0]))
 			fmt.Printf("Creator: %s\n", item.Metadata.Creator[0])
 			fmt.Printf("Image: %s\n", item.Misc.Image)
-			
+
 			for file, meta := range item.Files {
 				fmt.Printf("%s -> %s\n", file, meta.Format)
-			} 
+			}
 		}
 	}
 }
