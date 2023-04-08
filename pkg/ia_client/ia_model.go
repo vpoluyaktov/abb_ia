@@ -26,7 +26,7 @@ type SearchResponse struct {
 			Date               time.Time   `json:"date,omitempty"`
 			Description        string      `json:"description,omitempty"`
 			Downloads          int         `json:"downloads"`
-			Format             []string    `json:"format"`
+			Format             strArray    `json:"format"`
 			Identifier         string      `json:"identifier"`
 			Indexflag          []string    `json:"indexflag"`
 			ItemSize           int         `json:"item_size"`
@@ -71,24 +71,24 @@ type ItemDetails struct {
 		AccessRestrictedItem []string `json:"access-restricted-item"`
 	} `json:"metadata"`
 	Files map[string]struct {
-		Source             string `json:"source"`
-		Format             string `json:"format"`
-		Length             string `json:"length"`
-		Mtime              string `json:"mtime"`
-		Size               string `json:"size"`
-		Md5                string `json:"md5"`
-		Crc32              string `json:"crc32"`
-		Sha1               string `json:"sha1"`
-		Title              string `json:"title"`
-		Creator            string `json:"creator"`
-		Album              string `json:"album"`
-		Artist             string `json:"artist"`
-		Genre              string `json:"genre"`
-		ExternalIdentifier string `json:"external-identifier"`
-		Height             string `json:"height"`
-		Width              string `json:"width"`
-		Track              string `json:"track"`
-		Comment            string `json:"comment"`
+		Source             string   `json:"source"`
+		Format             string   `json:"format"`
+		Length             string   `json:"length"`
+		Mtime              string   `json:"mtime"`
+		Size               string   `json:"size"`
+		Md5                string   `json:"md5"`
+		Crc32              string   `json:"crc32"`
+		Sha1               string   `json:"sha1"`
+		Title              string   `json:"title"`
+		Creator            string   `json:"creator"`
+		Album              string   `json:"album"`
+		Artist             string   `json:"artist"`
+		Genre              string   `json:"genre"`
+		ExternalIdentifier strArray `json:"external-identifier"`
+		Height             string   `json:"height"`
+		Width              string   `json:"width"`
+		Track              string   `json:"track"`
+		Comment            string   `json:"comment"`
 	} `json:"files"`
 	Misc struct {
 		Image           string `json:"image"`
