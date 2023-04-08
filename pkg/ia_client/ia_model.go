@@ -39,8 +39,8 @@ type SearchResponse struct {
 			Week               int         `json:"week"`
 			Year               int         `json:"year,omitempty"`
 			BackupLocation     string      `json:"backup_location,omitempty"`
-			ExternalIdentifier string      `json:"external-identifier,omitempty"`
-			Genre              string      `json:"genre,omitempty"`
+			ExternalIdentifier strArray    `json:"external-identifier,omitempty"`
+			Genre              strArray    `json:"genre,omitempty"`
 			Language           string      `json:"language,omitempty"`
 			Licenseurl         string      `json:"licenseurl,omitempty"`
 			StrippedTags       strArray    `json:"stripped_tags,omitempty"`

@@ -18,3 +18,10 @@ func newButton(text string, f Fn) *cview.Button {
 	bt.SetSelectedFunc(f)
 	return bt
 }
+
+func box(title string) *cview.Box {
+  b := cview.NewBox()
+  b.SetBorder(true)
+  b.SetTitle(title)
+  return b
+}

@@ -4,8 +4,10 @@ import (
 	"time"
 
 	"code.rocketnine.space/tslocum/cview"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
+
 
 type components interface {
 	readMessages()
@@ -54,6 +56,7 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 
 func (ui *TUI) startEventListener() {
 	for {
+		ui.readMessages()
 		for _, c := range ui.components {
 			c.readMessages()
 		}
@@ -65,5 +68,28 @@ func (ui *TUI) Run() {
 	go ui.startEventListener()
 	if err := ui.app.Run(); err != nil {
 		panic(err)
+	}
+}
+
+func (ui *TUI) readMessages() {
+	m := ui.dispatcher.GetMessage("TUI")
+	if m != nil {
+		ui.dispatchMessage(m)
+	}
+}
+
+func (ui *TUI) dispatchMessage(m *mq.Message) {
+	switch t := m.Type; t {
+	case dto.CommandType:
+		if c, ok := m.Dto.(dto.Command); ok {
+			if c.Command == "RedrawUI" {
+				ui.app.Draw()
+			}
+		} else {
+			m.DtoCastError()
+		}
+
+	default:
+		m.UnsupportedTypeError()
 	}
 }
