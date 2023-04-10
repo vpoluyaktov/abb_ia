@@ -71,7 +71,6 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 		item.ID = doc.Identifier
 		item.Title = doc.Title
 		item.Creator = doc.Creator
-		item.Description = doc.Description
 
 		// collect mp3 files
 		item.FilesCount = 0
@@ -82,6 +81,7 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 		if d != nil {
 			item.Server = d.Server
 			item.Dir = d.Dir
+			item.Description = ia.Html2Text(d.Metadata.Description[0])
 			for name, metadata := range d.Files {
 				format := metadata.Format
 				if utils.Contains(dto.FormatList, format) {

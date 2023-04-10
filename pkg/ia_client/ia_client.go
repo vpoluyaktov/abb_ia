@@ -64,7 +64,7 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 	if err != nil {
 		panic(err)
 	}
-	// logger.Debug("GetItemDetails response: " + result.String())
+	logger.Debug("GetItemDetails response: " + result.String())
 
 	return result
 }

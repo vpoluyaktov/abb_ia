@@ -13,7 +13,7 @@ func newHeader(colors *colors) *header {
 	h := &header{}
 	h.colors = colors
 	h.view = cview.NewTextView()
-	h.view.SetText("Audiobook Creator (Internet Archive version). Version 0.5")
+	h.view.SetText("Audiobook Creator (Internet Archive version)")
 	h.view.SetBorder(false)
 	h.view.SetTextColor(h.colors.textColor)
 	h.view.SetBackgroundColor(colors.textBgColor)
