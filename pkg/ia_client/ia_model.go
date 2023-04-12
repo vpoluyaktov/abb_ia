@@ -37,7 +37,7 @@ type SearchResponse struct {
 			Subject            strArray    `json:"subject,omitempty"`
 			Title              string      `json:"title"`
 			Week               int         `json:"week"`
-			Year               int         `json:"year,omitempty"`
+			Year               numArray    `json:"year,omitempty"`
 			BackupLocation     string      `json:"backup_location,omitempty"`
 			ExternalIdentifier strArray    `json:"external-identifier,omitempty"`
 			Genre              strArray    `json:"genre,omitempty"`

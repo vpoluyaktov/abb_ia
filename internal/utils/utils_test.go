@@ -46,3 +46,18 @@ func TestTimeToSeconds(t *testing.T) {
 	assert.Equal(t, float64(3845.32), tInt)
 
 }
+
+func TestSecondToTime(t *testing.T) {
+	sec := float64((5 * 3600) + (45 * 60) + 35)
+	time, err := utils.SecondToTime(sec)
+	assert.NoError(t, err)
+	assert.Equal(t, "5:45:35", time)
+}
+
+
+func TestBytesToHuman(t *testing.T) {
+	b := int64((5 * 1024 * 1024) + (245 * 1024) + 35)
+	size, err := utils.BytesToHuman(b)
+	assert.NoError(t, err)
+	assert.Equal(t, "5:45:35", size)
+}

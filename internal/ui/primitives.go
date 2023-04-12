@@ -25,3 +25,4 @@ func box(title string) *cview.Box {
   b.SetTitle(title)
   return b
 }
+

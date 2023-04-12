@@ -12,21 +12,25 @@ type SearchCommand struct {
 const IAItemType = "dto.IAItem"
 
 type IAItem struct {
-	ID          string
-	Title       string
-	Creator     string
-	Description string
-	Server      string
-	Dir         string
-	FilesCount  int
-	TotalLength float64
-	TotalSize   int64
-	Files       []File
+	ID           string
+	Title        string
+	Creator      string
+	Description  string
+	Server       string
+	Dir          string
+	FilesCount   int
+	TotalLength  float64
+	TotalLengthH string
+	TotalSize    int64
+	TotalSizeH   string
+	Files        []File
 }
 
 type File struct {
 	Name   string
 	Format string
-	Size   int64
 	Length float64
+	LengthH string
+	Size   int64
+	SizeH  string
 }

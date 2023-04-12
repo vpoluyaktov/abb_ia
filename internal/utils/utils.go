@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -44,4 +45,29 @@ func TimeToSeconds(t string) (float64, error) {
 		}
 		return sec, nil
 	}
+}
+
+// Convert time in seconds to HH:MM:SS striing format
+func SecondToTime(sec float64) (string, error) {
+	ss := int(sec) % 60
+	sec /= 60
+	mm := int(sec) % 60
+	sec /= 60
+	hh := int(sec)
+	time := fmt.Sprintf("%2d:%02d:%02d", hh, mm, ss)
+	return time, nil
+}
+
+// Convert time in seconds to HH:MM:SS striing format
+func BytesToHuman(b int64) (string, error) {
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b), nil
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %ciB", float64(b)/float64(div), "KMGTPE"[exp]), nil
 }

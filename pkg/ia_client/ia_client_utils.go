@@ -24,6 +24,9 @@ func (searchResult SearchResponse) String() string {
 // StrArray string array to be used on JSON UnmarshalJSON
 type strArray []string
 
+// NumArray int array to be used on JSON UnmarshalJSON
+type numArray []float64
+
 var (
 	// ErrUnsupportedType is returned if the type is not implemented
 	ErrUnsupportedType = errors.New("unsupported type")
@@ -51,6 +54,34 @@ func (sa *strArray) UnmarshalJSON(data []byte) error {
 			s = append(s, value)
 		}
 		*sa = strArray(s)
+		return nil
+	}
+	return ErrUnsupportedType
+}
+
+// UnmarshalJSON convert JSON object array of int or
+// a int format int to a golang int array
+func (sa *numArray) UnmarshalJSON(data []byte) error {
+	var jsonObj interface{}
+	err := json.Unmarshal(data, &jsonObj)
+	if err != nil {
+		return err
+	}
+	
+	switch obj := jsonObj.(type) {
+	case float64:
+		*sa = numArray([]float64{obj})
+		return nil
+	case []interface{}:
+		i := make([]float64, 0, len(obj))
+		for _, v := range obj {
+			value, ok := v.(float64)
+			if !ok {
+				return ErrUnsupportedType
+			}
+			i = append(i, value)
+		}
+		*sa = numArray(i)
 		return nil
 	}
 	return ErrUnsupportedType
@@ -84,5 +115,6 @@ func (client *IAClient) Html2Text(html string) string {
 	if err != nil {
 		text = "HTML parsing error"
 	}
+	text = strings.Replace(text, "\u00a0", "\n", -1)
 	return text
 }

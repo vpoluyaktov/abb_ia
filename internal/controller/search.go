@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"sort"
 	"strconv"
 
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
@@ -81,7 +82,9 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 		if d != nil {
 			item.Server = d.Server
 			item.Dir = d.Dir
-			item.Description = ia.Html2Text(d.Metadata.Description[0])
+			if len(d.Metadata.Description) > 0 {
+				item.Description = ia.Html2Text(d.Metadata.Description[0])
+			}
 			for name, metadata := range d.Files {
 				format := metadata.Format
 				if utils.Contains(dto.FormatList, format) {
@@ -91,7 +94,9 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 						file := dto.File{}
 						file.Name = name
 						file.Size = size
+						file.SizeH, _ = utils.BytesToHuman(size)
 						file.Length = length
+						file.LengthH, _ = utils.BytesToHuman(int64(length))
 						file.Format = metadata.Format
 						totalSize += size
 						totalLength += length
@@ -99,8 +104,12 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 					}
 				}
 			}
+			// sort files by name
+			sort.Slice(item.Files, func(i, j int) bool { return item.Files[i].Name < item.Files[j].Name})
 			item.TotalSize = totalSize
+			item.TotalSizeH, _ = utils.BytesToHuman(totalSize)
 			item.TotalLength = totalLength
+			item.TotalLengthH, _ = utils.SecondToTime(totalLength)
 			item.FilesCount = len(item.Files)
 		}
 		if item.FilesCount > 0 {
