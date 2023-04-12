@@ -96,7 +96,7 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 						file.Size = size
 						file.SizeH, _ = utils.BytesToHuman(size)
 						file.Length = length
-						file.LengthH, _ = utils.BytesToHuman(int64(length))
+						file.LengthH, _ = utils.SecondToTime(length)
 						file.Format = metadata.Format
 						totalSize += size
 						totalLength += length

@@ -151,7 +151,7 @@ func (p *searchPanel) updateSearchResult(i *dto.IAItem) {
 }
 
 func (p *searchPanel) updateDetails(row int, col int) {
-	if row > 0 && len(p.searchResult) > 0 && len(p.searchResult) > row {
+	if row > 0 && len(p.searchResult) > 0 && len(p.searchResult) >= row {
 		d := p.searchResult[row-1].Description
 		p.descriptionView.SetText(d)
 		p.descriptionView.ScrollToBeginning()
