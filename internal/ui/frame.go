@@ -19,11 +19,11 @@ func newFrame() *frame {
 }
 
 func (f *frame) addHeader(header *header) {
-	f.grid.AddItem(header.view, 0, 0, 1, 3, 0, 0, false)
+	f.grid.AddItem(header.view, 0, 1, 1, 1, 0, 0, false)
 }
 
 func (f *frame) addFooter(footer *footer) {
-	f.grid.AddItem(footer.view, 2, 0, 1, 3, 0, 0, false)
+	f.grid.AddItem(footer.view, 2, 1, 1, 1, 0, 0, false)
 }
 
 func (f *frame) addPannel(name string, g *cview.Grid) {

@@ -7,7 +7,7 @@ import (
 )
 
 type controller interface {
-	readMessages()
+	checkMQ()
 }
 
 type Conductor struct {
@@ -25,7 +25,7 @@ func NewConductor(dispatcher *mq.Dispatcher) *Conductor {
 func (c *Conductor) startEventListener() {
 	for {
 		for _, p := range c.controllers {
-			p.readMessages()
+			p.checkMQ()
 		}
 		time.Sleep(100 * time.Millisecond)
 	}

@@ -13,8 +13,8 @@ func newText(text string) *cview.TextView {
 
 func newButton(text string, f Fn) *cview.Button {
 	bt := cview.NewButton(text)
-	bt.SetRect(0, 0, 22, 3)
-	bt.SetBorder(true)
+	bt.SetRect(0, 0, 20, 1)
+	bt.SetBorder(false)
 	bt.SetSelectedFunc(f)
 	return bt
 }

@@ -27,7 +27,7 @@ func NewSearchController(dispatcher *mq.Dispatcher) *SearchController {
 	return sp
 }
 
-func (p *SearchController) readMessages() {
+func (p *SearchController) checkMQ() {
 	m := p.dispatcher.GetMessage(controllerName)
 	if m != nil {
 		p.dispatchMessage(m)

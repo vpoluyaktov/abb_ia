@@ -8,9 +8,9 @@ import (
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
 
-
 type components interface {
-	readMessages()
+	// Check for messages in message queue
+	checkMQ()
 }
 
 type TUI struct {
@@ -19,7 +19,6 @@ type TUI struct {
 	// UI components
 	components []components
 	app        *cview.Application
-	colors     *colors
 	header     *header
 	footer     *footer
 	search     *searchPanel
@@ -32,15 +31,15 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	ui := TUI{}
 	ui.app = cview.NewApplication()
 	defer ui.app.HandlePanic()
-	ui.colors = newColors()
 	ui.app.EnableMouse(true)
+	setColorTheme()
 
 	// Set Event Dispatcher
 	ui.dispatcher = dispatcher
 
 	// UI components
-	ui.header = newHeader(ui.colors)
-	ui.footer = newFooter(ui.colors)
+	ui.header = newHeader(dispatcher)
+	ui.footer = newFooter(dispatcher)
 	ui.search = newSearchPanel(dispatcher)
 	ui.components = append(ui.components, ui.search)
 
@@ -56,9 +55,9 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 
 func (ui *TUI) startEventListener() {
 	for {
-		ui.readMessages()
+		ui.pullMq()
 		for _, c := range ui.components {
-			c.readMessages()
+			c.checkMQ()
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -71,7 +70,7 @@ func (ui *TUI) Run() {
 	}
 }
 
-func (ui *TUI) readMessages() {
+func (ui *TUI) pullMq() {
 	m := ui.dispatcher.GetMessage("TUI")
 	if m != nil {
 		ui.dispatchMessage(m)

@@ -2,20 +2,22 @@ package ui
 
 import (
 	"code.rocketnine.space/tslocum/cview"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
 
 type footer struct {
-	view   *cview.TextView
-	colors *colors
+	view       *cview.TextView
+	dispatcher *mq.Dispatcher
 }
 
-func newFooter(colors *colors) *footer {
+func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f := &footer{}
-	f.colors = colors
+	f.dispatcher = dispatcher
 	f.view = cview.NewTextView()
-	f.view.SetText("Version 0.0.1")
+	f.view.SetText("v.0.0.1")
+	f.view.SetTextAlign(cview.AlignRight)
 	f.view.SetBorder(false)
-	f.view.SetTextColor(colors.textColor)
-	f.view.SetBackgroundColor(colors.textBgColor)
+	f.view.SetTextColor(footerFgColor)
+	f.view.SetBackgroundColor(footerBgColor)
 	return f
 }

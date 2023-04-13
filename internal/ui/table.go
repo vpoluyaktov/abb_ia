@@ -2,7 +2,6 @@ package ui
 
 import (
 	"code.rocketnine.space/tslocum/cview"
-	"github.com/gdamore/tcell/v2"
 )
 
 type table struct {
@@ -16,6 +15,7 @@ func newTable() *table {
 	t := &table{}
 	t.t = cview.NewTable()
 	t.t.SetSelectable(true, false)
+	t.t.SetSeparator(cview.Borders.Vertical)
 	t.t.SetSortClicked(false)
 	// t.t.SetSortFunc() // TODO
 	t.t.ShowFocus(true)
@@ -38,12 +38,11 @@ func (t *table) setAlign(aligns []uint) {
 func (t *table) showHeader() {
 	for c, h := range t.headers {
 		cell := cview.NewTableCell(h)
-		textColor := tcell.ColorYellow.TrueColor()
-		bgColor := tcell.ColorBlue.TrueColor()
-		cell.SetTextColor(textColor)
-		cell.SetBackgroundColor(bgColor)
-		cell.SetAlign(int(t.aligns[c]))
+		cell.SetTextColor(yellow)
+		cell.SetBackgroundColor(blue)
+		cell.SetAlign(cview.AlignCenter)
 		cell.SetExpansion(t.widths[c])
+		cell.NotSelectable = true
 		t.t.SetCell(0, c, cell)
 	}
 	t.t.SetFixed(1, 0)
@@ -58,7 +57,6 @@ func (t *table) appendRow(cols []string) {
 		cell.SetExpansion(t.widths[c])
 		t.t.SetCell(r, c, cell)
 	}
-	// p.searchResultTable.Select(r, 0)
 }
 
 func (t *table) clear() {

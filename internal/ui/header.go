@@ -2,20 +2,21 @@ package ui
 
 import (
 	"code.rocketnine.space/tslocum/cview"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
 
 type header struct {
 	view   *cview.TextView
-	colors *colors
+	dispatcher *mq.Dispatcher
 }
 
-func newHeader(colors *colors) *header {
+func newHeader(dispatcher *mq.Dispatcher) *header {
 	h := &header{}
-	h.colors = colors
+	h.dispatcher = dispatcher
 	h.view = cview.NewTextView()
 	h.view.SetText("Audiobook Creator (Internet Archive version)")
 	h.view.SetBorder(false)
-	h.view.SetTextColor(h.colors.textColor)
-	h.view.SetBackgroundColor(colors.textBgColor)
+	h.view.SetTextColor(headerFgColor)
+	h.view.SetBackgroundColor(headerBGColor)
 	return h
 }

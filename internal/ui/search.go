@@ -20,6 +20,7 @@ type searchPanel struct {
 	dispatcher          *mq.Dispatcher
 	searchSection       *cview.Flex
 	searchCriteria      string
+	searchForm 					*cview.Form
 	searchResult        []*dto.IAItem
 	searchResultSection *cview.Grid
 	searchResultTable   *table
@@ -43,12 +44,16 @@ func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 	p.searchSection.SetBorder(true)
 	p.searchSection.SetTitle(" Internet Archive Search ")
 	p.searchSection.SetTitleAlign(cview.AlignLeft)
-	form := cview.NewForm()
-	form.SetHorizontal(true)
-	form.AddInputField("Search criteria", "", 40, nil, func(t string) { p.searchCriteria = t })
-	form.AddButton("Search", p.runSearch)
-	form.AddButton("Clear", p.clearSearchResults)
-	p.searchSection.AddItem(form, 0, 1, true)
+	p.searchForm = cview.NewForm()
+	p.searchForm.SetHorizontal(true)
+	p.searchForm.AddInputField("Search criteria", "", 40, nil, func(t string) { p.searchCriteria = t })
+	p.searchForm.AddButton("Search", p.runSearch)
+	p.searchForm.AddButton("Clear", p.clearSearchResults)
+	p.searchForm.SetFieldTextColor(black)
+	p.searchForm.SetFieldTextColorFocused(black)
+	p.searchForm.SetButtonTextColor(black)
+	p.searchForm.SetButtonTextColorFocused(black)
+	p.searchSection.AddItem(p.searchForm, 0, 1, true)
 	p.grid.AddItem(p.searchSection, 0, 0, 1, 1, 0, 0, true)
 
 	// result section
@@ -70,13 +75,8 @@ func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 	p.detailsSection = cview.NewGrid()
 	p.detailsSection.SetRows(-1)
 	p.detailsSection.SetColumns(-1, 1, -1)
-	// p.detailsSection.SetTitle(" Details ")
-	// p.detailsSection.SetTitleAlign(cview.AlignLeft)
-	// p.detailsSection.SetBorder(true)
 
 	p.descriptionView = cview.NewTextView()
-	p.descriptionView.SetDynamicColors(true)
-	p.descriptionView.SetRegions(true)
 	p.descriptionView.SetWrap(true)
 	p.descriptionView.SetWordWrap(true)
 	p.descriptionView.SetBorder(true)
@@ -98,7 +98,7 @@ func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 	return p
 }
 
-func (p *searchPanel) readMessages() {
+func (p *searchPanel) checkMQ() {
 	m := p.dispatcher.GetMessage(uiComponentName)
 	if m != nil {
 		p.dispatchMessage(m)
@@ -137,6 +137,7 @@ func (p *searchPanel) runSearch() {
 }
 
 func (p *searchPanel) clearSearchResults() {
+	// p.searchForm.GetFormItem(0).(*cview.InputField).SetText("")
 	p.searchResult = make([]*dto.IAItem, 0)
 	p.searchResultTable.clear()
 	p.descriptionView.SetText("")
@@ -162,7 +163,7 @@ func (p *searchPanel) updateDetails(row int, col int) {
 		for _, f := range files {
 			p.filesTable.appendRow([]string{f.Name, f.Format, f.LengthH, f.SizeH})
 		}
-		p.filesTable.t.Select(1, 0)
+		p.filesTable.t.ScrollToBeginning()
 	}
 
 }
