@@ -79,11 +79,17 @@ func (ui *TUI) pullMq() {
 
 func (ui *TUI) dispatchMessage(m *mq.Message) {
 	switch t := m.Type; t {
-	case dto.CommandType:
-		if c, ok := m.Dto.(dto.Command); ok {
+	case dto.GeneralCommandType:
+		if c, ok := m.Dto.(dto.GeneralCommand); ok {
 			if c.Command == "RedrawUI" {
 				ui.app.Draw()
 			}
+		} else {
+			m.DtoCastError()
+		}
+	case dto.SetFocusCommandType:
+		if c, ok := m.Dto.(dto.SetFocusCommand); ok {
+			ui.app.SetFocus(c.Primitive)
 		} else {
 			m.DtoCastError()
 		}

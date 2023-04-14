@@ -16,17 +16,22 @@ const (
 )
 
 type searchPanel struct {
-	grid                *cview.Grid
-	dispatcher          *mq.Dispatcher
-	searchSection       *cview.Flex
-	searchCriteria      string
-	searchForm 					*cview.Form
-	searchResult        []*dto.IAItem
-	searchResultSection *cview.Grid
-	searchResultTable   *table
-	detailsSection      *cview.Grid
-	descriptionView     *cview.TextView
-	filesTable          *table
+	grid           *cview.Grid
+	dispatcher     *mq.Dispatcher
+	searchCriteria string
+	searchResult   []*dto.IAItem
+
+	searchSection *cview.Flex
+	inputField    *cview.InputField
+	searchButton  *cview.Button
+	clearButton   *cview.Button
+
+	resultSection *cview.Grid
+	resultTable   *table
+
+	detailsSection  *cview.Grid
+	descriptionView *cview.TextView
+	filesTable      *table
 }
 
 func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
@@ -44,32 +49,28 @@ func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 	p.searchSection.SetBorder(true)
 	p.searchSection.SetTitle(" Internet Archive Search ")
 	p.searchSection.SetTitleAlign(cview.AlignLeft)
-	p.searchForm = cview.NewForm()
-	p.searchForm.SetHorizontal(true)
-	p.searchForm.AddInputField("Search criteria", "", 40, nil, func(t string) { p.searchCriteria = t })
-	p.searchForm.AddButton("Search", p.runSearch)
-	p.searchForm.AddButton("Clear", p.clearSearchResults)
-	p.searchForm.SetFieldTextColor(black)
-	p.searchForm.SetFieldTextColorFocused(black)
-	p.searchForm.SetButtonTextColor(black)
-	p.searchForm.SetButtonTextColorFocused(black)
-	p.searchSection.AddItem(p.searchForm, 0, 1, true)
+	f := newForm()
+	f.SetHorizontal(true)
+	p.inputField = f.AddInputField("Search criteria", "", 40, nil, func(t string) { p.searchCriteria = t })
+	p.searchButton = f.AddButton("Search", p.runSearch)
+	p.clearButton = f.AddButton("Clear", p.clearEverything)
+	p.searchSection.AddItem(f.f, 0, 1, true)
 	p.grid.AddItem(p.searchSection, 0, 0, 1, 1, 0, 0, true)
 
 	// result section
-	p.searchResultSection = cview.NewGrid()
-	p.searchResultSection.SetColumns(-1)
-	p.searchResultSection.SetTitle(" Search result ")
-	p.searchResultSection.SetTitleAlign(cview.AlignLeft)
-	p.searchResultSection.SetBorder(true)
+	p.resultSection = cview.NewGrid()
+	p.resultSection.SetColumns(-1)
+	p.resultSection.SetTitle(" Search result ")
+	p.resultSection.SetTitleAlign(cview.AlignLeft)
+	p.resultSection.SetBorder(true)
 
-	p.searchResultTable = newTable()
-	p.searchResultTable.setHeaders([]string{"Title", "Files", "Duration (HH:MM:SS)", "Size"})
-	p.searchResultTable.setWidths([]int{4, 1, 1, 1})
-	p.searchResultTable.setAlign([]uint{cview.AlignLeft, cview.AlignRight, cview.AlignRight, cview.AlignRight})
-	p.searchResultTable.t.SetSelectionChangedFunc(p.updateDetails)
-	p.searchResultSection.AddItem(p.searchResultTable.t, 0, 0, 1, 1, 0, 0, true)
-	p.grid.AddItem(p.searchResultSection, 1, 0, 1, 1, 0, 0, true)
+	p.resultTable = newTable()
+	p.resultTable.setHeaders("Title", "Files", "Duration (HH:MM:SS)", "Total Size")
+	p.resultTable.setWidths(6, 2, 1, 1)
+	p.resultTable.setAlign(cview.AlignLeft, cview.AlignRight, cview.AlignRight, cview.AlignRight)
+	p.resultTable.t.SetSelectionChangedFunc(p.updateDetails)
+	p.resultSection.AddItem(p.resultTable.t, 0, 0, 1, 1, 0, 0, true)
+	p.grid.AddItem(p.resultSection, 1, 0, 1, 1, 0, 0, true)
 
 	// details section
 	p.detailsSection = cview.NewGrid()
@@ -88,12 +89,14 @@ func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 	p.filesTable.t.SetBorder(true)
 	p.filesTable.t.SetTitle(" Files: ")
 	p.filesTable.t.SetTitleAlign(cview.AlignLeft)
-	p.filesTable.setHeaders([]string{"File name", "Format", "Duration", "Size"})
-	p.filesTable.setWidths([]int{4, 1, 1, 1})
-	p.filesTable.setAlign([]uint{cview.AlignLeft, cview.AlignRight, cview.AlignRight, cview.AlignRight})
+	p.filesTable.setHeaders("File name", "Format", "Duration", "Size")
+	p.filesTable.setWidths(3, 1, 1, 1)
+	p.filesTable.setAlign(cview.AlignLeft, cview.AlignRight, cview.AlignRight, cview.AlignRight)
 	p.detailsSection.AddItem(p.filesTable.t, 0, 2, 1, 1, 0, 0, true)
 
 	p.grid.AddItem(p.detailsSection, 2, 0, 1, 1, 0, 0, true)
+
+	p.sendMessage(uiComponentName, "TUI", dto.SetFocusCommandType, dto.SetFocusCommand{Primitive: p.searchSection}, true)
 
 	return p
 }
@@ -119,7 +122,7 @@ func (p *searchPanel) dispatchMessage(m *mq.Message) {
 	switch t := m.Type; t {
 	case dto.IAItemType:
 		if r, ok := m.Dto.(*dto.IAItem); ok {
-			go p.updateSearchResult(r)
+			go p.updateResult(r)
 		} else {
 			m.DtoCastError()
 		}
@@ -131,24 +134,30 @@ func (p *searchPanel) dispatchMessage(m *mq.Message) {
 
 func (p *searchPanel) runSearch() {
 	p.clearSearchResults()
-	p.searchResultTable.showHeader()
+	p.resultTable.showHeader()
 	// Disable Search Button here
 	p.sendMessage(uiComponentName, controllerName, dto.SearchCommandType, dto.SearchCommand{SearchCondition: p.searchCriteria}, true)
+	p.sendMessage(uiComponentName, "TUI", dto.SetFocusCommandType, dto.SetFocusCommand{Primitive: p.resultSection}, true)
 }
 
 func (p *searchPanel) clearSearchResults() {
-	// p.searchForm.GetFormItem(0).(*cview.InputField).SetText("")
 	p.searchResult = make([]*dto.IAItem, 0)
-	p.searchResultTable.clear()
+	p.resultTable.clear()
 	p.descriptionView.SetText("")
 	p.filesTable.clear()
 }
 
-func (p *searchPanel) updateSearchResult(i *dto.IAItem) {
+func (p *searchPanel) clearEverything() {
+	p.inputField.SetText("")
+	p.clearSearchResults()
+}
+
+func (p *searchPanel) updateResult(i *dto.IAItem) {
 	logger.Debug(uiComponentName + ": Got AI Item: " + i.Title)
 	p.searchResult = append(p.searchResult, i)
-	p.searchResultTable.appendRow([]string{i.Title, strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH})
-	p.sendMessage(uiComponentName, "TUI", dto.CommandType, dto.Command{Command: "RedrawUI"}, true)
+	p.resultTable.appendRow(i.Title, strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
+	p.updateDetails(1, 0)
+	p.sendMessage(uiComponentName, "TUI", dto.GeneralCommandType, dto.GeneralCommand{Command: "RedrawUI"}, true)
 }
 
 func (p *searchPanel) updateDetails(row int, col int) {
@@ -161,7 +170,7 @@ func (p *searchPanel) updateDetails(row int, col int) {
 		p.filesTable.showHeader()
 		files := p.searchResult[row-1].Files
 		for _, f := range files {
-			p.filesTable.appendRow([]string{f.Name, f.Format, f.LengthH, f.SizeH})
+			p.filesTable.appendRow(f.Name, f.Format, f.LengthH, f.SizeH)
 		}
 		p.filesTable.t.ScrollToBeginning()
 	}

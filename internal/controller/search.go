@@ -71,7 +71,6 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 		item := &dto.IAItem{}
 		item.ID = doc.Identifier
 		item.Title = doc.Title
-		item.Creator = doc.Creator
 
 		// collect mp3 files
 		item.FilesCount = 0

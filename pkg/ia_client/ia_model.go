@@ -22,7 +22,7 @@ type SearchResponse struct {
 		Start    int `json:"start"`
 		Docs     []struct {
 			Collection         []string    `json:"collection"`
-			Creator            string      `json:"creator,omitempty"`
+			Creator            strArray    `json:"creator,omitempty"`
 			Date               time.Time   `json:"date,omitempty"`
 			Description        string      `json:"description,omitempty"`
 			Downloads          int         `json:"downloads"`
