@@ -1,14 +1,12 @@
 package ui
 
-import (
-	"code.rocketnine.space/tslocum/cview"
-)
+import "github.com/rivo/tview"
 
 // //////////////////////////////////////////////////////////////
-// cview.Table wrapper
+// tview.Table wrapper
 // //////////////////////////////////////////////////////////////
 type table struct {
-	t       *cview.Table
+	t       *tview.Table
 	headers []string
 	widths  []int
 	aligns  []uint
@@ -16,12 +14,12 @@ type table struct {
 
 func newTable() *table {
 	t := &table{}
-	t.t = cview.NewTable()
+	t.t = tview.NewTable()
 	t.t.SetSelectable(true, false)
-	t.t.SetSeparator(cview.Borders.Vertical)
-	t.t.SetSortClicked(false)
+	t.t.SetSeparator(tview.Borders.Vertical)
+	// t.t.SetSortClicked(false)
 	// t.t.SetSortFunc() // TODO
-	t.t.ShowFocus(true)
+	// t.t.ShowFocus(true)
 	t.t.SetBorder(false)
 	return t
 }
@@ -40,10 +38,10 @@ func (t *table) setAlign(aligns ...uint) {
 
 func (t *table) showHeader() {
 	for c, h := range t.headers {
-		cell := cview.NewTableCell(h)
+		cell := tview.NewTableCell(h)
 		cell.SetTextColor(yellow)
 		cell.SetBackgroundColor(blue)
-		cell.SetAlign(cview.AlignCenter)
+		cell.SetAlign(tview.AlignCenter)
 		cell.SetExpansion(t.widths[c])
 		cell.NotSelectable = true
 		t.t.SetCell(0, c, cell)
@@ -55,7 +53,7 @@ func (t *table) showHeader() {
 func (t *table) appendRow(cols ...string) {
 	r := t.t.GetRowCount()
 	for c, col := range cols {
-		cell := cview.NewTableCell(col)
+		cell := tview.NewTableCell(col)
 		cell.SetAlign(int(t.aligns[c]))
 		cell.SetExpansion(t.widths[c])
 		t.t.SetCell(r, c, cell)
@@ -67,19 +65,19 @@ func (t *table) clear() {
 }
 
 // //////////////////////////////////////////////////////////////
-// cview.Form wrapper
+// tview.Form wrapper
 // //////////////////////////////////////////////////////////////
 type form struct {
-	f *cview.Form
+	f *tview.Form
 }
 
 func newForm() *form {
 	f := &form{}
-	f.f = cview.NewForm()
+	f.f = tview.NewForm()
 	f.f.SetFieldTextColor(black)
-	f.f.SetFieldTextColorFocused(black)
+	// f.f.SetFieldTextColorFocused(black)
 	f.f.SetButtonTextColor(black)
-	f.f.SetButtonTextColorFocused(black)
+	// f.f.SetButtonTextColorFocused(black)
 	return f
 }
 
@@ -87,35 +85,44 @@ func (f *form) SetHorizontal(b bool) {
 	f.f.SetHorizontal(b)
 }
 
-func (f *form) AddInputField(label, value string, fieldWidth int, accept func(textToCheck string, lastChar rune) bool, changed func(text string)) (*cview.InputField) {
+func (f *form) AddInputField(label, value string, fieldWidth int, accept func(textToCheck string, lastChar rune) bool, changed func(text string)) *tview.InputField {
 	f.f.AddInputField(label, value, fieldWidth, accept, changed)
 	// return just created input field
-	return f.f.GetFormItem(f.f.GetFormItemCount()-1).(*cview.InputField)
+	return f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.InputField)
 }
 
-func (f *form) AddButton(label string, selected func()) (*cview.Button) {
+func (f *form) AddButton(label string, selected func()) *tview.Button {
 	f.f.AddButton(label, selected)
 	// return just created button
-	return f.f.GetButton(f.f.GetButtonCount()-1)
+	return f.f.GetButton(f.f.GetButtonCount() - 1)
 }
 
-func newText(text string) *cview.TextView {
-	tv := cview.NewTextView()
-	tv.SetTextAlign(cview.AlignCenter)
+// //////////////////////////////////////////////////////////////
+// tview.TextView wrapper
+// //////////////////////////////////////////////////////////////
+func newText(text string) *tview.TextView {
+	tv := tview.NewTextView()
+	tv.SetTextAlign(tview.AlignCenter)
 	tv.SetText(text)
 	return tv
 }
 
-func newButton(text string, f Fn) *cview.Button {
-	bt := cview.NewButton(text)
+// //////////////////////////////////////////////////////////////
+// tview.Button wrapper
+// //////////////////////////////////////////////////////////////
+func newButton(text string, f Fn) *tview.Button {
+	bt := tview.NewButton(text)
 	bt.SetRect(0, 0, 20, 1)
 	bt.SetBorder(false)
 	bt.SetSelectedFunc(f)
 	return bt
 }
 
-func box(title string) *cview.Box {
-	b := cview.NewBox()
+// //////////////////////////////////////////////////////////////
+// tview.Box wrapper
+// //////////////////////////////////////////////////////////////
+func box(title string) *tview.Box {
+	b := tview.NewBox()
 	b.SetBorder(true)
 	b.SetTitle(title)
 	return b

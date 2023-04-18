@@ -1,8 +1,8 @@
 package ui
 
 import (
-	"code.rocketnine.space/tslocum/cview"
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 )
 
 var (
@@ -21,17 +21,17 @@ var (
 )
 
 func setColorTheme() {
-	// Text
-	cview.Styles.PrimaryTextColor = gray           // Primary text.
-	cview.Styles.SecondaryTextColor = yellow       // Secondary text (e.g. labels).
-	cview.Styles.TertiaryTextColor = black         // Tertiary text (e.g. subtitles, notes).
-	cview.Styles.InverseTextColor = black          // Text on primary-colored backgrounds.
-	cview.Styles.ContrastPrimaryTextColor = black  // Primary text for contrasting elements.
-	cview.Styles.ContrastSecondaryTextColor = gray // Secondary text on ContrastBackgroundColor-colored backgrounds.
+	// // Text
+	tview.Styles.PrimaryTextColor = gray           // Primary text.
+	tview.Styles.SecondaryTextColor = yellow       // Secondary text (e.g. labels).
+	tview.Styles.TertiaryTextColor = black         // Tertiary text (e.g. subtitles, notes).
+	tview.Styles.InverseTextColor = black          // Text on primary-colored backgrounds.
+	tview.Styles.ContrastSecondaryTextColor = black  // Primary text for contrasting elements.
+	tview.Styles.ContrastSecondaryTextColor = gray // Secondary text on ContrastBackgroundColor-colored backgrounds.
 
 	// Background
-	cview.Styles.PrimitiveBackgroundColor = blue    // Main background color for primitives.
-	cview.Styles.ContrastBackgroundColor = white    // Background color for contrasting elements.
-	cview.Styles.MoreContrastBackgroundColor = gray // Background color for even more contrasting elements.
-	cview.Styles.ScrollBarColor = white             // Scroll bar color
+	tview.Styles.PrimitiveBackgroundColor = blue    // Main background color for primitives.
+	tview.Styles.ContrastBackgroundColor = white    // Background color for contrasting elements.
+	tview.Styles.MoreContrastBackgroundColor = gray // Background color for even more contrasting elements.
+	// tview.Styles.Scroll = white             // Scroll bar color
 }

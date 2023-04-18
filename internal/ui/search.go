@@ -3,106 +3,106 @@ package ui
 import (
 	"strconv"
 
-	"code.rocketnine.space/tslocum/cview"
-
+	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
 
-const (
-	uiComponentName = "SearchPanel"
-	controllerName  = "SearchController"
-)
-
 type searchPanel struct {
-	grid           *cview.Grid
 	dispatcher     *mq.Dispatcher
+	grid           *tview.Grid
 	searchCriteria string
 	searchResult   []*dto.IAItem
 
-	searchSection *cview.Flex
-	inputField    *cview.InputField
-	searchButton  *cview.Button
-	clearButton   *cview.Button
+	searchSection *tview.Grid
+	inputField    *tview.InputField
+	searchButton  *tview.Button
+	clearButton   *tview.Button
 
-	resultSection *cview.Grid
+	resultSection *tview.Grid
 	resultTable   *table
 
-	detailsSection  *cview.Grid
-	descriptionView *cview.TextView
+	detailsSection  *tview.Grid
+	descriptionView *tview.TextView
 	filesTable      *table
 }
 
 func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 	p := &searchPanel{}
 	p.dispatcher = dispatcher
-	p.dispatcher.RegisterListener(uiComponentName, p.dispatchMessage)
+	p.dispatcher.RegisterListener(mq.SearchPanel, p.dispatchMessage)
 
-	p.grid = cview.NewGrid()
+	p.grid = tview.NewGrid()
 	p.grid.SetRows(5, -1, -1)
 	p.grid.SetColumns(0)
 
 	// search section
-	p.searchSection = cview.NewFlex()
-	p.searchSection.SetDirection(cview.FlexRow)
+	p.searchSection = tview.NewGrid()
+	p.searchSection.SetColumns(-3, -1)
 	p.searchSection.SetBorder(true)
 	p.searchSection.SetTitle(" Internet Archive Search ")
-	p.searchSection.SetTitleAlign(cview.AlignLeft)
+	p.searchSection.SetTitleAlign(tview.AlignLeft)
 	f := newForm()
 	f.SetHorizontal(true)
 	p.inputField = f.AddInputField("Search criteria", "", 40, nil, func(t string) { p.searchCriteria = t })
 	p.searchButton = f.AddButton("Search", p.runSearch)
 	p.clearButton = f.AddButton("Clear", p.clearEverything)
-	p.searchSection.AddItem(f.f, 0, 1, true)
+	p.searchSection.AddItem(f.f, 0, 0, 1, 1, 0, 0, true)
+	f = newForm()
+	f.SetHorizontal(false)
+	p.searchButton = f.AddButton("Create Audiobook", p.createBook)
+	p.clearButton = f.AddButton("Settings", p.clearEverything)
+	p.searchSection.AddItem(f.f, 0, 1, 1, 1, 0, 0, false)
+
 	p.grid.AddItem(p.searchSection, 0, 0, 1, 1, 0, 0, true)
 
 	// result section
-	p.resultSection = cview.NewGrid()
+	p.resultSection = tview.NewGrid()
 	p.resultSection.SetColumns(-1)
 	p.resultSection.SetTitle(" Search result ")
-	p.resultSection.SetTitleAlign(cview.AlignLeft)
+	p.resultSection.SetTitleAlign(tview.AlignLeft)
 	p.resultSection.SetBorder(true)
 
 	p.resultTable = newTable()
 	p.resultTable.setHeaders("Title", "Files", "Duration (HH:MM:SS)", "Total Size")
 	p.resultTable.setWidths(6, 2, 1, 1)
-	p.resultTable.setAlign(cview.AlignLeft, cview.AlignRight, cview.AlignRight, cview.AlignRight)
+	p.resultTable.setAlign(tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.resultTable.t.SetSelectionChangedFunc(p.updateDetails)
 	p.resultSection.AddItem(p.resultTable.t, 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(p.resultSection, 1, 0, 1, 1, 0, 0, true)
 
 	// details section
-	p.detailsSection = cview.NewGrid()
+	p.detailsSection = tview.NewGrid()
 	p.detailsSection.SetRows(-1)
 	p.detailsSection.SetColumns(-1, 1, -1)
 
-	p.descriptionView = cview.NewTextView()
+	p.descriptionView = tview.NewTextView()
 	p.descriptionView.SetWrap(true)
 	p.descriptionView.SetWordWrap(true)
 	p.descriptionView.SetBorder(true)
 	p.descriptionView.SetTitle(" Description: ")
-	p.descriptionView.SetTitleAlign(cview.AlignLeft)
+	p.descriptionView.SetTitleAlign(tview.AlignLeft)
 	p.detailsSection.AddItem(p.descriptionView, 0, 0, 1, 1, 0, 0, true)
 
 	p.filesTable = newTable()
 	p.filesTable.t.SetBorder(true)
 	p.filesTable.t.SetTitle(" Files: ")
-	p.filesTable.t.SetTitleAlign(cview.AlignLeft)
+	p.filesTable.t.SetTitleAlign(tview.AlignLeft)
 	p.filesTable.setHeaders("File name", "Format", "Duration", "Size")
 	p.filesTable.setWidths(3, 1, 1, 1)
-	p.filesTable.setAlign(cview.AlignLeft, cview.AlignRight, cview.AlignRight, cview.AlignRight)
+	p.filesTable.setAlign(tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.detailsSection.AddItem(p.filesTable.t, 0, 2, 1, 1, 0, 0, true)
 
 	p.grid.AddItem(p.detailsSection, 2, 0, 1, 1, 0, 0, true)
 
-	p.sendMessage(uiComponentName, "TUI", dto.SetFocusCommandType, dto.SetFocusCommand{Primitive: p.searchSection}, true)
+	p.sendMessage(mq.SearchPanel, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
 
 	return p
 }
 
 func (p *searchPanel) checkMQ() {
-	m := p.dispatcher.GetMessage(uiComponentName)
+	m := p.dispatcher.GetMessage(mq.SearchPanel)
 	if m != nil {
 		p.dispatchMessage(m)
 	}
@@ -136,8 +136,8 @@ func (p *searchPanel) runSearch() {
 	p.clearSearchResults()
 	p.resultTable.showHeader()
 	// Disable Search Button here
-	p.sendMessage(uiComponentName, controllerName, dto.SearchCommandType, dto.SearchCommand{SearchCondition: p.searchCriteria}, true)
-	p.sendMessage(uiComponentName, "TUI", dto.SetFocusCommandType, dto.SetFocusCommand{Primitive: p.resultSection}, true)
+	p.sendMessage(mq.SearchPanel, mq.SearchController, dto.SearchCommandType, &dto.SearchCommand{SearchCondition: p.searchCriteria}, true)
+	p.sendMessage(mq.SearchPanel, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: p.resultTable.t}, true)
 }
 
 func (p *searchPanel) clearSearchResults() {
@@ -153,11 +153,12 @@ func (p *searchPanel) clearEverything() {
 }
 
 func (p *searchPanel) updateResult(i *dto.IAItem) {
-	logger.Debug(uiComponentName + ": Got AI Item: " + i.Title)
+	logger.Debug(mq.SearchPanel + ": Got AI Item: " + i.Title)
 	p.searchResult = append(p.searchResult, i)
 	p.resultTable.appendRow(i.Title, strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
+	p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.resultTable.t}, true)
 	p.updateDetails(1, 0)
-	p.sendMessage(uiComponentName, "TUI", dto.GeneralCommandType, dto.GeneralCommand{Command: "RedrawUI"}, true)
+
 }
 
 func (p *searchPanel) updateDetails(row int, col int) {
@@ -165,6 +166,7 @@ func (p *searchPanel) updateDetails(row int, col int) {
 		d := p.searchResult[row-1].Description
 		p.descriptionView.SetText(d)
 		p.descriptionView.ScrollToBeginning()
+		p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.descriptionView}, true)
 
 		p.filesTable.clear()
 		p.filesTable.showHeader()
@@ -173,6 +175,13 @@ func (p *searchPanel) updateDetails(row int, col int) {
 			p.filesTable.appendRow(f.Name, f.Format, f.LengthH, f.SizeH)
 		}
 		p.filesTable.t.ScrollToBeginning()
+		// p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.filesTable.t}, true)
+		p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
 	}
 
+}
+
+func (p *searchPanel) createBook() {
+	m := newModal(p.dispatcher)
+	m.Show()
 }

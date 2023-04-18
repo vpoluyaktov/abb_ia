@@ -3,6 +3,8 @@ package mq
 import (
 	"container/list"
 	"sync"
+
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 )
 
 type Dispatcher struct {
@@ -25,13 +27,14 @@ func NewDispatcher() *Dispatcher {
 }
 
 func (d *Dispatcher) SendMessage(message *Message) {
+	logger.Debug("MQ received " + message.String())
 	if message.Async {
 		// push message to queue
 		if _, ok := d.recipients[message.To]; !ok {
 			d.recipients[message.To] = messageQueue{list.New()}
 		}
 		d.mu.Lock()
-		d.recipients[message.To].messages.PushFront(message)
+		d.recipients[message.To].messages.PushBack(message)
 		d.mu.Unlock()
 	} else if _, ok := d.listeners[message.To]; ok {
 		// call recepient method in blocking mode

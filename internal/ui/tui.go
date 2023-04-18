@@ -3,7 +3,7 @@ package ui
 import (
 	"time"
 
-	"code.rocketnine.space/tslocum/cview"
+	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
@@ -18,7 +18,8 @@ type TUI struct {
 	dispatcher *mq.Dispatcher
 	// UI components
 	components []components
-	app        *cview.Application
+	app        *tview.Application
+	frame      *frame
 	header     *header
 	footer     *footer
 	search     *searchPanel
@@ -29,8 +30,8 @@ type Fn func()
 func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 
 	ui := TUI{}
-	ui.app = cview.NewApplication()
-	defer ui.app.HandlePanic()
+	ui.app = tview.NewApplication()
+	// defer ui.app.pani
 	ui.app.EnableMouse(true)
 	setColorTheme()
 
@@ -41,15 +42,16 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	ui.header = newHeader(dispatcher)
 	ui.footer = newFooter(dispatcher)
 	ui.search = newSearchPanel(dispatcher)
-	ui.components = append(ui.components, ui.search)
 
 	// UI main frame
-	f := newFrame()
-	f.addHeader(ui.header)
-	f.addFooter(ui.footer)
-	f.addPannel("Search", ui.search.grid)
+	ui.frame = newFrame(dispatcher)
+	ui.frame.addHeader(ui.header)
+	ui.frame.addFooter(ui.footer)
+	ui.frame.addPannel("Search", ui.search.grid)
+	ui.components = append(ui.components, ui.frame)
+	ui.components = append(ui.components, ui.search)
 
-	ui.app.SetRoot(f.grid, true)
+	ui.app.SetRoot(ui.frame.grid, true)
 	return &ui
 }
 
@@ -79,16 +81,18 @@ func (ui *TUI) pullMq() {
 
 func (ui *TUI) dispatchMessage(m *mq.Message) {
 	switch t := m.Type; t {
-	case dto.GeneralCommandType:
-		if c, ok := m.Dto.(dto.GeneralCommand); ok {
-			if c.Command == "RedrawUI" {
+	case dto.DrawCommandType:
+		if c, ok := m.Dto.(*dto.DrawCommand); ok {
+			if c.Primitive == nil {
 				ui.app.Draw()
+			} else {
+				// ui.app.Draw(c.Primitive)
 			}
 		} else {
 			m.DtoCastError()
 		}
 	case dto.SetFocusCommandType:
-		if c, ok := m.Dto.(dto.SetFocusCommand); ok {
+		if c, ok := m.Dto.(*dto.SetFocusCommand); ok {
 			ui.app.SetFocus(c.Primitive)
 		} else {
 			m.DtoCastError()

@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
@@ -47,7 +48,7 @@ func (p *SearchController) sendMessage(from string, to string, dtoType string, d
 func (p *SearchController) dispatchMessage(m *mq.Message) {
 	switch t := m.Type; t {
 	case dto.SearchCommandType:
-		if c, ok := m.Dto.(dto.SearchCommand); ok {
+		if c, ok := m.Dto.(*dto.SearchCommand); ok {
 			go p.performSearch(c)
 		} else {
 			m.DtoCastError()
@@ -58,7 +59,7 @@ func (p *SearchController) dispatchMessage(m *mq.Message) {
 	}
 }
 
-func (p *SearchController) performSearch(c dto.SearchCommand) {
+func (p *SearchController) performSearch(c *dto.SearchCommand) {
 	logger.Debug(controllerName + ": Received SearchCommand with condition: " + c.SearchCondition)
 	ia := ia_client.New()
 	resp := ia.Search(c.SearchCondition, "audio")
@@ -70,7 +71,7 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 	for _, doc := range docs {
 		item := &dto.IAItem{}
 		item.ID = doc.Identifier
-		item.Title = doc.Title
+		item.Title = tview.Escape(doc.Title)
 
 		// collect mp3 files
 		item.FilesCount = 0
@@ -82,7 +83,7 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 			item.Server = d.Server
 			item.Dir = d.Dir
 			if len(d.Metadata.Description) > 0 {
-				item.Description = ia.Html2Text(d.Metadata.Description[0])
+				item.Description = tview.Escape(ia.Html2Text(d.Metadata.Description[0]))
 			}
 			for name, metadata := range d.Files {
 				format := metadata.Format
@@ -91,7 +92,7 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 					length, lErr := utils.TimeToSeconds(metadata.Length)
 					if sErr == nil && lErr == nil {
 						file := dto.File{}
-						file.Name = name
+						file.Name = tview.Escape(name)
 						file.Size = size
 						file.SizeH, _ = utils.BytesToHuman(size)
 						file.Length = length
@@ -104,7 +105,7 @@ func (p *SearchController) performSearch(c dto.SearchCommand) {
 				}
 			}
 			// sort files by name
-			sort.Slice(item.Files, func(i, j int) bool { return item.Files[i].Name < item.Files[j].Name})
+			sort.Slice(item.Files, func(i, j int) bool { return item.Files[i].Name < item.Files[j].Name })
 			item.TotalSize = totalSize
 			item.TotalSizeH, _ = utils.BytesToHuman(totalSize)
 			item.TotalLength = totalLength
