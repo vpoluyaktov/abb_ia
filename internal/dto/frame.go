@@ -6,33 +6,33 @@ import (
 	"github.com/rivo/tview"
 )
 
-const AddPanelCommandType = "dto.AddPanelCommand"
+const AddPageCommandType = "dto.AddPageCommand"
 
-type AddPanelCommand struct {
+type AddPageCommand struct {
 	Name string
 	Grid *tview.Grid
 }
 
-func (c *AddPanelCommand) String() string {
+func (c *AddPageCommand) String() string {
 	return fmt.Sprintf("%T: %s", c, c.Name)
 }
 
-const RemovePanelCommandType = "dto.RemovePanelCommand"
+const RemovePageCommandType = "dto.RemovePageCommand"
 
-type RemovePanelCommand struct {
+type RemovePageCommand struct {
 	Name string
 }
 
-func (c *RemovePanelCommand) String() string {
+func (c *RemovePageCommand) String() string {
 	return fmt.Sprintf("%T: %s", c, c.Name)
 }
 
-const ShowPanelCommandType = "dto.ShowPanelCommand"
+const ShowPageCommandType = "dto.ShowPageCommand"
 
-type ShowPanelCommand struct {
+type ShowPageCommand struct {
 	Name string
 }
 
-func (c *ShowPanelCommand) String() string {
+func (c *ShowPageCommand) String() string {
 	return fmt.Sprintf("%T: %s", c, c.Name)
 }

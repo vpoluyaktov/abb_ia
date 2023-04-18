@@ -31,7 +31,6 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 
 	ui := TUI{}
 	ui.app = tview.NewApplication()
-	// defer ui.app.pani
 	ui.app.EnableMouse(true)
 	setColorTheme()
 
@@ -47,7 +46,7 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	ui.frame = newFrame(dispatcher)
 	ui.frame.addHeader(ui.header)
 	ui.frame.addFooter(ui.footer)
-	ui.frame.addPannel("Search", ui.search.grid)
+	ui.frame.addPage("Search", ui.search.grid)
 	ui.components = append(ui.components, ui.frame)
 	ui.components = append(ui.components, ui.search)
 

@@ -32,7 +32,7 @@ func (f *frame) addFooter(footer *footer) {
 	f.grid.AddItem(footer.view, 2, 1, 1, 1, 0, 0, false)
 }
 
-func (f *frame) addPannel(name string, g *tview.Grid) {
+func (f *frame) addPage(name string, g *tview.Grid) {
 	if f.pages == nil {
 		f.pages = tview.NewPages()
 		f.grid.AddItem(f.pages, 1, 1, 1, 1, 0, 0, false)
@@ -40,13 +40,13 @@ func (f *frame) addPannel(name string, g *tview.Grid) {
 	f.pages.AddPage(name, g, true, true)
 }
 
-func (f *frame) removePannel(name string) {
+func (f *frame) removePage(name string) {
 	f.pages.RemovePage(name)
 }
 
-func (f *frame) showPanel(name string) {
+func (f *frame) showPage(name string) {
 	f.pages.SendToFront(name)
-	// f.pages.SetPage(name)
+	f.pages.ShowPage(name)
 }
 
 func (f *frame) checkMQ() {
@@ -58,21 +58,21 @@ func (f *frame) checkMQ() {
 
 func (f *frame) dispatchMessage(m *mq.Message) {
 	switch t := m.Type; t {
-	case dto.AddPanelCommandType:
-		if c, ok := m.Dto.(*dto.AddPanelCommand); ok {
-			f.addPannel(c.Name, c.Grid)
+	case dto.AddPageCommandType:
+		if c, ok := m.Dto.(*dto.AddPageCommand); ok {
+			f.addPage(c.Name, c.Grid)
 		} else {
 			m.DtoCastError()
 		}
-	case dto.RemovePanelCommandType:
-		if c, ok := m.Dto.(*dto.RemovePanelCommand); ok {
-			f.removePannel(c.Name)
+	case dto.RemovePageCommandType:
+		if c, ok := m.Dto.(*dto.RemovePageCommand); ok {
+			f.removePage(c.Name)
 		} else {
 			m.DtoCastError()
 		}
-	case dto.ShowPanelCommandType:
-		if c, ok := m.Dto.(*dto.ShowPanelCommand); ok {
-			f.showPanel(c.Name)
+	case dto.ShowPageCommandType:
+		if c, ok := m.Dto.(*dto.ShowPageCommand); ok {
+			f.showPage(c.Name)
 		} else {
 			m.DtoCastError()
 		}
