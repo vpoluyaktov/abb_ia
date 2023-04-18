@@ -156,6 +156,7 @@ func (p *searchPanel) updateResult(i *dto.IAItem) {
 	logger.Debug(mq.SearchPanel + ": Got AI Item: " + i.Title)
 	p.searchResult = append(p.searchResult, i)
 	p.resultTable.appendRow(i.Title, strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
+	p.resultTable.t.ScrollToBeginning()
 	p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.resultTable.t}, true)
 	p.updateDetails(1, 0)
 

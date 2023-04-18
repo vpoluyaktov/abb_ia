@@ -21,17 +21,21 @@ var (
 )
 
 func setColorTheme() {
-	// // Text
-	tview.Styles.PrimaryTextColor = gray           // Primary text.
-	tview.Styles.SecondaryTextColor = yellow       // Secondary text (e.g. labels).
-	tview.Styles.TertiaryTextColor = black         // Tertiary text (e.g. subtitles, notes).
-	tview.Styles.InverseTextColor = black          // Text on primary-colored backgrounds.
-	tview.Styles.ContrastSecondaryTextColor = black  // Primary text for contrasting elements.
-	tview.Styles.ContrastSecondaryTextColor = gray // Secondary text on ContrastBackgroundColor-colored backgrounds.
+	// Text colors
+	tview.Styles.PrimaryTextColor = gray            // Primary text.
+	tview.Styles.SecondaryTextColor = yellow        // Secondary text (e.g. labels).
+	tview.Styles.TertiaryTextColor = white          // Tertiary text (e.g. subtitles, notes).
+	tview.Styles.InverseTextColor = white           // Text on primary-colored backgrounds.
+	tview.Styles.ContrastSecondaryTextColor = white // Primary text for contrasting elements.
+	tview.Styles.ContrastSecondaryTextColor = gray  // Secondary text on ContrastBackgroundColor-colored backgrounds.
 
-	// Background
-	tview.Styles.PrimitiveBackgroundColor = blue    // Main background color for primitives.
-	tview.Styles.ContrastBackgroundColor = white    // Background color for contrasting elements.
-	tview.Styles.MoreContrastBackgroundColor = gray // Background color for even more contrasting elements.
-	// tview.Styles.Scroll = white             // Scroll bar color
+	// Background colors
+	tview.Styles.PrimitiveBackgroundColor = blue     // Main background color for primitives.
+	tview.Styles.ContrastBackgroundColor = gray      // Background color for contrasting elements.
+	tview.Styles.MoreContrastBackgroundColor = white // Background color for even more contrasting elements.
+
+	// Elements colors
+	tview.Styles.BorderColor = gray     // Box borders.
+	tview.Styles.TitleColor = yellow    // Box titles.
+	tview.Styles.GraphicsColor = yellow // Graphics.
 }
