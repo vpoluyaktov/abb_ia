@@ -35,16 +35,21 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	// UI components
 	header := newHeader(dispatcher)
 	footer := newFooter(dispatcher)
-	searchPage := newSearchPanel(dispatcher)
+	searchPage := newSearchPage(dispatcher)
+	downloadPage := newDownloadPage(dispatcher)
 
 	// UI main frame
 	frame := newFrame(dispatcher)
 	frame.addHeader(header)
 	frame.addFooter(footer)
-	frame.addPage("Search", searchPage.grid)
-	
+	frame.addPage("SearchPage", searchPage.grid)
+	frame.addPage("DownloadPage", downloadPage.grid)
+
 	ui.components = append(ui.components, frame)
 	ui.components = append(ui.components, searchPage)
+	ui.components = append(ui.components, downloadPage)
+
+	frame.showPage("SearchPage")
 
 	ui.app.SetRoot(frame.grid, true)
 	return &ui

@@ -17,24 +17,25 @@ func newFrame(dispatcher *mq.Dispatcher) *frame {
 	f.dispatcher = dispatcher
 	f.grid = tview.NewGrid()
 	f.grid.SetRows(1, 0, 1)
-	f.grid.SetColumns(1, 0, 1)
+	// f.grid.SetColumns(1, 0, 1) // extra space on the right and left side
+	f.grid.SetColumns(0)
 
 	f.dispatcher.RegisterListener(mq.Frame, f.dispatchMessage)
 	return f
 }
 
 func (f *frame) addHeader(header *header) {
-	f.grid.AddItem(header.view, 0, 1, 1, 1, 0, 0, false)
+	f.grid.AddItem(header.view, 0, 0, 1, 1, 0, 0, false)
 }
 
 func (f *frame) addFooter(footer *footer) {
-	f.grid.AddItem(footer.view, 2, 1, 1, 1, 0, 0, false)
+	f.grid.AddItem(footer.view, 2, 0, 1, 1, 0, 0, false)
 }
 
 func (f *frame) addPage(name string, g *tview.Grid) {
 	if f.pages == nil {
 		f.pages = tview.NewPages()
-		f.grid.AddItem(f.pages, 1, 1, 1, 1, 0, 0, false)
+		f.grid.AddItem(f.pages, 1, 0, 1, 1, 0, 0, false)
 	}
 	f.pages.AddPage(name, g, true, true)
 }
@@ -45,6 +46,10 @@ func (f *frame) removePage(name string) {
 
 func (f *frame) showPage(name string) {
 	f.pages.SendToFront(name)
+}
+
+func (f *frame) switchToPage(name string) {
+	f.pages.SwitchToPage(name)
 }
 
 func (f *frame) checkMQ() {
@@ -74,6 +79,12 @@ func (f *frame) dispatchMessage(m *mq.Message) {
 		} else {
 			m.DtoCastError()
 		}
+	case dto.SwitchToPageCommandType:
+		if c, ok := m.Dto.(*dto.SwitchToPageCommand); ok {
+			f.switchToPage(c.Name)
+		} else {
+			m.DtoCastError()
+		}	
 
 	default:
 		m.UnsupportedTypeError()

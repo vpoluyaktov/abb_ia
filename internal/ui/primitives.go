@@ -1,6 +1,10 @@
 package ui
 
-import "github.com/rivo/tview"
+import (
+	"sync"
+
+	"github.com/rivo/tview"
+)
 
 // //////////////////////////////////////////////////////////////
 // tview.Table wrapper
@@ -68,16 +72,17 @@ func (t *table) clear() {
 // tview.Form wrapper
 // //////////////////////////////////////////////////////////////
 type form struct {
-	f *tview.Form
+	f  *tview.Form
+	mu sync.Mutex
 }
 
 func newForm() *form {
 	f := &form{}
 	f.f = tview.NewForm()
 	f.f.SetFieldTextColor(black)
-	// f.f.SetFieldTextColorFocused(black)
+	// f.f.SetFieldBackgroundColor(black)
 	f.f.SetButtonTextColor(black)
-	// f.f.SetButtonTextColorFocused(black)
+	// f.f.SetButtonBackgroundColor()
 	return f
 }
 
@@ -85,17 +90,74 @@ func (f *form) SetHorizontal(b bool) {
 	f.f.SetHorizontal(b)
 }
 
+func (f *form) SetTitle(t string) {
+	f.f.SetTitle(t)
+}
+
 func (f *form) AddInputField(label, value string, fieldWidth int, accept func(textToCheck string, lastChar rune) bool, changed func(text string)) *tview.InputField {
+	f.mu.Lock()
 	f.f.AddInputField(label, value, fieldWidth, accept, changed)
 	// return just created input field
-	return f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.InputField)
+	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.InputField)
+	f.mu.Unlock()
+	return obj
 }
 
 func (f *form) AddButton(label string, selected func()) *tview.Button {
+	f.mu.Lock()
 	f.f.AddButton(label, selected)
 	// return just created button
-	return f.f.GetButton(f.f.GetButtonCount() - 1)
+	obj := f.f.GetButton(f.f.GetButtonCount() - 1)
+	f.mu.Unlock()
+	return obj
 }
+
+func (f *form) AddCheckbox(label string, checked bool, changed func(checked bool)) *tview.Checkbox {
+	f.mu.Lock()
+	f.f.AddCheckbox(label, checked, changed)
+	// return just created checkbox
+	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.Checkbox)
+	f.mu.Unlock()
+	return obj
+}
+
+func (f *form) AddDropdown(label string, options []string, initialOption int, selected func(option string, optionIndex int)) *tview.DropDown {
+	f.mu.Lock()
+	f.f.AddDropDown(label, options, initialOption, selected)
+	// return just created dropdown
+	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.DropDown)
+	f.mu.Unlock()
+	return obj
+}
+
+func (f *form) AddPasswordField(label, value string, fieldWidth int, mask rune, changed func(text string)) *tview.InputField {
+	f.mu.Lock()
+	f.f.AddPasswordField(label, value, fieldWidth, mask, changed)
+	// return just created InputField
+	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.InputField)
+	f.mu.Unlock()
+	return obj
+}
+
+func (f *form) AddTextArea(label, text string, fieldWidth, fieldHeight, maxLength int, changed func(text string)) *tview.TextArea {
+	f.mu.Lock()
+	f.f.AddTextArea(label, text, fieldWidth, fieldHeight, maxLength, changed)
+	// return just created InputField
+	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.TextArea)
+	f.mu.Unlock()
+	return obj
+}
+
+func (f *form) AddTextView(label, text string, fieldWidth, fieldHeight int, dynamicColors, scrollable bool) *tview.TextView {
+	f.mu.Lock()
+	f.f.AddTextView(label, text, fieldWidth, fieldHeight, dynamicColors, scrollable)
+	// return just created InputField
+	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.TextView)
+	f.mu.Unlock()
+	return obj
+}
+
+
 
 // //////////////////////////////////////////////////////////////
 // tview.TextView wrapper

@@ -71,3 +71,10 @@ func BytesToHuman(b int64) (string, error) {
 	}
 	return fmt.Sprintf("%.1f %ciB", float64(b)/float64(div), "KMGTPE"[exp]), nil
 }
+
+func FirstN(s string, n int) string {
+	if len(s) > n {
+		return s[:n] + "..."
+	}
+	return s
+}

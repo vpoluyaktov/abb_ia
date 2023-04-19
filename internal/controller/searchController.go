@@ -6,50 +6,36 @@ import (
 
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ia_client"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
-	"github.com/vpoluyaktov/audiobook_creator_IA/pkg/ia_client"
 )
 
-const (
-	controllerName  = "SearchController"
-	uiComponentName = "SearchPanel"
-)
 
 type SearchController struct {
-	dispatcher *mq.Dispatcher
+	mq *mq.Dispatcher
 }
 
 func NewSearchController(dispatcher *mq.Dispatcher) *SearchController {
 	sp := &SearchController{}
-	sp.dispatcher = dispatcher
-	sp.dispatcher.RegisterListener(controllerName, sp.dispatchMessage)
+	sp.mq = dispatcher
+	sp.mq.RegisterListener(mq.SearchController, sp.dispatchMessage)
 	return sp
 }
 
-func (p *SearchController) checkMQ() {
-	m := p.dispatcher.GetMessage(controllerName)
+func (c *SearchController) checkMQ() {
+	m := c.mq.GetMessage(mq.SearchController)
 	if m != nil {
-		p.dispatchMessage(m)
+		c.dispatchMessage(m)
 	}
 }
 
-func (p *SearchController) sendMessage(from string, to string, dtoType string, dto dto.Dto, async bool) {
-	m := &mq.Message{}
-	m.From = from
-	m.To = to
-	m.Type = dtoType
-	m.Dto = dto
-	m.Async = async
-	p.dispatcher.SendMessage(m)
-}
-
-func (p *SearchController) dispatchMessage(m *mq.Message) {
+func (c *SearchController) dispatchMessage(m *mq.Message) {
 	switch t := m.Type; t {
 	case dto.SearchCommandType:
-		if c, ok := m.Dto.(*dto.SearchCommand); ok {
-			go p.performSearch(c)
+		if cmd, ok := m.Dto.(*dto.SearchCommand); ok {
+			go c.performSearch(cmd)
 		} else {
 			m.DtoCastError()
 		}
@@ -59,18 +45,23 @@ func (p *SearchController) dispatchMessage(m *mq.Message) {
 	}
 }
 
-func (p *SearchController) performSearch(c *dto.SearchCommand) {
-	logger.Debug(controllerName + ": Received SearchCommand with condition: " + c.SearchCondition)
+func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
+	logger.Debug(mq.SearchController + ": Received SearchCommand with condition: " + cmd.SearchCondition)
 	ia := ia_client.New()
-	resp := ia.Search(c.SearchCondition, "audio")
+	resp := ia.Search(cmd.SearchCondition, "audio")
 	if resp == nil {
-		logger.Error(controllerName + ": Failed to perform IA search with condition: " + c.SearchCondition)
+		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.SearchCondition)
 	}
 
 	docs := resp.Response.Docs
 	for _, doc := range docs {
 		item := &dto.IAItem{}
 		item.ID = doc.Identifier
+		if len(doc.Creator) > 0 {
+			item.Creator = doc.Creator[0]
+		} else {
+			item.Creator = "Internet Archive"
+		}
 		item.Title = tview.Escape(doc.Title)
 
 		// collect mp3 files
@@ -113,7 +104,7 @@ func (p *SearchController) performSearch(c *dto.SearchCommand) {
 			item.FilesCount = len(item.Files)
 		}
 		if item.FilesCount > 0 {
-			p.sendMessage(controllerName, uiComponentName, dto.IAItemType, item, true)
+			c.mq.SendMessage(mq.SearchController, mq.SearchPage, dto.IAItemType, item, true)
 		}
 	}
 }

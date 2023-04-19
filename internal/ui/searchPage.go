@@ -8,10 +8,11 @@ import (
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
 )
 
-type searchPanel struct {
-	dispatcher     *mq.Dispatcher
+type SearchPage struct {
+	mq             *mq.Dispatcher
 	grid           *tview.Grid
 	searchCriteria string
 	searchResult   []*dto.IAItem
@@ -29,10 +30,10 @@ type searchPanel struct {
 	filesTable      *table
 }
 
-func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
-	p := &searchPanel{}
-	p.dispatcher = dispatcher
-	p.dispatcher.RegisterListener(mq.SearchPanel, p.dispatchMessage)
+func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
+	p := &SearchPage{}
+	p.mq = dispatcher
+	p.mq.RegisterListener(mq.SearchPage, p.dispatchMessage)
 
 	p.grid = tview.NewGrid()
 	p.grid.SetRows(5, -1, -1)
@@ -40,7 +41,7 @@ func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 
 	// search section
 	p.searchSection = tview.NewGrid()
-	p.searchSection.SetColumns(-3, -1)
+	p.searchSection.SetColumns(-2, -1)
 	p.searchSection.SetBorder(true)
 	p.searchSection.SetTitle(" Internet Archive Search ")
 	p.searchSection.SetTitleAlign(tview.AlignLeft)
@@ -52,6 +53,7 @@ func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 	p.searchSection.AddItem(f.f, 0, 0, 1, 1, 0, 0, true)
 	f = newForm()
 	f.SetHorizontal(false)
+	f.f.SetButtonsAlign(tview.AlignRight)
 	p.searchButton = f.AddButton("Create Audiobook", p.createBook)
 	p.clearButton = f.AddButton("Settings", p.clearEverything)
 	p.searchSection.AddItem(f.f, 0, 1, 1, 1, 0, 0, false)
@@ -66,9 +68,9 @@ func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 	p.resultSection.SetBorder(true)
 
 	p.resultTable = newTable()
-	p.resultTable.setHeaders("Title", "Files", "Duration (HH:MM:SS)", "Total Size")
-	p.resultTable.setWidths(6, 2, 1, 1)
-	p.resultTable.setAlign(tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
+	p.resultTable.setHeaders("Author", "Title", "Files", "Duration (HH:MM:SS)", "Total Size")
+	p.resultTable.setWidths(3, 6, 2, 1, 1)
+	p.resultTable.setAlign(tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.resultTable.t.SetSelectionChangedFunc(p.updateDetails)
 	p.resultSection.AddItem(p.resultTable.t, 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(p.resultSection, 1, 0, 1, 1, 0, 0, true)
@@ -97,29 +99,19 @@ func newSearchPanel(dispatcher *mq.Dispatcher) *searchPanel {
 
 	p.grid.AddItem(p.detailsSection, 2, 0, 1, 1, 0, 0, true)
 
-	p.sendMessage(mq.SearchPanel, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
 
 	return p
 }
 
-func (p *searchPanel) checkMQ() {
-	m := p.dispatcher.GetMessage(mq.SearchPanel)
+func (p *SearchPage) checkMQ() {
+	m := p.mq.GetMessage(mq.SearchPage)
 	if m != nil {
 		p.dispatchMessage(m)
 	}
 }
 
-func (p *searchPanel) sendMessage(from string, to string, dtoType string, dto dto.Dto, async bool) {
-	m := &mq.Message{}
-	m.From = from
-	m.To = to
-	m.Type = dtoType
-	m.Dto = dto
-	m.Async = async
-	p.dispatcher.SendMessage(m)
-}
-
-func (p *searchPanel) dispatchMessage(m *mq.Message) {
+func (p *SearchPage) dispatchMessage(m *mq.Message) {
 	switch t := m.Type; t {
 	case dto.IAItemType:
 		if r, ok := m.Dto.(*dto.IAItem); ok {
@@ -133,57 +125,82 @@ func (p *searchPanel) dispatchMessage(m *mq.Message) {
 	}
 }
 
-func (p *searchPanel) runSearch() {
+func (p *SearchPage) runSearch() {
 	p.clearSearchResults()
 	p.resultTable.showHeader()
 	// Disable Search Button here
-	p.sendMessage(mq.SearchPanel, mq.SearchController, dto.SearchCommandType, &dto.SearchCommand{SearchCondition: p.searchCriteria}, true)
-	p.sendMessage(mq.SearchPanel, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: p.resultTable.t}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.SearchController, dto.SearchCommandType, &dto.SearchCommand{SearchCondition: p.searchCriteria}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: p.resultTable.t}, true)
 }
 
-func (p *searchPanel) clearSearchResults() {
+func (p *SearchPage) clearSearchResults() {
 	p.searchResult = make([]*dto.IAItem, 0)
 	p.resultTable.clear()
 	p.descriptionView.SetText("")
 	p.filesTable.clear()
 }
 
-func (p *searchPanel) clearEverything() {
+func (p *SearchPage) clearEverything() {
 	p.inputField.SetText("")
 	p.clearSearchResults()
 }
 
-func (p *searchPanel) updateResult(i *dto.IAItem) {
-	logger.Debug(mq.SearchPanel + ": Got AI Item: " + i.Title)
+func (p *SearchPage) updateResult(i *dto.IAItem) {
+	logger.Debug(mq.SearchPage + ": Got AI Item: " + i.Title)
 	p.searchResult = append(p.searchResult, i)
-	p.resultTable.appendRow(i.Title, strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
+	p.resultTable.appendRow(utils.FirstN(i.Creator, 40), utils.FirstN(i.Title, 80), strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
 	p.resultTable.t.ScrollToBeginning()
-	p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.resultTable.t}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.resultTable.t}, true)
 	p.updateDetails(1, 0)
 
 }
 
-func (p *searchPanel) updateDetails(row int, col int) {
+func (p *SearchPage) updateDetails(row int, col int) {
 	if row > 0 && len(p.searchResult) > 0 && len(p.searchResult) >= row {
 		d := p.searchResult[row-1].Description
 		p.descriptionView.SetText(d)
 		p.descriptionView.ScrollToBeginning()
-		p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.descriptionView}, true)
+		p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.descriptionView}, true)
 
 		p.filesTable.clear()
 		p.filesTable.showHeader()
 		files := p.searchResult[row-1].Files
 		for _, f := range files {
-			p.filesTable.appendRow(strings.TrimPrefix(f.Name, "/"), f.Format, f.LengthH, f.SizeH)
+			p.filesTable.appendRow(utils.FirstN(strings.TrimPrefix(f.Name, "/"), 50), f.Format, f.LengthH, f.SizeH)
 		}
 		p.filesTable.t.ScrollToBeginning()
-		// p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.filesTable.t}, true)
-		p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
+		p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
 	}
 
 }
 
-func (p *searchPanel) createBook() {
-	m := newDialogWindow(p.dispatcher, 25, 60)
-	m.Show()
+func (p *SearchPage) createBook() {
+	// get selectet row from the results table
+	row, _ := p.resultTable.t.GetSelection()
+	if row > 0 && len(p.searchResult) > 0 && len(p.searchResult) >= row {
+		item := p.searchResult[row-1]
+
+		d := newDialogWindow(p.mq, 12, 80)
+		f := tview.NewForm()
+		f.SetTitle(" Create Audiobook ")
+		f.AddInputField("Book Author", item.Creator, 40, nil, nil)
+		f.AddInputField("Book Title", item.Title, 60, nil, nil)
+		f.AddButton("Create Audiobook", func ()  {
+			d.Close()
+			p.launchDownload()		
+		})
+		f.AddButton("Cancel", func ()  {
+			d.Close()
+		})
+		d.setForm(f)
+		d.Show()
+	} else {
+		messageDialog(p.mq, " Error ", "Please perform a search first")
+	}
+}
+
+func (p *SearchPage) launchDownload() {
+	// d.Close()
+	// p.mq.SendMessage(mq.SearchPage, mq.DownloadPageController, dto.SearchCommandType, &dto.SearchCommand{SearchCondition: p.searchCriteria}, true)
+	p.mq.SendMessage(mq.DialogWindow, mq.Frame, dto.SwitchToPageCommandType, &dto.SwitchToPageCommand{Name: "DownloadPage"}, false)
 }

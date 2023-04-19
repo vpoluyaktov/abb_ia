@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"sync"
 
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 )
 
@@ -26,21 +27,29 @@ func NewDispatcher() *Dispatcher {
 	return d
 }
 
-func (d *Dispatcher) SendMessage(message *Message) {
-	if message.Async {
+func (d *Dispatcher) SendMessage(from string, to string, dtoType string, dto dto.Dto, async bool) {
+
+	m := &Message{}
+	m.From = from
+	m.To = to
+	m.Type = dtoType
+	m.Dto = dto
+	m.Async = async
+
+	if async {
 		// push message to queue
-		if _, ok := d.recipients[message.To]; !ok {
-			d.recipients[message.To] = messageQueue{list.New()}
+		if _, ok := d.recipients[m.To]; !ok {
+			d.recipients[m.To] = messageQueue{list.New()}
 		}
 		d.mu.Lock()
-		d.recipients[message.To].messages.PushBack(message)
+		d.recipients[m.To].messages.PushBack(m)
 		d.mu.Unlock()
-		logger.Debug("MQ received async " + message.String())
-	} else if _, ok := d.listeners[message.To]; ok {
-		logger.Debug("MQ received sync  " + message.String())
+		logger.Debug("MQ received async " + m.String())
+	} else if _, ok := d.listeners[m.To]; ok {
+		logger.Debug("MQ received sync  " + m.String())
 		// call recepient method in blocking mode
-		d.listeners[message.To](message)
-		logger.Debug("MQ sent sync:     " + message.String())
+		d.listeners[m.To](m)
+		logger.Debug("MQ sent sync:     " + m.String())
 	}
 }
 

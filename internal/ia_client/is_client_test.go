@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ia_client"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
-	"github.com/vpoluyaktov/audiobook_creator_IA/pkg/ia_client"
 )
 
 const (

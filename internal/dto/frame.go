@@ -36,3 +36,13 @@ type ShowPageCommand struct {
 func (c *ShowPageCommand) String() string {
 	return fmt.Sprintf("%T: %s", c, c.Name)
 }
+
+const SwitchToPageCommandType = "dto.SwitchToPageCommand"
+
+type SwitchToPageCommand struct {
+	Name string
+}
+
+func (c *SwitchToPageCommand) String() string {
+	return fmt.Sprintf("%T: %s", c, c.Name)
+}
