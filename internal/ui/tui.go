@@ -16,13 +16,8 @@ type components interface {
 type TUI struct {
 	// Message dispatcher
 	dispatcher *mq.Dispatcher
-	// UI components
 	components []components
 	app        *tview.Application
-	frame      *frame
-	header     *header
-	footer     *footer
-	search     *searchPanel
 }
 
 type Fn func()
@@ -38,19 +33,20 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	ui.dispatcher = dispatcher
 
 	// UI components
-	ui.header = newHeader(dispatcher)
-	ui.footer = newFooter(dispatcher)
-	ui.search = newSearchPanel(dispatcher)
+	header := newHeader(dispatcher)
+	footer := newFooter(dispatcher)
+	searchPage := newSearchPanel(dispatcher)
 
 	// UI main frame
-	ui.frame = newFrame(dispatcher)
-	ui.frame.addHeader(ui.header)
-	ui.frame.addFooter(ui.footer)
-	ui.frame.addPage("Search", ui.search.grid)
-	ui.components = append(ui.components, ui.frame)
-	ui.components = append(ui.components, ui.search)
+	frame := newFrame(dispatcher)
+	frame.addHeader(header)
+	frame.addFooter(footer)
+	frame.addPage("Search", searchPage.grid)
+	
+	ui.components = append(ui.components, frame)
+	ui.components = append(ui.components, searchPage)
 
-	ui.app.SetRoot(ui.frame.grid, true)
+	ui.app.SetRoot(frame.grid, true)
 	return &ui
 }
 

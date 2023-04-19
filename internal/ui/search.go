@@ -2,6 +2,7 @@ package ui
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
@@ -173,7 +174,7 @@ func (p *searchPanel) updateDetails(row int, col int) {
 		p.filesTable.showHeader()
 		files := p.searchResult[row-1].Files
 		for _, f := range files {
-			p.filesTable.appendRow(f.Name, f.Format, f.LengthH, f.SizeH)
+			p.filesTable.appendRow(strings.TrimPrefix(f.Name, "/"), f.Format, f.LengthH, f.SizeH)
 		}
 		p.filesTable.t.ScrollToBeginning()
 		// p.sendMessage(mq.SearchPanel, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.filesTable.t}, true)

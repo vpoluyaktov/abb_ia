@@ -13,7 +13,7 @@ import (
 
 const (
 	IA_BASE_URL     = "https://archive.org"
-	MAX_RESULT_ROWS = 25
+	MAX_RESULT_ROWS = 100
 )
 
 type IAClient struct {
