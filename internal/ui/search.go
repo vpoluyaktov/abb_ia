@@ -183,6 +183,6 @@ func (p *searchPanel) updateDetails(row int, col int) {
 }
 
 func (p *searchPanel) createBook() {
-	m := newModal(p.dispatcher)
+	m := newDialogWindow(p.dispatcher, 25, 60)
 	m.Show()
 }

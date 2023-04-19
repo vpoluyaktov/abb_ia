@@ -27,7 +27,6 @@ func NewDispatcher() *Dispatcher {
 }
 
 func (d *Dispatcher) SendMessage(message *Message) {
-	logger.Debug("MQ received " + message.String())
 	if message.Async {
 		// push message to queue
 		if _, ok := d.recipients[message.To]; !ok {
@@ -36,9 +35,12 @@ func (d *Dispatcher) SendMessage(message *Message) {
 		d.mu.Lock()
 		d.recipients[message.To].messages.PushBack(message)
 		d.mu.Unlock()
+		logger.Debug("MQ received async " + message.String())
 	} else if _, ok := d.listeners[message.To]; ok {
+		logger.Debug("MQ received sync  " + message.String())
 		// call recepient method in blocking mode
 		d.listeners[message.To](message)
+		logger.Debug("MQ sent sync:     " + message.String())
 	}
 }
 
@@ -50,6 +52,7 @@ func (d *Dispatcher) GetMessage(recipient string) *Message {
 		if e != nil {
 			d.recipients[recipient].messages.Remove(e)
 			m = e.Value.(*Message)
+			logger.Debug("MQ sent async     " + m.String())
 		}
 		d.mu.Unlock()
 	}

@@ -2,11 +2,9 @@ package mq
 
 // MQ recipients
 const (
-	TUI = "TUI"
-	Frame = "Frame"
-  SearchPanel = "SearchPanel"
+	TUI              = "TUI"
+	Frame            = "Frame"
+	SearchPanel      = "SearchPanel"
 	SearchController = "SearchController"
-	ModalWindow = "ModalWindow"
+	DialogWindow     = "DialogWindow"
 )
-
-

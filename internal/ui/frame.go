@@ -18,7 +18,6 @@ func newFrame(dispatcher *mq.Dispatcher) *frame {
 	f.grid = tview.NewGrid()
 	f.grid.SetRows(1, 0, 1)
 	f.grid.SetColumns(1, 0, 1)
-	// f.grid.SetBackgroundColor(true)
 
 	f.dispatcher.RegisterListener(mq.Frame, f.dispatchMessage)
 	return f
@@ -46,7 +45,6 @@ func (f *frame) removePage(name string) {
 
 func (f *frame) showPage(name string) {
 	f.pages.SendToFront(name)
-	f.pages.ShowPage(name)
 }
 
 func (f *frame) checkMQ() {
