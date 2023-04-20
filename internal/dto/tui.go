@@ -6,10 +6,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-type Dto interface {
-	String() string
-}
-
 const DrawCommandType = "dto.DrawCommand"
 
 type DrawCommand struct {

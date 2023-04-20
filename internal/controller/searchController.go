@@ -37,31 +37,31 @@ func (c *SearchController) dispatchMessage(m *mq.Message) {
 		if cmd, ok := m.Dto.(*dto.SearchCommand); ok {
 			go c.performSearch(cmd)
 		} else {
-			m.DtoCastError()
+			m.DtoCastError(mq.SearchController)
 		}
 
 	default:
-		m.UnsupportedTypeError()
+		m.UnsupportedTypeError(mq.SearchController)
 	}
 }
 
 func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 	logger.Debug(mq.SearchController + ": Received SearchCommand with condition: " + cmd.SearchCondition)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, dto.UpdateStatusType, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, dto.SetBusyIndicatorType, &dto.SetBusyIndicator{Busy: true}, false)
 	ia := ia_client.New()
 	resp := ia.Search(cmd.SearchCondition, "audio")
 	if resp == nil {
 		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.SearchCondition)
 	}
 
+	itemsTotal := resp.Response.NumFound 
+	itemsFetched := 0
+
 	docs := resp.Response.Docs
 	for _, doc := range docs {
 		item := &dto.IAItem{}
 		item.ID = doc.Identifier
-		if len(doc.Creator) > 0 {
-			item.Creator = doc.Creator[0]
-		} else {
-			item.Creator = "Internet Archive"
-		}
 		item.Title = tview.Escape(doc.Title)
 
 		// collect mp3 files
@@ -73,6 +73,13 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 		if d != nil {
 			item.Server = d.Server
 			item.Dir = d.Dir
+			if len(d.Metadata.Creator) > 0 && d.Metadata.Creator[0] != "" {
+				item.Creator = d.Metadata.Creator[0]
+			} else if len(d.Metadata.Artist) > 0 && d.Metadata.Artist[0] != "" {
+					item.Creator = d.Metadata.Artist[0]	
+			} else {
+				item.Creator = "Internet Archive"
+			}
 			if len(d.Metadata.Description) > 0 {
 				item.Description = tview.Escape(ia.Html2Text(d.Metadata.Description[0]))
 			}
@@ -104,7 +111,12 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			item.FilesCount = len(item.Files)
 		}
 		if item.FilesCount > 0 {
+			itemsFetched++
+			sp := &dto.SearchProgress{ItemsTotal: itemsTotal, ItemsFetched: itemsFetched}
+			c.mq.SendMessage(mq.SearchController, mq.SearchPage, dto.SearchProgressType, sp, true)
 			c.mq.SendMessage(mq.SearchController, mq.SearchPage, dto.IAItemType, item, true)
 		}
 	}
+	c.mq.SendMessage(mq.SearchController, mq.Footer, dto.SetBusyIndicatorType, &dto.SetBusyIndicator{Busy: false}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, dto.UpdateStatusType, &dto.UpdateStatus{Message: ""}, false)
 }

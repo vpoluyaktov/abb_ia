@@ -16,13 +16,13 @@ type Message struct {
 }
 
 func (m *Message) String() string {
-	return fmt.Sprintf("Message - From:" + m.From + ", To:" + m.To + " " + m.Dto.String())
+	return fmt.Sprintf("Message [From:" + m.From + ", To:" + m.To + " " + m.Dto.String() + "]")
 }
 
-func (m *Message) DtoCastError() {
-	logger.Error("MQ DTO cast error. From: " + m.From + ", To: " + m.To + ", DTO Type: " + m.Type + ", object type: " + fmt.Sprintf("%T", m.Dto))
+func (m *Message) DtoCastError(reporter string) {
+	logger.Error(reporter + ": MQ DTO cast error. From: " + m.From + ", To: " + m.To + ", DTO Type: " + m.Type + ", object type: " + fmt.Sprintf("%T", m.Dto))
 }
 
-func (m *Message) UnsupportedTypeError() {
-	logger.Error("Unsupported message type: " + m.Type + ", sent From: " + m.From + ", To: " + m.To)
+func (m *Message) UnsupportedTypeError(reporter string) {
+	logger.Error(reporter + ": Unsupported message type: " + m.Type + ", sent From: " + m.From + ", To: " + m.To)
 }

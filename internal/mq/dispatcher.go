@@ -44,12 +44,12 @@ func (d *Dispatcher) SendMessage(from string, to string, dtoType string, dto dto
 		d.mu.Lock()
 		d.recipients[m.To].messages.PushBack(m)
 		d.mu.Unlock()
-		logger.Debug("MQ received async " + m.String())
+		logger.Debug("MQ <-- async " + m.String())
 	} else if _, ok := d.listeners[m.To]; ok {
-		logger.Debug("MQ received sync  " + m.String())
+		logger.Debug("MQ <-- sync  " + m.String())
 		// call recepient method in blocking mode
 		d.listeners[m.To](m)
-		logger.Debug("MQ sent sync:     " + m.String())
+		logger.Debug("MQ  sync --> " + m.String())
 	}
 }
 
@@ -61,7 +61,7 @@ func (d *Dispatcher) GetMessage(recipient string) *Message {
 		if e != nil {
 			d.recipients[recipient].messages.Remove(e)
 			m = e.Value.(*Message)
-			logger.Debug("MQ sent async     " + m.String())
+			logger.Debug("MQ async --> " + m.String())
 		}
 		d.mu.Unlock()
 	}

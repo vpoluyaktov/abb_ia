@@ -14,8 +14,8 @@ type components interface {
 }
 
 type TUI struct {
-	// Message dispatcher
-	dispatcher *mq.Dispatcher
+	// Message mq
+	mq         *mq.Dispatcher
 	components []components
 	app        *tview.Application
 }
@@ -29,8 +29,8 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	ui.app.EnableMouse(true)
 	setColorTheme()
 
-	// Set Event Dispatcher
-	ui.dispatcher = dispatcher
+	// Set Event Dispatcher and recepient
+	ui.mq = dispatcher
 
 	// UI components
 	header := newHeader(dispatcher)
@@ -46,6 +46,8 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	frame.addPage("DownloadPage", downloadPage.grid)
 
 	ui.components = append(ui.components, frame)
+	ui.components = append(ui.components, header)
+	ui.components = append(ui.components, footer)
 	ui.components = append(ui.components, searchPage)
 	ui.components = append(ui.components, downloadPage)
 
@@ -57,7 +59,7 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 
 func (ui *TUI) startEventListener() {
 	for {
-		ui.pullMq()
+		ui.checkMQ()
 		for _, c := range ui.components {
 			c.checkMQ()
 		}
@@ -72,8 +74,8 @@ func (ui *TUI) Run() {
 	}
 }
 
-func (ui *TUI) pullMq() {
-	m := ui.dispatcher.GetMessage("TUI")
+func (ui *TUI) checkMQ() {
+	m := ui.mq.GetMessage(mq.TUI)
 	if m != nil {
 		ui.dispatchMessage(m)
 	}
@@ -86,19 +88,19 @@ func (ui *TUI) dispatchMessage(m *mq.Message) {
 			if c.Primitive == nil {
 				ui.app.Draw()
 			} else {
-				// ui.app.Draw(c.Primitive)
+				// ui.app.Draw(c.Primitive) // not supported by rivo/tview
 			}
 		} else {
-			m.DtoCastError()
+			m.DtoCastError(mq.TUI)
 		}
 	case dto.SetFocusCommandType:
 		if c, ok := m.Dto.(*dto.SetFocusCommand); ok {
 			ui.app.SetFocus(c.Primitive)
 		} else {
-			m.DtoCastError()
+			m.DtoCastError(mq.TUI)
 		}
 
 	default:
-		m.UnsupportedTypeError()
+		m.UnsupportedTypeError(mq.TUI)
 	}
 }

@@ -54,6 +54,7 @@ type ItemDetails struct {
 	Metadata struct {
 		Identifier           []string `json:"identifier"`
 		Creator              []string `json:"creator"`
+		Artist               []string `json:"artist"`
 		Date                 []string `json:"date"`
 		Description          []string `json:"description"`
 		GUID                 []string `json:"guid"`

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 
 type SearchPage struct {
 	mq             *mq.Dispatcher
+	mqRecipient		string
 	grid           *tview.Grid
 	searchCriteria string
 	searchResult   []*dto.IAItem
@@ -63,7 +65,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	// result section
 	p.resultSection = tview.NewGrid()
 	p.resultSection.SetColumns(-1)
-	p.resultSection.SetTitle(" Search result ")
+	p.resultSection.SetTitle(" Search result: ")
 	p.resultSection.SetTitleAlign(tview.AlignLeft)
 	p.resultSection.SetBorder(true)
 
@@ -117,11 +119,17 @@ func (p *SearchPage) dispatchMessage(m *mq.Message) {
 		if r, ok := m.Dto.(*dto.IAItem); ok {
 			go p.updateResult(r)
 		} else {
-			m.DtoCastError()
+			m.DtoCastError(mq.SearchPage)
 		}
+	case dto.SearchProgressType:
+		if sp, ok := m.Dto.(*dto.SearchProgress); ok {
+			p.updateTitle(sp)
+		} else {
+			m.DtoCastError(mq.SearchPage)
+		}	
 
 	default:
-		m.UnsupportedTypeError()
+		m.UnsupportedTypeError(mq.SearchPage)
 	}
 }
 
@@ -129,12 +137,13 @@ func (p *SearchPage) runSearch() {
 	p.clearSearchResults()
 	p.resultTable.showHeader()
 	// Disable Search Button here
-	p.mq.SendMessage(mq.SearchPage, mq.SearchController, dto.SearchCommandType, &dto.SearchCommand{SearchCondition: p.searchCriteria}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.SearchController, dto.SearchCommandType, &dto.SearchCommand{SearchCondition: p.searchCriteria}, false)
 	p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: p.resultTable.t}, true)
 }
 
 func (p *SearchPage) clearSearchResults() {
 	p.searchResult = make([]*dto.IAItem, 0)
+	p.resultSection.SetTitle(" Search result: ")
 	p.resultTable.clear()
 	p.descriptionView.SetText("")
 	p.filesTable.clear()
@@ -150,9 +159,13 @@ func (p *SearchPage) updateResult(i *dto.IAItem) {
 	p.searchResult = append(p.searchResult, i)
 	p.resultTable.appendRow(utils.FirstN(i.Creator, 40), utils.FirstN(i.Title, 80), strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
 	p.resultTable.t.ScrollToBeginning()
-	p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.resultTable.t}, true)
+	// p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.resultTable.t}, true) // not supported by tview
 	p.updateDetails(1, 0)
+	p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
+}
 
+func (p *SearchPage) updateTitle(sp *dto.SearchProgress) {
+	p.resultSection.SetTitle(fmt.Sprintf(" Search result: (first %d items from %d total)", sp.ItemsFetched, sp.ItemsTotal))
 }
 
 func (p *SearchPage) updateDetails(row int, col int) {
@@ -160,7 +173,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 		d := p.searchResult[row-1].Description
 		p.descriptionView.SetText(d)
 		p.descriptionView.ScrollToBeginning()
-		p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.descriptionView}, true)
+		// p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.descriptionView}, true) // not supported by tview
 
 		p.filesTable.clear()
 		p.filesTable.showHeader()
@@ -169,7 +182,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 			p.filesTable.appendRow(utils.FirstN(strings.TrimPrefix(f.Name, "/"), 50), f.Format, f.LengthH, f.SizeH)
 		}
 		p.filesTable.t.ScrollToBeginning()
-		p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
+		// p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.filesTable.t}, true) // not supported by tview
 	}
 
 }
@@ -183,7 +196,7 @@ func (p *SearchPage) createBook() {
 		d := newDialogWindow(p.mq, 12, 80)
 		f := tview.NewForm()
 		f.SetTitle(" Create Audiobook ")
-		f.AddInputField("Book Author", item.Creator, 40, nil, nil)
+		f.AddInputField("Book Author", item.Creator, 60, nil, nil)
 		f.AddInputField("Book Title", item.Title, 60, nil, nil)
 		f.AddButton("Create Audiobook", func ()  {
 			d.Close()

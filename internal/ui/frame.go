@@ -7,20 +7,20 @@ import (
 )
 
 type frame struct {
-	dispatcher *mq.Dispatcher
-	grid       *tview.Grid
-	pages      *tview.Pages
+	mq    *mq.Dispatcher
+	grid  *tview.Grid
+	pages *tview.Pages
 }
 
 func newFrame(dispatcher *mq.Dispatcher) *frame {
 	f := &frame{}
-	f.dispatcher = dispatcher
+	f.mq = dispatcher
 	f.grid = tview.NewGrid()
 	f.grid.SetRows(1, 0, 1)
 	// f.grid.SetColumns(1, 0, 1) // extra space on the right and left side
 	f.grid.SetColumns(0)
 
-	f.dispatcher.RegisterListener(mq.Frame, f.dispatchMessage)
+	f.mq.RegisterListener(mq.Frame, f.dispatchMessage)
 	return f
 }
 
@@ -29,7 +29,7 @@ func (f *frame) addHeader(header *header) {
 }
 
 func (f *frame) addFooter(footer *footer) {
-	f.grid.AddItem(footer.view, 2, 0, 1, 1, 0, 0, false)
+	f.grid.AddItem(footer.grid, 2, 0, 1, 1, 0, 0, false)
 }
 
 func (f *frame) addPage(name string, g *tview.Grid) {
@@ -53,7 +53,7 @@ func (f *frame) switchToPage(name string) {
 }
 
 func (f *frame) checkMQ() {
-	m := f.dispatcher.GetMessage(mq.Frame)
+	m := f.mq.GetMessage(mq.Frame)
 	if m != nil {
 		f.dispatchMessage(m)
 	}
@@ -65,28 +65,28 @@ func (f *frame) dispatchMessage(m *mq.Message) {
 		if c, ok := m.Dto.(*dto.AddPageCommand); ok {
 			f.addPage(c.Name, c.Grid)
 		} else {
-			m.DtoCastError()
+			m.DtoCastError(mq.Frame)
 		}
 	case dto.RemovePageCommandType:
 		if c, ok := m.Dto.(*dto.RemovePageCommand); ok {
 			f.removePage(c.Name)
 		} else {
-			m.DtoCastError()
+			m.DtoCastError(mq.Frame)
 		}
 	case dto.ShowPageCommandType:
 		if c, ok := m.Dto.(*dto.ShowPageCommand); ok {
 			f.showPage(c.Name)
 		} else {
-			m.DtoCastError()
+			m.DtoCastError(mq.Frame)
 		}
 	case dto.SwitchToPageCommandType:
 		if c, ok := m.Dto.(*dto.SwitchToPageCommand); ok {
 			f.switchToPage(c.Name)
 		} else {
-			m.DtoCastError()
-		}	
+			m.DtoCastError(mq.Frame)
+		}
 
 	default:
-		m.UnsupportedTypeError()
+		m.UnsupportedTypeError(mq.Frame)
 	}
 }

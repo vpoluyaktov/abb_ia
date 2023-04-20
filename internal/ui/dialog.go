@@ -50,11 +50,11 @@ func (d *dialogWindow) Close() {
 
 func (d *dialogWindow) setForm(f *tview.Form) {
 	d.form = f
-	d.setFormAttr()
+	d.setFormAttributes()
 	d.grid.AddItem(d.form, 1, 1, 1, 1, 0, 0, true)
 }
 
-func (d *dialogWindow) setFormAttr() {
+func (d *dialogWindow) setFormAttributes() {
 	d.form.SetBorderColor(black)
 	d.form.SetTitleColor(blue)
 	d.form.SetLabelColor(blue)

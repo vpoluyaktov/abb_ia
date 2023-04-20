@@ -42,7 +42,7 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 }
 
 func (p *DownloadPage) checkMQ() {
-	m := p.mq.GetMessage(mq.SearchPage)
+	m := p.mq.GetMessage(mq.DownloadPage)
 	if m != nil {
 		p.dispatchMessage(m)
 	}
@@ -54,11 +54,11 @@ func (p *DownloadPage) dispatchMessage(m *mq.Message) {
 		if r, ok := m.Dto.(*dto.IAItem); ok {
 			go p.updateResult(r)
 		} else {
-			m.DtoCastError()
+			m.DtoCastError(mq.DownloadPage)
 		}
 
 	default:
-		m.UnsupportedTypeError()
+		m.UnsupportedTypeError(mq.DownloadPage)
 	}
 }
 
