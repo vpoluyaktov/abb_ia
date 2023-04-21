@@ -4,16 +4,18 @@ import (
 	"sync"
 
 	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
 )
 
 // //////////////////////////////////////////////////////////////
 // tview.Table wrapper
 // //////////////////////////////////////////////////////////////
 type table struct {
-	t       *tview.Table
-	headers []string
-	widths  []int
-	aligns  []uint
+	t         *tview.Table
+	headers   []string
+	widths    []int
+	allWidths int
+	aligns    []uint
 }
 
 func newTable() *table {
@@ -34,6 +36,9 @@ func (t *table) setHeaders(headers ...string) {
 
 func (t *table) setWidths(widths ...int) {
 	t.widths = widths
+	for _, w := range t.widths {
+		t.allWidths += w
+	}
 }
 
 func (t *table) setAlign(aligns ...uint) {
@@ -55,17 +60,25 @@ func (t *table) showHeader() {
 }
 
 func (t *table) appendRow(cols ...string) {
-	r := t.t.GetRowCount()
-	for c, col := range cols {
-		cell := tview.NewTableCell(col)
-		cell.SetAlign(int(t.aligns[c]))
-		cell.SetExpansion(t.widths[c])
-		t.t.SetCell(r, c, cell)
+	row := t.t.GetRowCount()
+	for col, val := range cols {
+		cell := tview.NewTableCell(t.adjustLength(val, col))
+		cell.SetAlign(int(t.aligns[col]))
+		cell.SetExpansion(t.widths[col])
+		t.t.SetCell(row, col, cell)
+
 	}
 }
 
 func (t *table) clear() {
 	t.t.Clear()
+}
+
+func (t *table) adjustLength(val string, col int) string {
+	_, _, w, _ := t.t.GetRect()                            // table weight
+	m := float32(w) / float32(t.allWidths) * 1.2           // multiplier
+	val = utils.FirstN(val, int(m*float32(t.widths[col]))) // cut string
+	return val
 }
 
 // //////////////////////////////////////////////////////////////
@@ -156,8 +169,6 @@ func (f *form) AddTextView(label, text string, fieldWidth, fieldHeight int, dyna
 	f.mu.Unlock()
 	return obj
 }
-
-
 
 // //////////////////////////////////////////////////////////////
 // tview.TextView wrapper

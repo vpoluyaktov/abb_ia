@@ -9,7 +9,6 @@ import (
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
 )
 
 type SearchPage struct {
@@ -157,7 +156,7 @@ func (p *SearchPage) clearEverything() {
 func (p *SearchPage) updateResult(i *dto.IAItem) {
 	logger.Debug(mq.SearchPage + ": Got AI Item: " + i.Title)
 	p.searchResult = append(p.searchResult, i)
-	p.resultTable.appendRow(utils.FirstN(i.Creator, 40), utils.FirstN(i.Title, 80), strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
+	p.resultTable.appendRow(i.Creator, i.Title, strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
 	p.resultTable.t.ScrollToBeginning()
 	// p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.resultTable.t}, true) // not supported by tview
 	p.updateDetails(1, 0)
@@ -179,7 +178,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 		p.filesTable.showHeader()
 		files := p.searchResult[row-1].Files
 		for _, f := range files {
-			p.filesTable.appendRow(utils.FirstN(strings.TrimPrefix(f.Name, "/"), 50), f.Format, f.LengthH, f.SizeH)
+			p.filesTable.appendRow(strings.TrimPrefix(f.Name, "/"), f.Format, f.LengthH, f.SizeH)
 		}
 		p.filesTable.t.ScrollToBeginning()
 		// p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.filesTable.t}, true) // not supported by tview

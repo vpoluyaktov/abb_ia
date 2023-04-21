@@ -27,7 +27,7 @@ func (c *Conductor) startEventListener() {
 		for _, p := range c.controllers {
 			p.checkMQ()
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(mq.PullFrequency)
 	}
 }
 

@@ -3,6 +3,7 @@ package mq
 import (
 	"container/list"
 	"sync"
+	"time"
 
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
@@ -17,6 +18,7 @@ type Dispatcher struct {
 type messageQueue struct {
 	messages *list.List
 }
+const PullFrequency = 50 * time.Microsecond  
 
 type CallBackFunc func(*Message)
 

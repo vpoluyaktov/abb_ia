@@ -63,7 +63,7 @@ func (ui *TUI) startEventListener() {
 		for _, c := range ui.components {
 			c.checkMQ()
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(mq.PullFrequency)
 	}
 }
 

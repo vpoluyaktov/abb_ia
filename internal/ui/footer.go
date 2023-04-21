@@ -79,6 +79,7 @@ func (f *footer) dispatchMessage(m *mq.Message) {
 
 func (f *footer) updateStatus(s *dto.UpdateStatus) {
 	f.status.SetText(s.Message)
+	f.mq.SendMessage(mq.Footer, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
 }
 
 func (f *footer) updateBusyIndicator(c *dto.SetBusyIndicator) {
@@ -87,4 +88,5 @@ func (f *footer) updateBusyIndicator(c *dto.SetBusyIndicator) {
 	} else {
 		f.busy.SetText("")
 	}
+	f.mq.SendMessage(mq.Footer, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
 }
