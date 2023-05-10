@@ -69,18 +69,43 @@ func (d *dialogWindow) setFormAttributes() {
 	d.form.SetButtonsAlign(tview.AlignCenter)
 }
 
-func messageDialog(dispatcher *mq.Dispatcher, title string, message string) {
+func newMessageDialog(dispatcher *mq.Dispatcher, title string, message string) {
 	d := newDialogWindow(dispatcher, 12, 80)
-	f := tview.NewForm()
+	f := newForm()
 	f.SetTitle(title)
 	tv := tview.NewTextView()
+	tv.SetWrap(true)
+	tv.SetWordWrap(true)
 	tv.SetText(message)
 	tv.SetTextAlign(tview.AlignCenter)
 	f.AddFormItem(tv)
 	f.AddButton("Ok", func() {
 		d.Close()
 	})
-	d.setForm(f)
+	d.setForm(f.f)
 	d.Show()
+}
 
+type YesNoFunc func()
+
+func newYesNoDialog(dispatcher *mq.Dispatcher, title string, message string, yesFunc YesNoFunc, noFunc YesNoFunc) {
+	d := newDialogWindow(dispatcher, 11, 60)
+	f := newForm()
+	f.SetTitle(title)
+	tv := tview.NewTextView()
+	tv.SetWrap(true)
+	tv.SetWordWrap(true)
+	tv.SetText(message)
+	tv.SetTextAlign(tview.AlignCenter)
+	f.AddFormItem(tv)
+	f.AddButton("Yes", func() {
+		yesFunc()
+		d.Close()
+	})
+	f.AddButton("No", func () {
+		noFunc()
+		d.Close()
+	})
+	d.setForm(f.f)
+	d.Show()
 }

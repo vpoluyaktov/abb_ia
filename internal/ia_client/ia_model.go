@@ -81,7 +81,7 @@ type ItemDetails struct {
 		Crc32              string   `json:"crc32"`
 		Sha1               string   `json:"sha1"`
 		Title              string   `json:"title"`
-		Creator            string   `json:"creator"`
+		Creator            strArray `json:"creator"`
 		Album              string   `json:"album"`
 		Artist             string   `json:"artist"`
 		Genre              string   `json:"genre"`

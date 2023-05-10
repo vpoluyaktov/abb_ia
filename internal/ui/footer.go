@@ -1,17 +1,20 @@
 package ui
 
 import (
+	"time"
+
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
 
 type footer struct {
-	mq      *mq.Dispatcher
-	grid    *tview.Grid
-	busy    *tview.TextView
-	status  *tview.TextView
-	version *tview.TextView
+	mq            *mq.Dispatcher
+	grid          *tview.Grid
+	busyFlag      bool
+	busyIndicator *tview.TextView
+	statusMessage *tview.TextView
+	version       *tview.TextView
 }
 
 func newFooter(dispatcher *mq.Dispatcher) *footer {
@@ -19,19 +22,19 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f.mq = dispatcher
 	f.mq.RegisterListener(mq.Footer, f.dispatchMessage)
 
-	f.busy = tview.NewTextView()
-	f.busy.SetText("")
-	f.busy.SetTextAlign(tview.AlignCenter)
-	f.busy.SetBorder(false)
-	f.busy.SetTextColor(footerFgColor)
-	f.busy.SetBackgroundColor(footerBgColor)
+	f.busyIndicator = tview.NewTextView()
+	f.busyIndicator.SetText("")
+	f.busyIndicator.SetTextAlign(tview.AlignCenter)
+	f.busyIndicator.SetBorder(false)
+	f.busyIndicator.SetTextColor(footerFgColor)
+	f.busyIndicator.SetBackgroundColor(footerBgColor)
 
-	f.status = tview.NewTextView()
-	f.status.SetText("")
-	f.status.SetTextAlign(tview.AlignLeft)
-	f.status.SetBorder(false)
-	f.status.SetTextColor(footerFgColor)
-	f.status.SetBackgroundColor(footerBgColor)
+	f.statusMessage = tview.NewTextView()
+	f.statusMessage.SetText("")
+	f.statusMessage.SetTextAlign(tview.AlignLeft)
+	f.statusMessage.SetBorder(false)
+	f.statusMessage.SetTextColor(footerFgColor)
+	f.statusMessage.SetBackgroundColor(footerBgColor)
 
 	f.version = tview.NewTextView()
 	f.version.SetText("v.0.0.1")
@@ -41,9 +44,9 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f.version.SetBackgroundColor(footerBgColor)
 
 	f.grid = tview.NewGrid()
-	f.grid.SetColumns(5, -1, 10)
-	f.grid.AddItem(f.busy, 0, 0, 1, 1, 0, 0, false)
-	f.grid.AddItem(f.status, 0, 1, 1, 1, 0, 0, false)
+	f.grid.SetColumns(10, -1, 10)
+	f.grid.AddItem(f.busyIndicator, 0, 0, 1, 1, 0, 0, false)
+	f.grid.AddItem(f.statusMessage, 0, 1, 1, 1, 0, 0, false)
 	f.grid.AddItem(f.version, 0, 2, 1, 1, 0, 0, false)
 
 	return f
@@ -66,11 +69,10 @@ func (f *footer) dispatchMessage(m *mq.Message) {
 		}
 	case dto.SetBusyIndicatorType:
 		if c, ok := m.Dto.(*dto.SetBusyIndicator); ok {
-			f.updateBusyIndicator(c)
+			f.toggleBusyIndicator(c)
 		} else {
 			m.DtoCastError(mq.Footer)
-		}	
-		
+		}
 
 	default:
 		m.UnsupportedTypeError(mq.Footer)
@@ -78,15 +80,33 @@ func (f *footer) dispatchMessage(m *mq.Message) {
 }
 
 func (f *footer) updateStatus(s *dto.UpdateStatus) {
-	f.status.SetText(s.Message)
+	f.statusMessage.SetText(s.Message)
 	f.mq.SendMessage(mq.Footer, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
 }
 
-func (f *footer) updateBusyIndicator(c *dto.SetBusyIndicator) {
+func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
 	if c.Busy {
-		f.busy.SetText("XXX")
+		f.busyFlag = true
+		go f.updateBusyIndicator()
 	} else {
-		f.busy.SetText("")
+		f.busyFlag = false
+
 	}
+}
+
+func (f *footer) updateBusyIndicator() {
+	// busyChars := []string{"[>    ]", "[ >   ]", "[  >  ]", "[   > ]", "[    >]", "[    <]", "[   < ]", "[  <  ]", "[ <   ]", "[<    ]"}
+	busyChars := []string{"[O----]", "[-O---]", "[--O--]", "[---O-]", "[----O]", "[---O-]", "[--O--]", "[-O---]"}
+	for f.busyFlag {
+		for i := 0; i < len(busyChars); i++ {
+			f.busyIndicator.SetText(busyChars[i])
+			f.mq.SendMessage(mq.Footer, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
+			time.Sleep(250 * time.Millisecond)
+			if !f.busyFlag {
+				break
+			}
+		}
+	}
+	f.busyIndicator.SetText("")
 	f.mq.SendMessage(mq.Footer, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
 }

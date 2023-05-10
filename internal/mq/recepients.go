@@ -10,5 +10,5 @@ const (
 	SearchPage             = "SearchPage"
 	DownloadPage           = "DownloadPage"
 	SearchController       = "SearchController"
-	DownloadPageController = "DownloadPageController"
+	DownloadController     = "DownloadController"
 )

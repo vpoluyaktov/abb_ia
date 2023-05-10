@@ -18,7 +18,7 @@ type Dispatcher struct {
 type messageQueue struct {
 	messages *list.List
 }
-const PullFrequency = 50 * time.Microsecond  
+const PullFrequency = 10 * time.Millisecond  
 
 type CallBackFunc func(*Message)
 

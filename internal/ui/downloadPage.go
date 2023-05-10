@@ -8,10 +8,11 @@ import (
 )
 
 type DownloadPage struct {
-	mq   *mq.Dispatcher
-	grid *tview.Grid
+	mq              *mq.Dispatcher
+	grid            *tview.Grid
+	infoSection *tview.Grid
 	downloadSection *tview.Grid
-	downloadTable *table
+	downloadTable   *table
 }
 
 func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
@@ -20,8 +21,25 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	p.mq.RegisterListener(mq.DownloadPage, p.dispatchMessage)
 
 	p.grid = tview.NewGrid()
-	p.grid.SetRows(5, -1, -1)
+	p.grid.SetRows(10, -1)
 	p.grid.SetColumns(0)
+
+	// information section
+	p.infoSection = tview.NewGrid()
+	p.infoSection.SetColumns(-2, -1)
+	p.infoSection.SetBorder(true)
+	p.infoSection.SetTitle(" Audiobook information: ")
+	p.infoSection.SetTitleAlign(tview.AlignLeft)
+	f := newForm()
+	f.SetHorizontal(false)
+	f.AddInputField("Search criteria", "", 40, nil, func(t string) {})
+	p.infoSection.AddItem(f.f, 0, 0, 1, 1, 0, 0, true)
+	f = newForm()
+	f.SetHorizontal(false)
+	f.f.SetButtonsAlign(tview.AlignRight)
+	f.AddButton("Stop", p.stopConfirmation)
+	p.infoSection.AddItem(f.f, 0, 1, 1, 1, 0, 0, false)
+	p.grid.AddItem(p.infoSection, 0, 0, 1, 1, 0, 0, false)
 
 	// Download section
 	p.downloadSection = tview.NewGrid()
@@ -64,4 +82,14 @@ func (p *DownloadPage) dispatchMessage(m *mq.Message) {
 
 func (p *DownloadPage) updateResult(i *dto.IAItem) {
 
+}
+
+func (p *DownloadPage) stopConfirmation() { 
+	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop the download?", p.stopDownload, func() {})
+}
+
+func (p *DownloadPage) stopDownload() {
+	// Stop the download here
+	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, dto.StopCommandType, &dto.StopCommand{Process: "Download"}, false)
+	p.mq.SendMessage(mq.DownloadPage, mq.Frame, dto.SwitchToPageCommandType, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }

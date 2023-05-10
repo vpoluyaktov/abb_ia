@@ -109,8 +109,8 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 }
 
 func (client *IAClient) Html2Text(html string) string {
-	html = strings.Replace(html, "<blockquote>", "", -1)
-	html = strings.Replace(html, "</blockquote>", "", -1)
+	html = RemoveHtmlTag(html, "<blockquote>")
+	html = RemoveHtmlTag(html, "<b>")
 	text, err := html2text.FromString(html)
 	if err != nil {
 		text = "HTML parsing error"
@@ -118,4 +118,10 @@ func (client *IAClient) Html2Text(html string) string {
 	text = strings.Replace(text, "\u00a0", "\n", -1)
 
 	return text
+}
+
+func RemoveHtmlTag(html string, tag string) string {
+	html = strings.Replace(html, tag, "", -1)
+	html = strings.Replace(html, tag[0:1] + "/" + tag[1:], "", -1)
+	return html
 }

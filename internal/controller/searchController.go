@@ -18,10 +18,10 @@ type SearchController struct {
 }
 
 func NewSearchController(dispatcher *mq.Dispatcher) *SearchController {
-	sp := &SearchController{}
-	sp.mq = dispatcher
-	sp.mq.RegisterListener(mq.SearchController, sp.dispatchMessage)
-	return sp
+	sc := &SearchController{}
+	sc.mq = dispatcher
+	sc.mq.RegisterListener(mq.SearchController, sc.dispatchMessage)
+	return sc
 }
 
 func (c *SearchController) checkMQ() {

@@ -74,9 +74,10 @@ func (t *table) clear() {
 	t.t.Clear()
 }
 
+// TODO - implement more accurate calculation
 func (t *table) adjustLength(val string, col int) string {
 	_, _, w, _ := t.t.GetRect()                            // table weight
-	m := float32(w) / float32(t.allWidths) * 1.2           // multiplier
+	m := float32(w) / float32(t.allWidths) * 1.3           // multiplier
 	val = utils.FirstN(val, int(m*float32(t.widths[col]))) // cut string
 	return val
 }
@@ -104,7 +105,7 @@ func (f *form) SetHorizontal(b bool) {
 }
 
 func (f *form) SetTitle(t string) {
-	f.f.SetTitle(t)
+	f.f.SetTitle(" " + t  + " ")
 }
 
 func (f *form) AddInputField(label, value string, fieldWidth int, accept func(textToCheck string, lastChar rune) bool, changed func(text string)) *tview.InputField {
@@ -168,6 +169,15 @@ func (f *form) AddTextView(label, text string, fieldWidth, fieldHeight int, dyna
 	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.TextView)
 	f.mu.Unlock()
 	return obj
+}
+
+func (f *form) AddFormItem(item tview.FormItem) *tview.FormItem {
+	f.mu.Lock()
+	f.f.AddFormItem(item)
+	// return just created FormItem
+	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1)
+	f.mu.Unlock()
+	return &obj
 }
 
 // //////////////////////////////////////////////////////////////

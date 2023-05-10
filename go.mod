@@ -2,13 +2,14 @@ module github.com/vpoluyaktov/audiobook_creator_IA
 
 go 1.18
 
-require github.com/go-resty/resty/v2 v2.7.0
+require (
+	github.com/gdamore/tcell/v2 v2.6.0
+	github.com/go-resty/resty/v2 v2.7.0
+)
 
 require (
-	code.rocketnine.space/tslocum/cbind v0.1.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
-	github.com/gdamore/tcell/v2 v2.6.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
