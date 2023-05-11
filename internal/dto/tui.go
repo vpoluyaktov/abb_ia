@@ -6,8 +6,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-const DrawCommandType = "dto.DrawCommand"
-
 type DrawCommand struct {
 	Primitive tview.Primitive
 }
@@ -19,8 +17,6 @@ func (c *DrawCommand) String() string {
 		return fmt.Sprintf("%T: %T", c, c.Primitive)
 	}
 }
-
-const SetFocusCommandType = "dto.SetFocusCommand"
 
 type SetFocusCommand struct {
 	Primitive tview.Primitive

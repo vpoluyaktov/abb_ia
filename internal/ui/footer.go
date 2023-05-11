@@ -60,20 +60,11 @@ func (f *footer) checkMQ() {
 }
 
 func (f *footer) dispatchMessage(m *mq.Message) {
-	switch t := m.Type; t {
-	case dto.UpdateStatusType:
-		if s, ok := m.Dto.(*dto.UpdateStatus); ok {
-			f.updateStatus(s)
-		} else {
-			m.DtoCastError(mq.Footer)
-		}
-	case dto.SetBusyIndicatorType:
-		if c, ok := m.Dto.(*dto.SetBusyIndicator); ok {
-			f.toggleBusyIndicator(c)
-		} else {
-			m.DtoCastError(mq.Footer)
-		}
-
+	switch dto := m.Dto.(type) {
+	case *dto.UpdateStatus:
+		f.updateStatus(dto)
+	case *dto.SetBusyIndicator:
+		f.toggleBusyIndicator(dto)
 	default:
 		m.UnsupportedTypeError(mq.Footer)
 	}
@@ -81,7 +72,7 @@ func (f *footer) dispatchMessage(m *mq.Message) {
 
 func (f *footer) updateStatus(s *dto.UpdateStatus) {
 	f.statusMessage.SetText(s.Message)
-	f.mq.SendMessage(mq.Footer, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
+	f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }
 
 func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
@@ -100,7 +91,7 @@ func (f *footer) updateBusyIndicator() {
 	for f.busyFlag {
 		for i := 0; i < len(busyChars); i++ {
 			f.busyIndicator.SetText(busyChars[i])
-			f.mq.SendMessage(mq.Footer, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
+			f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 			time.Sleep(250 * time.Millisecond)
 			if !f.busyFlag {
 				break
@@ -108,5 +99,5 @@ func (f *footer) updateBusyIndicator() {
 		}
 	}
 	f.busyIndicator.SetText("")
-	f.mq.SendMessage(mq.Footer, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
+	f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }

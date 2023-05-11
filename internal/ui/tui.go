@@ -82,24 +82,15 @@ func (ui *TUI) checkMQ() {
 }
 
 func (ui *TUI) dispatchMessage(m *mq.Message) {
-	switch t := m.Type; t {
-	case dto.DrawCommandType:
-		if c, ok := m.Dto.(*dto.DrawCommand); ok {
-			if c.Primitive == nil {
-				ui.app.Draw()
-			} else {
-				// ui.app.Draw(c.Primitive) // not supported by rivo/tview
-			}
+	switch cmd := m.Dto.(type) {
+	case *dto.DrawCommand:
+		if cmd.Primitive == nil {
+			ui.app.Draw()
 		} else {
-			m.DtoCastError(mq.TUI)
+			// ui.app.Draw(cmd.Primitive) // not supported by rivo/tview
 		}
-	case dto.SetFocusCommandType:
-		if c, ok := m.Dto.(*dto.SetFocusCommand); ok {
-			ui.app.SetFocus(c.Primitive)
-		} else {
-			m.DtoCastError(mq.TUI)
-		}
-
+	case *dto.SetFocusCommand:
+		ui.app.SetFocus(cmd.Primitive)
 	default:
 		m.UnsupportedTypeError(mq.TUI)
 	}

@@ -10,7 +10,7 @@ import (
 type DownloadPage struct {
 	mq              *mq.Dispatcher
 	grid            *tview.Grid
-	infoSection *tview.Grid
+	infoSection     *tview.Grid
 	downloadSection *tview.Grid
 	downloadTable   *table
 }
@@ -67,14 +67,9 @@ func (p *DownloadPage) checkMQ() {
 }
 
 func (p *DownloadPage) dispatchMessage(m *mq.Message) {
-	switch t := m.Type; t {
-	case dto.IAItemType:
-		if r, ok := m.Dto.(*dto.IAItem); ok {
-			go p.updateResult(r)
-		} else {
-			m.DtoCastError(mq.DownloadPage)
-		}
-
+	switch dto := m.Dto.(type) {
+	case *dto.IAItem:
+		go p.updateResult(dto)
 	default:
 		m.UnsupportedTypeError(mq.DownloadPage)
 	}
@@ -84,12 +79,12 @@ func (p *DownloadPage) updateResult(i *dto.IAItem) {
 
 }
 
-func (p *DownloadPage) stopConfirmation() { 
+func (p *DownloadPage) stopConfirmation() {
 	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop the download?", p.stopDownload, func() {})
 }
 
 func (p *DownloadPage) stopDownload() {
 	// Stop the download here
-	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, dto.StopCommandType, &dto.StopCommand{Process: "Download"}, false)
-	p.mq.SendMessage(mq.DownloadPage, mq.Frame, dto.SwitchToPageCommandType, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, &dto.StopCommand{Process: "Download"}, false)
+	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }

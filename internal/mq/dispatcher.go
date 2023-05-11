@@ -29,12 +29,11 @@ func NewDispatcher() *Dispatcher {
 	return d
 }
 
-func (d *Dispatcher) SendMessage(from string, to string, dtoType string, dto dto.Dto, async bool) {
+func (d *Dispatcher) SendMessage(from string, to string, dto dto.Dto, async bool) {
 
 	m := &Message{}
 	m.From = from
 	m.To = to
-	m.Type = dtoType
 	m.Dto = dto
 	m.Async = async
 

@@ -60,32 +60,15 @@ func (f *frame) checkMQ() {
 }
 
 func (f *frame) dispatchMessage(m *mq.Message) {
-	switch t := m.Type; t {
-	case dto.AddPageCommandType:
-		if c, ok := m.Dto.(*dto.AddPageCommand); ok {
-			f.addPage(c.Name, c.Grid)
-		} else {
-			m.DtoCastError(mq.Frame)
-		}
-	case dto.RemovePageCommandType:
-		if c, ok := m.Dto.(*dto.RemovePageCommand); ok {
-			f.removePage(c.Name)
-		} else {
-			m.DtoCastError(mq.Frame)
-		}
-	case dto.ShowPageCommandType:
-		if c, ok := m.Dto.(*dto.ShowPageCommand); ok {
-			f.showPage(c.Name)
-		} else {
-			m.DtoCastError(mq.Frame)
-		}
-	case dto.SwitchToPageCommandType:
-		if c, ok := m.Dto.(*dto.SwitchToPageCommand); ok {
-			f.switchToPage(c.Name)
-		} else {
-			m.DtoCastError(mq.Frame)
-		}
-
+	switch dto := m.Dto.(type) {
+	case *dto.AddPageCommand:
+		f.addPage(dto.Name, dto.Grid)
+	case *dto.RemovePageCommand:
+		f.removePage(dto.Name)
+	case *dto.ShowPageCommand:
+		f.showPage(dto.Name)
+	case *dto.SwitchToPageCommand:
+		f.switchToPage(dto.Name)
 	default:
 		m.UnsupportedTypeError(mq.Frame)
 	}

@@ -4,8 +4,6 @@ import (
 	"fmt"
 )
 
-const StopCommandType = "dto.StopCommand"
-
 type StopCommand struct {
 	Process string
 }

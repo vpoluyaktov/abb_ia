@@ -36,16 +36,16 @@ func newDialogWindow(dispatcher *mq.Dispatcher, height int, width int) *dialogWi
 }
 
 func (d *dialogWindow) Show() {
-	d.mq.SendMessage(mq.DialogWindow, mq.Frame, dto.AddPageCommandType, &dto.AddPageCommand{Name: "Shadow", Grid: d.shadow}, false)
-	d.mq.SendMessage(mq.DialogWindow, mq.Frame, dto.AddPageCommandType, &dto.AddPageCommand{Name: "DialogWindow", Grid: d.grid}, false)
-	d.mq.SendMessage(mq.DialogWindow, mq.Frame, dto.ShowPageCommandType, &dto.ShowPageCommand{Name: "DialogWindow"}, false)
-	d.mq.SendMessage(mq.DialogWindow, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: d.form}, true)
+	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.AddPageCommand{Name: "Shadow", Grid: d.shadow}, false)
+	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.AddPageCommand{Name: "DialogWindow", Grid: d.grid}, false)
+	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.ShowPageCommand{Name: "DialogWindow"}, false)
+	d.mq.SendMessage(mq.DialogWindow, mq.TUI, &dto.SetFocusCommand{Primitive: d.form}, true)
 }
 
 func (d *dialogWindow) Close() {
-	d.mq.SendMessage(mq.DialogWindow, mq.Frame, dto.RemovePageCommandType, &dto.RemovePageCommand{Name: "DialogWindow"}, false)
-	d.mq.SendMessage(mq.DialogWindow, mq.Frame, dto.RemovePageCommandType, &dto.RemovePageCommand{Name: "Shadow"}, false)
-	d.mq.SendMessage(mq.DialogWindow, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
+	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.RemovePageCommand{Name: "DialogWindow"}, false)
+	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.RemovePageCommand{Name: "Shadow"}, false)
+	d.mq.SendMessage(mq.DialogWindow, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }
 
 func (d *dialogWindow) setForm(f *tview.Form) {
@@ -102,7 +102,7 @@ func newYesNoDialog(dispatcher *mq.Dispatcher, title string, message string, yes
 		yesFunc()
 		d.Close()
 	})
-	f.AddButton("No", func () {
+	f.AddButton("No", func() {
 		noFunc()
 		d.Close()
 	})

@@ -32,16 +32,10 @@ func (h *header) checkMQ() {
 }
 
 func (h *header) dispatchMessage(m *mq.Message) {
-	switch t := m.Type; t {
-	case dto.DrawCommandType:
-		if c, ok := m.Dto.(*dto.DrawCommand); ok {
-			if c.Primitive == nil {
-
+	switch dto := m.Dto.(type) {
+	case *dto.DrawCommand:
+			if dto.Primitive == nil {
 			}
-		} else {
-			m.DtoCastError(mq.Header)
-		}
-
 	default:
 		m.UnsupportedTypeError(mq.Header)
 	}

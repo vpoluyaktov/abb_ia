@@ -99,7 +99,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 
 	p.grid.AddItem(p.detailsSection, 2, 0, 1, 1, 0, 0, true)
 
-	p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
 
 	return p
 }
@@ -112,20 +112,11 @@ func (p *SearchPage) checkMQ() {
 }
 
 func (p *SearchPage) dispatchMessage(m *mq.Message) {
-	switch t := m.Type; t {
-	case dto.IAItemType:
-		if r, ok := m.Dto.(*dto.IAItem); ok {
-			go p.updateResult(r)
-		} else {
-			m.DtoCastError(mq.SearchPage)
-		}
-	case dto.SearchProgressType:
-		if sp, ok := m.Dto.(*dto.SearchProgress); ok {
-			p.updateTitle(sp)
-		} else {
-			m.DtoCastError(mq.SearchPage)
-		}
-
+	switch dto := m.Dto.(type) {
+	case *dto.IAItem:
+		go p.updateResult(dto)
+	case *dto.SearchProgress:
+		p.updateTitle(dto)
 	default:
 		m.UnsupportedTypeError(mq.SearchPage)
 	}
@@ -135,8 +126,8 @@ func (p *SearchPage) runSearch() {
 	p.clearSearchResults()
 	p.resultTable.showHeader()
 	// Disable Search Button here
-	p.mq.SendMessage(mq.SearchPage, mq.SearchController, dto.SearchCommandType, &dto.SearchCommand{SearchCondition: p.searchCriteria}, false)
-	p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.SetFocusCommandType, &dto.SetFocusCommand{Primitive: p.resultTable.t}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.SearchCommand{SearchCondition: p.searchCriteria}, false)
+	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.resultTable.t}, true)
 }
 
 func (p *SearchPage) clearSearchResults() {
@@ -157,9 +148,9 @@ func (p *SearchPage) updateResult(i *dto.IAItem) {
 	p.searchResult = append(p.searchResult, i)
 	p.resultTable.appendRow(i.Creator, i.Title, strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
 	p.resultTable.t.ScrollToBeginning()
-	// p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.resultTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
+	// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.resultTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
 	p.updateDetails(1, 0)
-	p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: nil}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }
 
 func (p *SearchPage) updateTitle(sp *dto.SearchProgress) {
@@ -171,7 +162,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 		d := p.searchResult[row-1].Description
 		p.descriptionView.SetText(d)
 		p.descriptionView.ScrollToBeginning()
-		// p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.descriptionView}, true) // single primitive refresh is not supported by tview (but supported by cview)
+		// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.descriptionView}, true) // single primitive refresh is not supported by tview (but supported by cview)
 
 		p.filesTable.clear()
 		p.filesTable.showHeader()
@@ -180,7 +171,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 			p.filesTable.appendRow(strings.TrimPrefix(f.Name, "/"), f.Format, f.LengthH, f.SizeH)
 		}
 		p.filesTable.t.ScrollToBeginning()
-		// p.mq.SendMessage(mq.SearchPage, mq.TUI, dto.DrawCommandType, &dto.DrawCommand{Primitive: p.filesTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
+		// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.filesTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
 	}
 
 }
@@ -198,7 +189,7 @@ func (p *SearchPage) createBook() {
 		f.AddInputField("Book Title", item.Title, 60, nil, nil)
 		f.AddButton("Create Audiobook", func() {
 			d.Close()
-			p.launchDownload()
+			p.launchDownload(item)
 		})
 		f.AddButton("Cancel", func() {
 			d.Close()
@@ -210,8 +201,7 @@ func (p *SearchPage) createBook() {
 	}
 }
 
-func (p *SearchPage) launchDownload() {
-	// d.Close()
-	// p.mq.SendMessage(mq.SearchPage, mq.DownloadPageController, dto.SearchCommandType, &dto.SearchCommand{SearchCondition: p.searchCriteria}, true)
-	p.mq.SendMessage(mq.SearchPage, mq.Frame, dto.SwitchToPageCommandType, &dto.SwitchToPageCommand{Name: "DownloadPage"}, false)
+func (p *SearchPage) launchDownload(item *dto.IAItem) {
+	p.mq.SendMessage(mq.SearchPage, mq.DownloadController, &dto.DownloadCommand{Item: item}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "DownloadPage"}, false)
 }

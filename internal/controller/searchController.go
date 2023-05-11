@@ -12,7 +12,6 @@ import (
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
 )
 
-
 type SearchController struct {
 	mq *mq.Dispatcher
 }
@@ -32,14 +31,9 @@ func (c *SearchController) checkMQ() {
 }
 
 func (c *SearchController) dispatchMessage(m *mq.Message) {
-	switch t := m.Type; t {
-	case dto.SearchCommandType:
-		if cmd, ok := m.Dto.(*dto.SearchCommand); ok {
-			go c.performSearch(cmd)
-		} else {
-			m.DtoCastError(mq.SearchController)
-		}
-
+	switch dto := m.Dto.(type) {
+	case *dto.SearchCommand:
+		go c.performSearch(dto)
 	default:
 		m.UnsupportedTypeError(mq.SearchController)
 	}
@@ -47,15 +41,15 @@ func (c *SearchController) dispatchMessage(m *mq.Message) {
 
 func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 	logger.Debug(mq.SearchController + ": Received SearchCommand with condition: " + cmd.SearchCondition)
-	c.mq.SendMessage(mq.SearchController, mq.Footer, dto.UpdateStatusType, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
-	c.mq.SendMessage(mq.SearchController, mq.Footer, dto.SetBusyIndicatorType, &dto.SetBusyIndicator{Busy: true}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 	ia := ia_client.New()
 	resp := ia.Search(cmd.SearchCondition, "audio")
 	if resp == nil {
 		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.SearchCondition)
 	}
 
-	itemsTotal := resp.Response.NumFound 
+	itemsTotal := resp.Response.NumFound
 	itemsFetched := 0
 
 	docs := resp.Response.Docs
@@ -76,7 +70,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			if len(d.Metadata.Creator) > 0 && d.Metadata.Creator[0] != "" {
 				item.Creator = d.Metadata.Creator[0]
 			} else if len(d.Metadata.Artist) > 0 && d.Metadata.Artist[0] != "" {
-					item.Creator = d.Metadata.Artist[0]	
+				item.Creator = d.Metadata.Artist[0]
 			} else {
 				item.Creator = "Internet Archive"
 			}
@@ -113,10 +107,10 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 		if item.FilesCount > 0 {
 			itemsFetched++
 			sp := &dto.SearchProgress{ItemsTotal: itemsTotal, ItemsFetched: itemsFetched}
-			c.mq.SendMessage(mq.SearchController, mq.SearchPage, dto.SearchProgressType, sp, true)
-			c.mq.SendMessage(mq.SearchController, mq.SearchPage, dto.IAItemType, item, true)
+			c.mq.SendMessage(mq.SearchController, mq.SearchPage, sp, true)
+			c.mq.SendMessage(mq.SearchController, mq.SearchPage, item, true)
 		}
 	}
-	c.mq.SendMessage(mq.SearchController, mq.Footer, dto.SetBusyIndicatorType, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.SearchController, mq.Footer, dto.UpdateStatusType, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 }

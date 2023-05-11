@@ -2,8 +2,6 @@ package dto
 
 import "fmt"
 
-const UpdateStatusType = "dto.UpdateStatus"
-
 type UpdateStatus struct {
 	Message string
 }
@@ -11,8 +9,6 @@ type UpdateStatus struct {
 func (c *UpdateStatus) String() string {
 	return fmt.Sprintf("%T: %s", c, c.Message)
 }
-
-const SetBusyIndicatorType = "dto.SetBusyIndicator"
 
 type SetBusyIndicator struct {
 	Busy bool

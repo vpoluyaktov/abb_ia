@@ -2,8 +2,6 @@ package dto
 
 import "fmt"
 
-const IAItemType = "dto.IAItem"
-
 type IAItem struct {
 	ID           string
 	Title        string
