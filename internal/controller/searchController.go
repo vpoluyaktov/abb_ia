@@ -3,6 +3,7 @@ package controller
 import (
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
@@ -84,7 +85,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 					length, lErr := utils.TimeToSeconds(metadata.Length)
 					if sErr == nil && lErr == nil {
 						file := dto.File{}
-						file.Name = tview.Escape(name)
+						file.Name = strings.TrimPrefix(name, "/")
 						file.Size = size
 						file.SizeH, _ = utils.BytesToHuman(size)
 						file.Length = length

@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
+	// "github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
 )
 
 // //////////////////////////////////////////////////////////////
@@ -66,7 +66,6 @@ func (t *table) appendRow(cols ...string) {
 		cell.SetAlign(int(t.aligns[col]))
 		cell.SetExpansion(t.widths[col])
 		t.t.SetCell(row, col, cell)
-
 	}
 }
 
@@ -76,10 +75,40 @@ func (t *table) clear() {
 
 // TODO - implement more accurate calculation
 func (t *table) adjustLength(val string, col int) string {
-	_, _, w, _ := t.t.GetRect()                            // table weight
-	m := float32(w) / float32(t.allWidths) * 1.3           // multiplier
-	val = utils.FirstN(val, int(m*float32(t.widths[col]))) // cut string
+	// _, _, w, _ := t.t.GetRect()                            // table weight
+	// m := float32(w) / float32(t.allWidths) * 1.3           // multiplier
+	// val = utils.FirstN(val, int(m*float32(t.widths[col]))) // cut string
 	return val
+}
+
+// //////////////////////////////////////////////////////////////
+// tview.Table wrapper (vertical layout)
+// //////////////////////////////////////////////////////////////
+type infoTable struct {
+	t         *tview.Table
+}
+
+func newInfoTable() *infoTable {
+	t := &infoTable{}
+	t.t = tview.NewTable()
+	t.t.SetSelectable(false, false)
+	t.t.SetBorder(false)
+	return t
+}
+
+func (t *infoTable) appendRow(label string, value string) {
+	row := t.t.GetRowCount()
+	// label
+	labelCell := tview.NewTableCell(" " + label)
+	labelCell.SetTextColor(yellow)
+	t.t.SetCell(row, 0, labelCell)
+	// value
+	valueCell := tview.NewTableCell(" " + value)
+	t.t.SetCell(row, 1, valueCell)
+}
+
+func (t *infoTable) clear() {
+	t.t.Clear()
 }
 
 // //////////////////////////////////////////////////////////////

@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
@@ -168,12 +167,11 @@ func (p *SearchPage) updateDetails(row int, col int) {
 		p.filesTable.showHeader()
 		files := p.searchResult[row-1].Files
 		for _, f := range files {
-			p.filesTable.appendRow(strings.TrimPrefix(f.Name, "/"), f.Format, f.LengthH, f.SizeH)
+			p.filesTable.appendRow(f.Name, f.Format, f.LengthH, f.SizeH)
 		}
 		p.filesTable.t.ScrollToBeginning()
 		// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.filesTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
 	}
-
 }
 
 func (p *SearchPage) createBook() {
@@ -185,11 +183,15 @@ func (p *SearchPage) createBook() {
 		d := newDialogWindow(p.mq, 12, 80)
 		f := newForm()
 		f.SetTitle("Create Audiobook")
-		f.AddInputField("Book Author", item.Creator, 60, nil, nil)
-		f.AddInputField("Book Title", item.Title, 60, nil, nil)
+		author := f.AddInputField("Book Author", item.Creator, 60, nil, nil)
+		title := f.AddInputField("Book Title", item.Title, 60, nil, nil)
 		f.AddButton("Create Audiobook", func() {
+			ab := &dto.Audiobook{}
+			ab.IAItem = item
+			ab.Title = title.GetText()
+			ab.Author = author.GetText()
+			p.launchDownload(ab)
 			d.Close()
-			p.launchDownload(item)
 		})
 		f.AddButton("Cancel", func() {
 			d.Close()
@@ -201,7 +203,8 @@ func (p *SearchPage) createBook() {
 	}
 }
 
-func (p *SearchPage) launchDownload(item *dto.IAItem) {
-	p.mq.SendMessage(mq.SearchPage, mq.DownloadController, &dto.DownloadCommand{Item: item}, true)
+func (p *SearchPage) launchDownload(ab *dto.Audiobook) {
+	p.mq.SendMessage(mq.SearchPage, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: ab}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.DownloadController, &dto.DownloadCommand{Audiobook: ab}, true)
 	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "DownloadPage"}, false)
 }

@@ -6,8 +6,9 @@ import (
 
 type StopCommand struct {
 	Process string
+	Reason string
 }
 
 func (c *StopCommand) String() string {
-	return fmt.Sprintf("%T: %s", c, c.Process)
+	return fmt.Sprintf("%T: Process: %s, Reason: %s", c, c.Process, c.Reason)
 }

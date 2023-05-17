@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"strconv"
+
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 
@@ -11,6 +13,7 @@ type DownloadPage struct {
 	mq              *mq.Dispatcher
 	grid            *tview.Grid
 	infoSection     *tview.Grid
+	infoTable       *infoTable
 	downloadSection *tview.Grid
 	downloadTable   *table
 }
@@ -21,7 +24,7 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	p.mq.RegisterListener(mq.DownloadPage, p.dispatchMessage)
 
 	p.grid = tview.NewGrid()
-	p.grid.SetRows(10, -1)
+	p.grid.SetRows(9, -1)
 	p.grid.SetColumns(0)
 
 	// information section
@@ -30,11 +33,9 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	p.infoSection.SetBorder(true)
 	p.infoSection.SetTitle(" Audiobook information: ")
 	p.infoSection.SetTitleAlign(tview.AlignLeft)
+	p.infoTable = newInfoTable()
+	p.infoSection.AddItem(p.infoTable.t, 0, 0, 1, 1, 0, 0, true)
 	f := newForm()
-	f.SetHorizontal(false)
-	f.AddInputField("Search criteria", "", 40, nil, func(t string) {})
-	p.infoSection.AddItem(f.f, 0, 0, 1, 1, 0, 0, true)
-	f = newForm()
 	f.SetHorizontal(false)
 	f.f.SetButtonsAlign(tview.AlignRight)
 	f.AddButton("Stop", p.stopConfirmation)
@@ -44,14 +45,14 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	// Download section
 	p.downloadSection = tview.NewGrid()
 	p.downloadSection.SetColumns(-1)
-	p.downloadSection.SetTitle(" Downloading items...")
+	p.downloadSection.SetTitle(" Downloading items... ")
 	p.downloadSection.SetTitleAlign(tview.AlignLeft)
 	p.downloadSection.SetBorder(true)
 
 	p.downloadTable = newTable()
-	p.downloadTable.setHeaders("Author", "Title", "Files", "Duration (HH:MM:SS)", "Total Size")
-	p.downloadTable.setWidths(3, 6, 2, 1, 1)
-	p.downloadTable.setAlign(tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
+	p.downloadTable.setHeaders(" # ", "File name", "Format", "Duration (HH:MM:SS)", "Total Size", "Download progress")
+	p.downloadTable.setWidths(1, 4, 2, 2, 1, 20)
+	p.downloadTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	// p.downloadTable.t.SetSelectionChangedFunc(p.updateDetails)
 	p.downloadSection.AddItem(p.downloadTable.t, 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(p.downloadSection, 1, 0, 1, 1, 0, 0, true)
@@ -68,15 +69,30 @@ func (p *DownloadPage) checkMQ() {
 
 func (p *DownloadPage) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
-	case *dto.IAItem:
-		go p.updateResult(dto)
+	case *dto.DisplayBookInfoCommand:
+		p.displayBookInfo(dto.Audiobook)
 	default:
 		m.UnsupportedTypeError(mq.DownloadPage)
 	}
 }
 
-func (p *DownloadPage) updateResult(i *dto.IAItem) {
+func (p *DownloadPage) displayBookInfo(ab *dto.Audiobook) {
+	p.infoTable.clear()
+	p.infoTable.appendRow("", "")
+	p.infoTable.appendRow("Title:", ab.Title)
+	p.infoTable.appendRow("Author:", ab.Author)
+	p.infoTable.appendRow("Duration:", ab.IAItem.TotalLengthH)
+	p.infoTable.appendRow("Size:", ab.IAItem.TotalSizeH)
+	p.infoTable.appendRow("Files", strconv.Itoa(ab.IAItem.FilesCount))
 
+	p.downloadTable.clear()
+	p.downloadTable.showHeader()
+	for i, f := range ab.IAItem.Files {
+		p.downloadTable.appendRow(strconv.Itoa(i+1), f.Name, f.Format, f.LengthH, f.SizeH, "")
+	}
+	p.downloadTable.t.ScrollToBeginning()
+	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.downloadTable.t}, true)
+	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }
 
 func (p *DownloadPage) stopConfirmation() {
@@ -85,6 +101,6 @@ func (p *DownloadPage) stopConfirmation() {
 
 func (p *DownloadPage) stopDownload() {
 	// Stop the download here
-	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, &dto.StopCommand{Process: "Download"}, false)
+	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, &dto.StopCommand{Process: "Download", Reason: "User request"}, false)
 	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }

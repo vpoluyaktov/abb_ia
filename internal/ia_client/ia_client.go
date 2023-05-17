@@ -70,6 +70,9 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 }
 
 func (client *IAClient) DownloadFile(outputDir string, server string, dir string, file string, updateProgress Fn) {
+
+	return 
+	
 	dir = strings.TrimPrefix(dir, "/")
 	file = strings.TrimPrefix(file, "/")
 	fileUrl := fmt.Sprintf("https://%s/%s/%s", server, dir, file)
@@ -90,6 +93,7 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 	defer f.Close()
 
 	progressReader := &ProgressReader{
+		FileName: file,
 		Reader:   resp.Body,
 		Size:     resp.ContentLength,
 		Callback: updateProgress,

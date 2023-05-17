@@ -1,13 +1,18 @@
 package controller
 
 import (
+	"path/filepath"
+	"strconv"
+
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ia_client"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
 
 type DownloadController struct {
-	mq *mq.Dispatcher
+	mq       *mq.Dispatcher
+	stopFlag bool
 }
 
 func NewDownloadController(dispatcher *mq.Dispatcher) *DownloadController {
@@ -36,9 +41,33 @@ func (c *DownloadController) dispatchMessage(m *mq.Message) {
 }
 
 func (c *DownloadController) stopDownload(cmd *dto.StopCommand) {
+	c.stopFlag = true
 	logger.Debug(mq.DownloadController + ": Received StopDownload command")
 }
 
-func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
-	logger.Debug(mq.DownloadController + ": Received StartDownload command with IA item: " + cmd.String())
+func (c *DownloadController) startDownload(dto *dto.DownloadCommand) {
+	logger.Debug(mq.DownloadController + ": Received StartDownload command with IA item: " + dto.String())
+	item := dto.Audiobook.IAItem
+	outputDir := filepath.Join("output", item.ID)
+
+	// display DownloadPage initial content
+
+
+	// download files
+	ia := ia_client.New()
+	c.stopFlag = false
+	for _, f := range item.Files {
+		if c.stopFlag {
+			break
+		}
+		if false /* config.ParrallelDownload */ {
+			go ia.DownloadFile(outputDir, item.Server, item.Dir, f.Name, c.updateProgress)
+		} else {
+			ia.DownloadFile(outputDir, item.Server, item.Dir, f.Name, c.updateProgress)
+		}
+	}
+}
+
+func (c *DownloadController) updateProgress(fileName string, percent int) {
+	logger.Debug("File: " + fileName + " Downloading progress: " + strconv.Itoa(percent))
 }
