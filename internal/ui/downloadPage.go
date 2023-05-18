@@ -13,7 +13,7 @@ type DownloadPage struct {
 	mq              *mq.Dispatcher
 	grid            *tview.Grid
 	infoSection     *tview.Grid
-	infoTable       *infoTable
+	infoPanel       *infoPanel
 	downloadSection *tview.Grid
 	downloadTable   *table
 }
@@ -24,7 +24,7 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	p.mq.RegisterListener(mq.DownloadPage, p.dispatchMessage)
 
 	p.grid = tview.NewGrid()
-	p.grid.SetRows(9, -1)
+	p.grid.SetRows(7, -1)
 	p.grid.SetColumns(0)
 
 	// information section
@@ -33,8 +33,8 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	p.infoSection.SetBorder(true)
 	p.infoSection.SetTitle(" Audiobook information: ")
 	p.infoSection.SetTitleAlign(tview.AlignLeft)
-	p.infoTable = newInfoTable()
-	p.infoSection.AddItem(p.infoTable.t, 0, 0, 1, 1, 0, 0, true)
+	p.infoPanel = newInfoPanel()
+	p.infoSection.AddItem(p.infoPanel.t, 0, 0, 1, 1, 0, 0, true)
 	f := newForm()
 	f.SetHorizontal(false)
 	f.f.SetButtonsAlign(tview.AlignRight)
@@ -50,8 +50,8 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	p.downloadSection.SetBorder(true)
 
 	p.downloadTable = newTable()
-	p.downloadTable.setHeaders(" # ", "File name", "Format", "Duration (HH:MM:SS)", "Total Size", "Download progress")
-	p.downloadTable.setWidths(1, 4, 2, 2, 1, 20)
+	p.downloadTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Download progress")
+	p.downloadTable.setWidths(1, 2, 1, 1, 1, 20)
 	p.downloadTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	// p.downloadTable.t.SetSelectionChangedFunc(p.updateDetails)
 	p.downloadSection.AddItem(p.downloadTable.t, 0, 0, 1, 1, 0, 0, true)
@@ -77,18 +77,18 @@ func (p *DownloadPage) dispatchMessage(m *mq.Message) {
 }
 
 func (p *DownloadPage) displayBookInfo(ab *dto.Audiobook) {
-	p.infoTable.clear()
-	p.infoTable.appendRow("", "")
-	p.infoTable.appendRow("Title:", ab.Title)
-	p.infoTable.appendRow("Author:", ab.Author)
-	p.infoTable.appendRow("Duration:", ab.IAItem.TotalLengthH)
-	p.infoTable.appendRow("Size:", ab.IAItem.TotalSizeH)
-	p.infoTable.appendRow("Files", strconv.Itoa(ab.IAItem.FilesCount))
+	p.infoPanel.clear()
+	// p.infoPanel.appendRow("", "")
+	p.infoPanel.appendRow("Title:", ab.Title)
+	p.infoPanel.appendRow("Author:", ab.Author)
+	p.infoPanel.appendRow("Duration:", ab.IAItem.TotalLengthH)
+	p.infoPanel.appendRow("Size:", ab.IAItem.TotalSizeH)
+	p.infoPanel.appendRow("Files", strconv.Itoa(ab.IAItem.FilesCount))
 
 	p.downloadTable.clear()
 	p.downloadTable.showHeader()
 	for i, f := range ab.IAItem.Files {
-		p.downloadTable.appendRow(strconv.Itoa(i+1), f.Name, f.Format, f.LengthH, f.SizeH, "")
+		p.downloadTable.appendRow(strconv.Itoa(i+1) + " ", f.Name, f.Format, f.LengthH, f.SizeH, "")
 	}
 	p.downloadTable.t.ScrollToBeginning()
 	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.downloadTable.t}, true)

@@ -40,6 +40,10 @@ func (sa *strArray) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
+	if jsonObj == nil {
+		*sa = strArray(make([]string, 0))
+		return nil
+	}
 	switch obj := jsonObj.(type) {
 	case string:
 		*sa = strArray([]string{obj})
@@ -67,7 +71,10 @@ func (sa *numArray) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	
+	if jsonObj == nil {
+		*sa = numArray(make([]float64, 0))
+		return nil
+	}	
 	switch obj := jsonObj.(type) {
 	case float64:
 		*sa = numArray([]float64{obj})

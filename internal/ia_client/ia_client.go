@@ -9,21 +9,33 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
 )
 
 const (
 	IA_BASE_URL     = "https://archive.org"
 	MAX_RESULT_ROWS = 25
+	MOCK_DIR = "test/mock"
 )
 
 type IAClient struct {
-	restyClient *resty.Client
+	restyClient    *resty.Client
+	loadMockResult bool
+	saveMockResult bool
 }
 
 func New() *IAClient {
-	var client IAClient
+	client :=  &IAClient{}
+	client.saveMockResult = false
+	client.loadMockResult = true
+
+	if client.saveMockResult {
+		if err := os.MkdirAll(MOCK_DIR, 0750); err != nil {
+			logger.Error("IA Client can't create Mock directory " + MOCK_DIR + ": " + err.Error())
+		}
+	}
 	client.restyClient = resty.New()
-	return &client
+	return client
 }
 
 func (client *IAClient) Search(searchCondition string, mediaType string) *SearchResponse {
@@ -36,33 +48,70 @@ func (client *IAClient) Search(searchCondition string, mediaType string) *Search
 }
 
 func (client *IAClient) searchByTitle(title string, mediaType string) *SearchResponse {
-	var searchURL = IA_BASE_URL + "/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1"
+	mockFile := MOCK_DIR + "/SearchByTitle.json"
 	result := &SearchResponse{}
-	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, title, mediaType, MAX_RESULT_ROWS))
-	if err != nil {
-		panic(err)
+	if client.loadMockResult {
+		if err := utils.LoadJson(mockFile, result); err != nil {
+			logger.Error("IA Client SearchByTitle() mock load error: " + err.Error())
+		}
+	} else {
+		var searchURL = IA_BASE_URL + "/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1"
+		_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, title, mediaType, MAX_RESULT_ROWS))
+		if err != nil {
+			logger.Error("IAClient SearchByTitle() error: " + err.Error())
+		}
+		if client.saveMockResult {
+			if err := utils.DumpJson(mockFile, result); err != nil {
+				logger.Error("IAClient SearchByTitle() mock save error: " + err.Error())
+			}
+		}
 	}
 	// logger.Debug("SearchByTitle response: " + result.String())
 	return result
 }
 
 func (client *IAClient) searchByID(itemId string, mediaType string) *SearchResponse {
-	var searchURL = IA_BASE_URL + "/advancedsearch.php?q=identifier:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1"
+	mockFile := MOCK_DIR + "/SearchByID.json"
 	result := &SearchResponse{}
-	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, itemId, mediaType, MAX_RESULT_ROWS))
-	if err != nil {
-		panic(err)
+	if client.loadMockResult {
+		if err := utils.LoadJson(mockFile, result); err != nil {
+			logger.Error("IAClient SearchByID() mock load error: " + err.Error())
+		}
+	} else {
+		var searchURL = IA_BASE_URL + "/advancedsearch.php?q=identifier:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1"
+		result := &SearchResponse{}
+		_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, itemId, mediaType, MAX_RESULT_ROWS))
+		if err != nil {
+			logger.Error("IAClient SearchByID() error: " + err.Error())
+		}
+	}
+	if client.saveMockResult {
+		if err := utils.DumpJson(mockFile, result); err != nil {
+			logger.Error("IAClient SearchByID() mock save error: " + err.Error())
+		}
 	}
 	// logger.Debug("SearchByID response: " + result.String())
 	return result
 }
 
 func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
-	var getURL = IA_BASE_URL + "/details/%s/?output=json"
+	mockFile := MOCK_DIR + "/GetItemDetails_" + itemId + ".json"
 	result := &ItemDetails{}
-	_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(getURL, itemId))
-	if err != nil {
-		panic(err)
+	if client.loadMockResult {
+		if err := utils.LoadJson(mockFile, result); err != nil {
+			logger.Error("IAClient GetItemDetails() mock load error: " + err.Error())
+		}
+	} else {
+		var getURL = IA_BASE_URL + "/details/%s/?output=json"
+		_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(getURL, itemId))
+		if err != nil {
+			logger.Error("IAClient GetItemDetails() error: " + err.Error())
+		}
+	}
+	if client.saveMockResult {
+		if err := utils.DumpJson(mockFile, result); err != nil {
+			logger.Error("IAClient SearchByID() mock save error: " + err.Error())
+		}
 	}
 	// logger.Debug("GetItemDetails response: " + result.String())
 
@@ -71,8 +120,10 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 
 func (client *IAClient) DownloadFile(outputDir string, server string, dir string, file string, updateProgress Fn) {
 
-	return 
-	
+	if client.loadMockResult {
+		return
+	}
+
 	dir = strings.TrimPrefix(dir, "/")
 	file = strings.TrimPrefix(file, "/")
 	fileUrl := fmt.Sprintf("https://%s/%s/%s", server, dir, file)

@@ -27,6 +27,7 @@ func newTable() *table {
 	// t.t.SetSortFunc() // TODO
 	// t.t.ShowFocus(true)
 	t.t.SetBorder(false)
+	t.t.Clear().SetEvaluateAllRows(true)
 	return t
 }
 
@@ -84,31 +85,31 @@ func (t *table) adjustLength(val string, col int) string {
 // //////////////////////////////////////////////////////////////
 // tview.Table wrapper (vertical layout)
 // //////////////////////////////////////////////////////////////
-type infoTable struct {
-	t         *tview.Table
+type infoPanel struct {
+	t *tview.Table
 }
 
-func newInfoTable() *infoTable {
-	t := &infoTable{}
-	t.t = tview.NewTable()
-	t.t.SetSelectable(false, false)
-	t.t.SetBorder(false)
-	return t
+func newInfoPanel() *infoPanel {
+	p := &infoPanel{}
+	p.t = tview.NewTable()
+	p.t.SetSelectable(false, false)
+	p.t.SetBorder(false)
+	return p
 }
 
-func (t *infoTable) appendRow(label string, value string) {
-	row := t.t.GetRowCount()
+func (p *infoPanel) appendRow(label string, value string) {
+	row := p.t.GetRowCount()
 	// label
 	labelCell := tview.NewTableCell(" " + label)
 	labelCell.SetTextColor(yellow)
-	t.t.SetCell(row, 0, labelCell)
+	p.t.SetCell(row, 0, labelCell)
 	// value
 	valueCell := tview.NewTableCell(" " + value)
-	t.t.SetCell(row, 1, valueCell)
+	p.t.SetCell(row, 1, valueCell)
 }
 
-func (t *infoTable) clear() {
-	t.t.Clear()
+func (p *infoPanel) clear() {
+	p.t.Clear()
 }
 
 // //////////////////////////////////////////////////////////////
@@ -134,7 +135,7 @@ func (f *form) SetHorizontal(b bool) {
 }
 
 func (f *form) SetTitle(t string) {
-	f.f.SetTitle(" " + t  + " ")
+	f.f.SetTitle(" " + t + " ")
 }
 
 func (f *form) AddInputField(label, value string, fieldWidth int, accept func(textToCheck string, lastChar rune) bool, changed func(text string)) *tview.InputField {
