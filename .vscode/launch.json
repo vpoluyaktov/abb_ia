@@ -10,7 +10,10 @@
             "request": "launch",
             "mode": "auto",
             "console": "integratedTerminal",
-            "program": "${fileDirname}"
+            "program": "${fileDirname}",
+            // "args": ["--log-level", "DEBUG", "Search Condition"]
+            // "args": ["--log-level", "DEBUG", "--mock-save", "Single Episodes"]
+            "args": ["--log-level", "DEBUG", "--mock-load", "Single Episodes"]
         }
     ]
 }

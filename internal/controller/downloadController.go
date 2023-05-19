@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ia_client"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
@@ -54,7 +55,7 @@ func (c *DownloadController) startDownload(dto *dto.DownloadCommand) {
 
 
 	// download files
-	ia := ia_client.New()
+	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
 	for _, f := range item.Files {
 		if c.stopFlag {

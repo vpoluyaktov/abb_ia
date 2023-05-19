@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestSearch(t *testing.T) {
-	ia := ia_client.New()
+	ia := ia_client.New(false, false)
 
 	res := ia.Search("NASA", "audio") // search by title
 	assert.NotNil(t, res)
@@ -35,7 +35,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestGetItemById(t *testing.T) {
-	ia := ia_client.New()
+	ia := ia_client.New(false, false)
 	item := ia.GetItemDetails("OTRR_Frank_Race_Singles")
 	assert.NotNil(t, item)
 	if logLevel == logger.DEBUG {
@@ -61,7 +61,7 @@ func TestDownloadItem(t *testing.T) {
 	file := "/Frank_Race_49-xx-xx_ep13_The_Adventure_Of_The_Garrulous_Bartender_spectrogram.png"
 	outputDir := "/tmp/audiobook_creator_IA"
 
-	ia := ia_client.New()
+	ia := ia_client.New(false, false)
 	ia.DownloadFile(outputDir, server, dir, file, UpdateProgress)
 }
 

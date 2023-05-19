@@ -19,15 +19,15 @@ const (
 	FATAL
 )
 
-type logLevelType int
+type LogLevelType int
 type Logger struct {
 	logFileName string
-	logLevel    logLevelType
+	logLevel    LogLevelType
 	logFile     *os.File
 	err         error
 }
 
-func Init(logFileName string, logLevel logLevelType) {
+func Init(logFileName string, logLevel LogLevelType) {
 	var logger = Logger{}
 	logger.logLevel = logLevel
 	logger.logFileName = logFileName
@@ -40,7 +40,11 @@ func Init(logFileName string, logLevel logLevelType) {
 	loggerInstance = &logger
 }
 
-func SetLogLevel(logLevel logLevelType) {
+func SetLogfileName(logFileName string) {
+	loggerInstance.logFileName = logFileName
+}
+
+func SetLogLevel(logLevel LogLevelType) {
 	loggerInstance.logLevel = logLevel
 }
 

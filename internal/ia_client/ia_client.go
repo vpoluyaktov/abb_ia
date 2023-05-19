@@ -24,10 +24,10 @@ type IAClient struct {
 	saveMockResult bool
 }
 
-func New() *IAClient {
+func New(useMock bool, saveMock bool) *IAClient {
 	client :=  &IAClient{}
-	client.saveMockResult = false
-	client.loadMockResult = true
+	client.loadMockResult = useMock
+	client.saveMockResult = saveMock
 
 	if client.saveMockResult {
 		if err := os.MkdirAll(MOCK_DIR, 0750); err != nil {

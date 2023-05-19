@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ia_client"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
@@ -44,7 +45,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 	logger.Debug(mq.SearchController + ": Received SearchCommand with condition: " + cmd.SearchCondition)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
-	ia := ia_client.New()
+	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	resp := ia.Search(cmd.SearchCondition, "audio")
 	if resp == nil {
 		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.SearchCondition)

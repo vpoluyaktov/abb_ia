@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
@@ -34,6 +35,8 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.mq = dispatcher
 	p.mq.RegisterListener(mq.SearchPage, p.dispatchMessage)
 
+	p.searchCriteria = config.SearchCondition()
+	
 	p.grid = tview.NewGrid()
 	p.grid.SetRows(5, -1, -1)
 	p.grid.SetColumns(0)
@@ -46,7 +49,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.searchSection.SetTitleAlign(tview.AlignLeft)
 	f := newForm()
 	f.SetHorizontal(true)
-	p.inputField = f.AddInputField("Search criteria", "", 40, nil, func(t string) { p.searchCriteria = t })
+	p.inputField = f.AddInputField("Search criteria", config.SearchCondition(), 40, nil, func(t string) { p.searchCriteria = t })
 	p.searchButton = f.AddButton("Search", p.runSearch)
 	p.clearButton = f.AddButton("Clear", p.clearEverything)
 	p.searchSection.AddItem(f.f, 0, 0, 1, 1, 0, 0, true)
