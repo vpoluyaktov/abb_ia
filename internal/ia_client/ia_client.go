@@ -3,9 +3,11 @@ package ia_client
 import (
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
@@ -15,7 +17,7 @@ import (
 const (
 	IA_BASE_URL     = "https://archive.org"
 	MAX_RESULT_ROWS = 25
-	MOCK_DIR = "test/mock"
+	MOCK_DIR = "mock"
 )
 
 type IAClient struct {
@@ -79,7 +81,8 @@ func (client *IAClient) searchByID(itemId string, mediaType string) *SearchRespo
 		}
 	} else {
 		var searchURL = IA_BASE_URL + "/advancedsearch.php?q=identifier:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1"
-		result := &SearchResponse{}
+		req := fmt.Sprintf(searchURL, itemId, mediaType, MAX_RESULT_ROWS)
+		logger.Debug("req: " + req)
 		_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, itemId, mediaType, MAX_RESULT_ROWS))
 		if err != nil {
 			logger.Error("IAClient SearchByID() error: " + err.Error())
@@ -121,6 +124,10 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 func (client *IAClient) DownloadFile(outputDir string, server string, dir string, file string, updateProgress Fn) {
 
 	if client.loadMockResult {
+		for percent := 0; percent <= 100; percent++ {
+			updateProgress(file, percent)
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+		}
 		return
 	}
 

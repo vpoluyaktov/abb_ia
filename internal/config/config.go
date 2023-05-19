@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+
 )
 
 // singleton
@@ -20,7 +20,7 @@ type Config struct {
 func Load() {
 	config := &Config{}
 	config.logFileName = "/tmp/audiobook_creator_IA.log"
-	config.logLevel = "DEBUG"
+	config.logLevel = "INFO"
 	config.useMock = false
 	config.saveMock = false
 	config.searchCondition = ""
@@ -32,7 +32,6 @@ func Load() {
 
 func SetLogfileName(fileName string) {
 	configInstance.logFileName = fileName
-	logger.SetLogfileName(fileName)
 }
 
 func LogFileName() string {

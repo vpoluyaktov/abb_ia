@@ -24,20 +24,36 @@ type Logger struct {
 	logFileName string
 	logLevel    LogLevelType
 	logFile     *os.File
-	err         error
 }
 
-func Init(logFileName string, logLevel LogLevelType) {
-	var logger = Logger{}
-	logger.logLevel = logLevel
-	logger.logFileName = logFileName
-	var logFile, err = os.OpenFile(logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+func Init(logFileName, logLevel string) {
+	var l = Logger{}
+
+	l.logFileName = logFileName
+
+	// convert string logLevel to constants
+	switch logLevel {
+	case "DEBUG":
+		l.logLevel = DEBUG
+	case "INFO":
+		l.logLevel = INFO
+	case "WARN":
+		l.logLevel = WARN
+	case "ERROR":
+		l.logLevel = ERROR
+	case "FATAL":
+		l.logLevel = FATAL
+	default:
+		l.logLevel = INFO
+	}
+
+	var logFile, err = os.OpenFile(l.logFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		fmt.Println("Can not open log file: " + logFileName)
+		fmt.Println("Can not open log file: " + l.logFileName)
 		panic(err)
 	}
-	logger.logFile = logFile
-	loggerInstance = &logger
+	l.logFile = logFile
+	loggerInstance = &l
 }
 
 func SetLogfileName(logFileName string) {

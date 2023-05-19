@@ -5,17 +5,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
 )
 
-const (
-	logFileName string = "/tmp/audiobook_creator_IA.test.log"
-	logLevel           = logger.DEBUG
-)
-
 func TestMain(m *testing.M) {
-	logger.Init(logFileName, logLevel)
+	config.Load()
+	logger.Init(config.LogFileName(), "DEBUG")
 	os.Exit(m.Run())
 }
 

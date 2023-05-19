@@ -12,17 +12,19 @@ import (
 func main() {
 	config.Load()
 
-	// parse command line arguments
+	// command line arguments
 	logLevel := flag.String("log-level", "INFO", "Logging level")
 	useMock := flag.Bool("mock-load", false, "Use mock data")
 	saveMock := flag.Bool("mock-save", false, "Save mock data")
 	help := flag.Bool("help", false, "Display usage information")
 	flag.Parse()
+
+	// get IA search condition from command line if specified
 	searchCondition := flag.Arg(0)
 
 	// display usage information
 	if *help {
-		flag.PrintDefaults()
+		flag.Usage()
 		os.Exit(0)
 	}
 
@@ -32,6 +34,6 @@ func main() {
 	config.UseMock(*useMock)
 	config.SaveMock(*saveMock)
 
-	logger.Init("/tmp/audiobook_creator_IA.log", logger.DEBUG)
+	logger.Init(config.LogFileName(), *logLevel)
 	cmd.Execute()
 }

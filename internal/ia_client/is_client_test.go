@@ -17,7 +17,7 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	logger.Init(logFileName, logLevel)
+	logger.Init(logFileName, "DEBUG")
 	config.Load()
 	os.Exit(m.Run())
 }
