@@ -15,6 +15,7 @@ type Config struct {
 	useMock         bool
 	saveMock        bool
 	searchCondition string
+	parrallelDownload bool
 }
 
 func Load() {
@@ -24,6 +25,7 @@ func Load() {
 	config.useMock = false
 	config.saveMock = false
 	config.searchCondition = ""
+	config.parrallelDownload = false
 
 	// read config file here
 
@@ -68,4 +70,12 @@ func SetSearchCondition(c string) {
 
 func SearchCondition() string {
 	return configInstance.searchCondition
+}
+
+func SaveParallelDownload(b bool) {
+	configInstance.parrallelDownload = b
+}
+
+func IsParallelDownload() bool {
+	return configInstance.parrallelDownload
 }

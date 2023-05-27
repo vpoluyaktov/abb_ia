@@ -2,7 +2,6 @@ package controller
 
 import (
 	"path/filepath"
-	"strconv"
 
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
@@ -13,6 +12,7 @@ import (
 
 type DownloadController struct {
 	mq       *mq.Dispatcher
+	progress []int
 	stopFlag bool
 }
 
@@ -46,29 +46,37 @@ func (c *DownloadController) stopDownload(cmd *dto.StopCommand) {
 	logger.Debug(mq.DownloadController + ": Received StopDownload command")
 }
 
-func (c *DownloadController) startDownload(dto *dto.DownloadCommand) {
-	logger.Debug(mq.DownloadController + ": Received StartDownload command with IA item: " + dto.String())
-	item := dto.Audiobook.IAItem
+func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
+	logger.Debug(mq.DownloadController + ": Received StartDownload command with IA item: " + cmd.String())
+	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: "Downloading mp3 files..."}, false)
+	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	item := cmd.Audiobook.IAItem
 	outputDir := filepath.Join("output", item.ID)
 
 	// display DownloadPage initial content
 
-
 	// download files
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
-	for _, f := range item.Files {
+	c.progress = make([]int, len(item.Files))
+	for i, f := range item.Files {
 		if c.stopFlag {
 			break
 		}
-		if false /* config.ParrallelDownload */ {
-			go ia.DownloadFile(outputDir, item.Server, item.Dir, f.Name, c.updateProgress)
+		if config.IsParallelDownload() {
+			go ia.DownloadFile(outputDir, item.Server, item.Dir, f.Name, i, c.updateProgress)
 		} else {
-			ia.DownloadFile(outputDir, item.Server, item.Dir, f.Name, c.updateProgress)
+			ia.DownloadFile(outputDir, item.Server, item.Dir, f.Name, i, c.updateProgress)
 		}
 	}
+	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
+	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 }
 
-func (c *DownloadController) updateProgress(fileName string, percent int) {
-	logger.Debug("File: " + fileName + " Downloading progress: " + strconv.Itoa(percent))
+func (c *DownloadController) updateProgress(fileId int, fileName string, percent int) {
+	if c.progress[fileId] != percent {
+		// sent a message only if progress changed
+		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
+	}
+	c.progress[fileId] = percent
 }

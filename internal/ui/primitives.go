@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/rivo/tview"
-	// "github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
 )
 
 // //////////////////////////////////////////////////////////////
@@ -74,12 +73,17 @@ func (t *table) clear() {
 	t.t.Clear()
 }
 
-// TODO - implement more accurate calculation
 func (t *table) adjustLength(val string, col int) string {
-	// _, _, w, _ := t.t.GetRect()                            // table weight
-	// m := float32(w) / float32(t.allWidths) * 1.3           // multiplier
-	// val = utils.FirstN(val, int(m*float32(t.widths[col]))) // cut string
+	// val = utils.FirstN(val, t.getColumnWidth(col)) // cut string
 	return val
+}
+
+// TODO - implement more accurate calculation
+func (t *table) getColumnWidth(col int) int {
+	_, _, w, _ := t.t.GetInnerRect()                               // table weight
+	m := (float32(w-len(t.widths)-1) / float32(t.allWidths)) * 1.15 // multiplier
+	width := int(m * float32(t.widths[col]))
+	return width
 }
 
 // //////////////////////////////////////////////////////////////

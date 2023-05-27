@@ -94,10 +94,11 @@ func (sa *numArray) UnmarshalJSON(data []byte) error {
 	return ErrUnsupportedType
 }
 
-type Fn func(string, int)
+type Fn func(int, string, int)
 
 // Progress Reader for file download progress
 type ProgressReader struct {
+	FileId int
 	FileName string
 	Reader   io.Reader
 	Size     int64
@@ -111,7 +112,7 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 	if err == nil {
 		pr.Pos += int64(n)
 		pr.Percent = int(float64(pr.Pos) / float64(pr.Size) * 100)
-		pr.Callback(pr.FileName, pr.Percent)
+		pr.Callback(pr.FileId, pr.FileName, pr.Percent)
 	}
 	return n, err
 }

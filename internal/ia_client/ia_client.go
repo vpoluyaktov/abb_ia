@@ -101,6 +101,8 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 	mockFile := MOCK_DIR + "/GetItemDetails_" + itemId + ".json"
 	result := &ItemDetails{}
 	if client.loadMockResult {
+		delay := time.Duration(rand.Intn(100))
+		time.Sleep(3 * delay * time.Millisecond)
 		if err := utils.LoadJson(mockFile, result); err != nil {
 			logger.Error("IAClient GetItemDetails() mock load error: " + err.Error())
 		}
@@ -121,20 +123,21 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 	return result
 }
 
-func (client *IAClient) DownloadFile(outputDir string, server string, dir string, file string, updateProgress Fn) {
+func (client *IAClient) DownloadFile(outputDir string, server string, dir string, fileName string, fileId int, updateProgress Fn) {
 
 	if client.loadMockResult {
+		delay := time.Duration(rand.Intn(100))
 		for percent := 0; percent <= 100; percent++ {
-			updateProgress(file, percent)
-			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+			updateProgress(fileId, fileName, percent)
+			time.Sleep(delay * time.Millisecond)
 		}
 		return
 	}
 
 	dir = strings.TrimPrefix(dir, "/")
-	file = strings.TrimPrefix(file, "/")
-	fileUrl := fmt.Sprintf("https://%s/%s/%s", server, dir, file)
-	outPath := fmt.Sprintf("%s/%s/%s", outputDir, dir, file)
+	fileName = strings.TrimPrefix(fileName, "/")
+	fileUrl := fmt.Sprintf("https://%s/%s/%s", server, dir, fileName)
+	outPath := fmt.Sprintf("%s/%s/%s", outputDir, dir, fileName)
 	tempPath := outPath + ".tmp"
 
 	req, _ := http.NewRequest("GET", fileUrl, nil)
@@ -151,7 +154,8 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 	defer f.Close()
 
 	progressReader := &ProgressReader{
-		FileName: file,
+		FileId: fileId,
+		FileName: fileName,
 		Reader:   resp.Body,
 		Size:     resp.ContentLength,
 		Callback: updateProgress,
@@ -161,5 +165,5 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 		logger.Fatal("Error while downloading: " + err.Error())
 	}
 	os.Rename(tempPath, outPath)
-	logger.Debug(file + " downloaded to " + outPath)
+	logger.Debug(fileName + " downloaded to " + outPath)
 }
