@@ -50,7 +50,7 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 
 	p.downloadTable = newTable()
 	p.downloadTable.setHeaders("  # ", "File name", "Format", "Duration", "Total Size", "Download progress")
-	p.downloadTable.setWidths(1, 2, 1, 1, 1, 5)
+	p.downloadTable.setWeights(1, 2, 1, 1, 1, 5)
 	p.downloadTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	// p.downloadTable.t.SetSelectionChangedFunc(p.updateDetails)
 	downloadSection.AddItem(p.downloadTable.t, 0, 0, 1, 1, 0, 0, true)

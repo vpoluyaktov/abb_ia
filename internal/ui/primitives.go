@@ -12,8 +12,7 @@ import (
 type table struct {
 	t         *tview.Table
 	headers   []string
-	widths    []int
-	allWidths int
+	colWeight []int
 	aligns    []uint
 }
 
@@ -26,7 +25,8 @@ func newTable() *table {
 	// t.t.SetSortFunc() // TODO
 	// t.t.ShowFocus(true)
 	t.t.SetBorder(false)
-	t.t.Clear().SetEvaluateAllRows(true)
+	t.t.Clear()
+	t.t.SetEvaluateAllRows(true)
 	return t
 }
 
@@ -34,11 +34,8 @@ func (t *table) setHeaders(headers ...string) {
 	t.headers = headers
 }
 
-func (t *table) setWidths(widths ...int) {
-	t.widths = widths
-	for _, w := range t.widths {
-		t.allWidths += w
-	}
+func (t *table) setWeights(weights ...int) {
+	t.colWeight = weights
 }
 
 func (t *table) setAlign(aligns ...uint) {
@@ -51,7 +48,7 @@ func (t *table) showHeader() {
 		cell.SetTextColor(yellow)
 		cell.SetBackgroundColor(blue)
 		cell.SetAlign(tview.AlignCenter)
-		cell.SetExpansion(t.widths[c])
+		cell.SetExpansion(t.colWeight[c])
 		cell.NotSelectable = true
 		t.t.SetCell(0, c, cell)
 	}
@@ -64,7 +61,7 @@ func (t *table) appendRow(cols ...string) {
 	for col, val := range cols {
 		cell := tview.NewTableCell(t.adjustLength(val, col))
 		cell.SetAlign(int(t.aligns[col]))
-		cell.SetExpansion(t.widths[col])
+		cell.SetExpansion(t.colWeight[col])
 		t.t.SetCell(row, col, cell)
 	}
 }
@@ -80,9 +77,15 @@ func (t *table) adjustLength(val string, col int) string {
 
 // TODO - implement more accurate calculation
 func (t *table) getColumnWidth(col int) int {
-	_, _, w, _ := t.t.GetInnerRect()                               // table weight
-	m := (float32(w-len(t.widths)-1) / float32(t.allWidths)) * 1.15 // multiplier
-	width := int(m * float32(t.widths[col]))
+	_, _, w, _ := t.t.GetInnerRect() // table weight
+
+	allWeights := 0
+	for _, w := range t.colWeight {
+		allWeights += w
+	}
+
+	m := (float32(w-len(t.colWeight)-1) / float32(allWeights)) * 1.15 // multiplier
+	width := int(m * float32(t.colWeight[col]))
 	return width
 }
 

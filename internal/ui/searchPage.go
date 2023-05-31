@@ -36,7 +36,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.mq.RegisterListener(mq.SearchPage, p.dispatchMessage)
 
 	p.searchCriteria = config.SearchCondition()
-	
+
 	p.grid = tview.NewGrid()
 	p.grid.SetRows(5, -1, -1)
 	p.grid.SetColumns(0)
@@ -71,7 +71,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 
 	p.resultTable = newTable()
 	p.resultTable.setHeaders("Author", "Title", "Files", "Duration (hh:mm:ss)", "Total Size")
-	p.resultTable.setWidths(3, 6, 2, 1, 1)
+	p.resultTable.setWeights(3, 6, 2, 1, 1)
 	p.resultTable.setAlign(tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.resultTable.t.SetSelectionChangedFunc(p.updateDetails)
 	p.resultSection.AddItem(p.resultTable.t, 0, 0, 1, 1, 0, 0, true)
@@ -95,7 +95,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.filesTable.t.SetTitle(" Files: ")
 	p.filesTable.t.SetTitleAlign(tview.AlignLeft)
 	p.filesTable.setHeaders("File name", "Format", "Duration", "Size")
-	p.filesTable.setWidths(3, 1, 1, 1)
+	p.filesTable.setWeights(3, 1, 1, 1)
 	p.filesTable.setAlign(tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.detailsSection.AddItem(p.filesTable.t, 0, 2, 1, 1, 0, 0, true)
 
