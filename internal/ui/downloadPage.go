@@ -116,10 +116,13 @@ func (p *DownloadPage) stopDownload() {
 
 func (p *DownloadPage) updateDownloadProgress(dp *dto.DownloadProgress) {
 	col := 5
-	w := p.downloadTable.getColumnWidth(col)
-	barWidth := int(((float32(w) - 15) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-barWidth-15)
+	w := p.downloadTable.getColumnWidth(col) - 5
+	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
+	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
+	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 	cell := p.downloadTable.t.GetCell(dp.FileId+1, col)
-	cell.Text = fmt.Sprintf(" %3d%% %s", dp.Percent, progressBar)
+	cell.SetExpansion(0)
+	cell.SetMaxWidth(50)
+	cell.Text = fmt.Sprintf("%s [%s]", progressText, progressBar)
 	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }

@@ -101,6 +101,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 
 	p.grid.AddItem(p.detailsSection, 2, 0, 1, 1, 0, 0, true)
 
+	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
 
 	return p
