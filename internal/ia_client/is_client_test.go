@@ -65,6 +65,6 @@ func TestDownloadItem(t *testing.T) {
 	ia.DownloadFile(outputDir, server, dir, file, 1, UpdateProgress)
 }
 
-func UpdateProgress(fileId int, fileName string, percent int) {
+func UpdateProgress(fileId int, fileName string, pos int64, percent int) {
 	fmt.Printf("Downloading... %d%%\n", percent)
 }

@@ -128,7 +128,7 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 	if client.loadMockResult {
 		delay := time.Duration(rand.Intn(100))
 		for percent := 0; percent <= 100; percent++ {
-			updateProgress(fileId, fileName, percent)
+			updateProgress(fileId, fileName, int64(percent * 1024 + rand.Intn(1024)), percent)
 			time.Sleep(delay * time.Millisecond)
 		}
 		return

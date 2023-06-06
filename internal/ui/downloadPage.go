@@ -14,6 +14,7 @@ type DownloadPage struct {
 	mq            *mq.Dispatcher
 	grid          *tview.Grid
 	infoPanel     *infoPanel
+	progressPanel *infoPanel
 	downloadTable *table
 }
 
@@ -62,6 +63,8 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	progressSection.SetBorder(true)
 	progressSection.SetTitle(" Download progress: ")
 	progressSection.SetTitleAlign(tview.AlignLeft)
+	p.progressPanel = newInfoPanel()
+	progressSection.AddItem(p.progressPanel.t, 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(progressSection, 2, 0, 1, 1, 0, 0, false)
 
 	return p
@@ -78,8 +81,10 @@ func (p *DownloadPage) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.DisplayBookInfoCommand:
 		p.displayBookInfo(dto.Audiobook)
+	case *dto.DownloadFileProgress:
+		p.updateFileProgress(dto)
 	case *dto.DownloadProgress:
-		p.updateDownloadProgress(dto)
+		p.updateDownloadProgress(dto)	
 	default:
 		m.UnsupportedTypeError(mq.DownloadPage)
 	}
@@ -114,7 +119,7 @@ func (p *DownloadPage) stopDownload() {
 	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }
 
-func (p *DownloadPage) updateDownloadProgress(dp *dto.DownloadProgress) {
+func (p *DownloadPage) updateFileProgress(dp *dto.DownloadFileProgress) {
 	col := 5
 	w := p.downloadTable.getColumnWidth(col) - 5
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
@@ -125,4 +130,9 @@ func (p *DownloadPage) updateDownloadProgress(dp *dto.DownloadProgress) {
 	cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s [%s]", progressText, progressBar)
 	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+}
+
+func (p *DownloadPage) updateDownloadProgress(dp *dto.DownloadProgress) {
+
+
 }

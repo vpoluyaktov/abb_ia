@@ -2,18 +2,23 @@ package controller
 
 import (
 	"path/filepath"
+	"time"
 
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ia_client"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
 )
 
 type DownloadController struct {
-	mq       *mq.Dispatcher
-	progress []int
-	stopFlag bool
+	mq         *mq.Dispatcher
+	item       *dto.IAItem
+	startTime  time.Time
+	progress   []int
+	downloaded []int64
+	stopFlag   bool
 }
 
 func NewDownloadController(dispatcher *mq.Dispatcher) *DownloadController {
@@ -47,36 +52,76 @@ func (c *DownloadController) stopDownload(cmd *dto.StopCommand) {
 }
 
 func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
+	c.startTime = time.Now()
 	logger.Debug(mq.DownloadController + ": Received StartDownload command with IA item: " + cmd.String())
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: "Downloading mp3 files..."}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
-	item := cmd.Audiobook.IAItem
-	outputDir := filepath.Join("output", item.ID)
-
-	// display DownloadPage initial content
+	c.item = cmd.Audiobook.IAItem
+	outputDir := filepath.Join("output", c.item.ID)
 
 	// download files
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
-	c.progress = make([]int, len(item.Files))
-	for i, f := range item.Files {
+	c.progress = make([]int, len(c.item.Files))
+	c.downloaded = make([]int64, len(c.item.Files))
+	go c.updateDownloadProgress()
+	for i, f := range c.item.Files {
 		if c.stopFlag {
 			break
 		}
 		if config.IsParallelDownload() {
-			go ia.DownloadFile(outputDir, item.Server, item.Dir, f.Name, i, c.updateProgress)
+			go ia.DownloadFile(outputDir, c.item.Server, c.item.Dir, f.Name, i, c.updateFileProgress)
 		} else {
-			ia.DownloadFile(outputDir, item.Server, item.Dir, f.Name, i, c.updateProgress)
+			ia.DownloadFile(outputDir, c.item.Server, c.item.Dir, f.Name, i, c.updateFileProgress)
 		}
 	}
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 }
 
-func (c *DownloadController) updateProgress(fileId int, fileName string, percent int) {
+func (c *DownloadController) updateFileProgress(fileId int, fileName string, pos int64, percent int) {
 	if c.progress[fileId] != percent {
 		// sent a message only if progress changed
-		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
+		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
 	}
 	c.progress[fileId] = percent
+	c.downloaded[fileId] = pos
+}
+
+func (c *DownloadController) updateDownloadProgress() {
+	var percent int = 0
+	var speed int64 = 0
+	var eta float64 = 0
+	var bytes int64 = 0
+
+	for !c.stopFlag && percent <= 100 {
+		var totalPercent int = 0
+		for _, p := range c.progress {
+			totalPercent += p
+		}
+		p := int(totalPercent / len(c.progress))
+
+		if percent != p {
+			// sent a message only if progress changed
+			percent = p
+
+			bytes = 0
+			for _, b := range c.downloaded {
+				bytes += b
+			}
+
+			duration := time.Since(c.startTime).Seconds()
+			speed = int64(float64(bytes) / duration)
+			eta = (100 / (float64(percent) / duration)) - duration
+
+			bytesH, _ := utils.BytesToHuman(bytes)
+			speedH, _ := utils.SpeedToHuman(speed)
+			etaH, _ := utils.SecondsToTime(eta)
+
+			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{Percent: percent, Bytes: bytesH, Speed: speedH, ETA: etaH}, true)
+		}
+		time.Sleep(mq.PullFrequency)
+	}
+
+	// c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{}, true)
 }

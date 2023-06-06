@@ -46,11 +46,10 @@ func TestTimeToSeconds(t *testing.T) {
 
 func TestSecondToTime(t *testing.T) {
 	sec := float64((5 * 3600) + (45 * 60) + 35)
-	time, err := utils.SecondToTime(sec)
+	time, err := utils.SecondsToTime(sec)
 	assert.NoError(t, err)
 	assert.Equal(t, " 5:45:35", time)
 }
-
 
 func TestBytesToHuman(t *testing.T) {
 	b := int64((5 * 1024 * 1024) + (245 * 1024) + 35)
