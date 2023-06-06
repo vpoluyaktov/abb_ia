@@ -1,4 +1,5 @@
 bin/
 mock/
 output/
+dist/
 __debug_bin

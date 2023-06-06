@@ -21,7 +21,7 @@ builds:
         goarch: arm64
     main: ./main.go
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
-    binary: dbui
+    binary: abcIA
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
     replacements:
