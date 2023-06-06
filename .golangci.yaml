@@ -1,0 +1,21 @@
+timeout: 3m
+
+linters:
+  disable-all: true
+  enable:
+    - goimports
+    - golint
+    - gofmt
+    - bodyclose
+    - gosimple
+    - prealloc
+    - unused
+    - deadcode
+    - govet
+    - varcheck
+    - ineffassign
+    - whitespace
+    - godot
+
+issues:
+  exclude-use-default: false

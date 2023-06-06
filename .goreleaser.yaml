@@ -1,0 +1,107 @@
+project_name: audiobook_creator_IA
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - 386
+      - arm
+      - arm64
+    goarm:
+      - 6
+    ignore:
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+    main: ./main.go
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    binary: dbui
+archives:
+  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: x86
+      amd64: x86_64
+snapshot:
+  name_template: SNAPSHOT-{{ .Commit }}
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
+signs:
+  - cmd: gpg
+    args:
+      - --output
+      - $signature
+      - --detach-sig
+      - $artifact
+    signature: ${artifact}.sig
+    artifacts: none
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^conf:'
+# release:
+#   github:
+#     owner: Vladimir Poluyaktov
+#     name: audiobook_creator_IA
+#   draft: true
+#   prerelease: auto
+#   discussion_category_name: General
+#   header: |
+#     ## Features
+
+#     List of newly introduced features:
+
+#     - Item 1
+#     - Item 2
+
+#     ## Bug fixes
+
+#     List of fixed issues:
+
+#     - Item 1
+#     - Item 2
+
+#     ## Code changes
+
+#     - Item 1
+#     - Item 2
+#   footer: |
+#     ## Thanks!
+
+#     Read more on our documentation page: https://github.com/vpoluyaktov/audioboook_creator_IA 
+# brews:
+#   - tap:
+#       owner: Vladimir Poluyaktov
+#       name: dbui
+#     name: dbui
+#     description: "Create an audiobook in .m4b format from an Internet Archive collection."
+#     homepage: "https://github.com/vpoluyaktov/audioboook_creator_IA"
+#     license: "Apache 2.0"
+#     folder: Formula
+#     commit_author:
+#       name: Vladimir Poluyaktov
+#       email: vpoluyaktov@gmail.com
+#     install: bin.install "audiobook_creator_IA"
+#     test: |
+#       system "#{bin/audiobook_creator_IA}"
+# nfpms:
+#   - maintainer: Vladimir Poluyaktov
+#     description: "Create an audiobook in .m4b format from an Internet Archive collection."
+#     homepage: "https://github.com/vpoluyaktov/audioboook_creator_IA"
+#     license: "Apache 2.0"
+#     formats:
+#       - deb
+#       - rpm
+#     replacements:
+#       darwin: Darwin
