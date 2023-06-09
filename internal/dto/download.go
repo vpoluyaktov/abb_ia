@@ -30,11 +30,12 @@ func (c *DownloadFileProgress) String() string {
 
 type DownloadProgress struct {
 	Percent int
-	Bytes   string  // total bytes downloaded
-	Speed   string  // download speed bytes/s
-	ETA     string  // ETA in seconds
+	Files   string    // files downloaded
+	Bytes   string // total bytes downloaded
+	Speed   string // download speed bytes/s
+	ETA     string // ETA in seconds
 }
 
 func (c *DownloadProgress) String() string {
-	return fmt.Sprintf("DownloadProgress: %d, %s, %s, %s", c.Percent, c.Bytes, c.Speed, c.ETA)
+	return fmt.Sprintf("DownloadProgress: %d, %s, %s, %s, %s", c.Percent, c.Files, c.Bytes, c.Speed, c.ETA)
 }

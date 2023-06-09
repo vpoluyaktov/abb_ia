@@ -83,6 +83,9 @@ func (t *table) clear() {
 
 // TODO - implement more accurate calculation
 func (t *table) recalculateColumnWidths() {
+	if len(t.colWeight) == 0 {
+		return
+	}
 	allWeights := 0
 	for _, w := range t.colWeight {
 		allWeights += w
@@ -97,7 +100,14 @@ func (t *table) recalculateColumnWidths() {
 }
 
 func (t *table) getColumnWidth(col int) int {
+	if len(t.colWidth) == 0 {
+		t.recalculateColumnWidths()
+	}
 	return t.colWidth[col]
+}
+
+func (t *table) GetRowCount()int {
+	return t.t.GetColumnCount()
 }
 
 // //////////////////////////////////////////////////////////////

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -89,15 +90,20 @@ func (c *DownloadController) updateFileProgress(fileId int, fileName string, pos
 }
 
 func (c *DownloadController) updateDownloadProgress() {
-	var percent int = 0
+	var percent int = -1
+	var files int = 0
 	var speed int64 = 0
 	var eta float64 = 0
 	var bytes int64 = 0
 
 	for !c.stopFlag && percent <= 100 {
 		var totalPercent int = 0
+		files = 0
 		for _, p := range c.progress {
 			totalPercent += p
+			if p == 100 {
+				files++
+			}
 		}
 		p := int(totalPercent / len(c.progress))
 
@@ -113,12 +119,16 @@ func (c *DownloadController) updateDownloadProgress() {
 			duration := time.Since(c.startTime).Seconds()
 			speed = int64(float64(bytes) / duration)
 			eta = (100 / (float64(percent) / duration)) - duration
+			if eta < 0 || eta > (60 * 60 * 24 * 365) {
+				eta = 0
+			}
 
 			bytesH, _ := utils.BytesToHuman(bytes)
+			filesH := fmt.Sprintf("%d/%d", files, len(c.item.Files))
 			speedH, _ := utils.SpeedToHuman(speed)
 			etaH, _ := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{Percent: percent, Bytes: bytesH, Speed: speedH, ETA: etaH}, true)
+			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, true)
 		}
 		time.Sleep(mq.PullFrequency)
 	}
