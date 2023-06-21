@@ -6,12 +6,11 @@ import (
 	"strings"
 
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
 
-type DownloadPage struct {
+type EncodingPage struct {
 	mq            *mq.Dispatcher
 	grid          *tview.Grid
 	infoPanel     *infoPanel
@@ -19,10 +18,10 @@ type DownloadPage struct {
 	progressTable *table
 }
 
-func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
-	p := &DownloadPage{}
+func newEncodingPage(dispatcher *mq.Dispatcher) *EncodingPage {
+	p := &EncodingPage{}
 	p.mq = dispatcher
-	p.mq.RegisterListener(mq.DownloadPage, p.dispatchMessage)
+	p.mq.RegisterListener(mq.EncodingPage, p.dispatchMessage)
 
 	p.grid = tview.NewGrid()
 	p.grid.SetRows(7, -1, 4)
@@ -43,25 +42,25 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	infoSection.AddItem(f.f, 0, 1, 1, 1, 0, 0, false)
 	p.grid.AddItem(infoSection, 0, 0, 1, 1, 0, 0, false)
 
-	// files downnload section
+	// files re-encoding section
 	filesSection := tview.NewGrid()
 	filesSection.SetColumns(-1)
-	filesSection.SetTitle(" Downloading .mp3 files... ")
+	filesSection.SetTitle(" Encodinging .mp3 files... ")
 	filesSection.SetTitleAlign(tview.AlignLeft)
 	filesSection.SetBorder(true)
 
 	p.filesTable = newTable()
-	p.filesTable.setHeaders("  # ", "File name", "Format", "Duration", "Total Size", "Download progress")
+	p.filesTable.setHeaders("  # ", "File name", "Format", "Duration", "Total Size", "Encoding progress")
 	p.filesTable.setWeights(1, 2, 1, 1, 1, 5)
 	p.filesTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	filesSection.AddItem(p.filesTable.t, 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(filesSection, 1, 0, 1, 1, 0, 0, true)
 
-	// download progress section
+	// encoding progress section
 	progressSection := tview.NewGrid()
 	progressSection.SetColumns(-1)
 	progressSection.SetBorder(true)
-	progressSection.SetTitle(" Download progress: ")
+	progressSection.SetTitle(" Encoding progress: ")
 	progressSection.SetTitleAlign(tview.AlignLeft)
 	p.progressTable = newTable()
 	p.progressTable.setWeights(1)
@@ -73,29 +72,27 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	return p
 }
 
-func (p *DownloadPage) checkMQ() {
-	m := p.mq.GetMessage(mq.DownloadPage)
+func (p *EncodingPage) checkMQ() {
+	m := p.mq.GetMessage(mq.EncodingPage)
 	if m != nil {
 		p.dispatchMessage(m)
 	}
 }
 
-func (p *DownloadPage) dispatchMessage(m *mq.Message) {
+func (p *EncodingPage) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.DisplayBookInfoCommand:
 		p.displayBookInfo(dto.Audiobook)
-	case *dto.DownloadFileProgress:
+	case *dto.EncodingFileProgress:
 		p.updateFileProgress(dto)
-	case *dto.DownloadProgress:
+	case *dto.EncodingProgress:
 		p.updateTotalProgress(dto)
-	case *dto.DownloadComplete:
-		p.downloadComplete(dto)
 	default:
-		m.UnsupportedTypeError(mq.DownloadPage)
+		m.UnsupportedTypeError(mq.EncodingPage)
 	}
 }
 
-func (p *DownloadPage) displayBookInfo(ab *dto.Audiobook) {
+func (p *EncodingPage) displayBookInfo(ab *dto.Audiobook) {
 	p.infoPanel.clear()
 	// p.infoPanel.appendRow("", "")
 	p.infoPanel.appendRow("Title:", ab.Title)
@@ -110,21 +107,21 @@ func (p *DownloadPage) displayBookInfo(ab *dto.Audiobook) {
 		p.filesTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, f.Format, f.LengthH, f.SizeH, "")
 	}
 	p.filesTable.t.ScrollToBeginning()
-	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.filesTable.t}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	p.mq.SendMessage(mq.EncodingPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.filesTable.t}, true)
+	p.mq.SendMessage(mq.EncodingPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }
 
-func (p *DownloadPage) stopConfirmation() {
-	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop the download?", p.stopDownload, func() {})
+func (p *EncodingPage) stopConfirmation() {
+	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop encoding?", p.stopEncoding, func() {})
 }
 
-func (p *DownloadPage) stopDownload() {
-	// Stop the download here
-	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, &dto.StopCommand{Process: "Download", Reason: "User request"}, false)
-	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+func (p *EncodingPage) stopEncoding() {
+	// Stop the encoding here
+	p.mq.SendMessage(mq.EncodingPage, mq.EncodingController, &dto.StopCommand{Process: "Encoding", Reason: "User request"}, false)
+	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }
 
-func (p *DownloadPage) updateFileProgress(dp *dto.DownloadFileProgress) {
+func (p *EncodingPage) updateFileProgress(dp *dto.EncodingFileProgress) {
 	col := 5
 	w := p.filesTable.getColumnWidth(col) - 5
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
@@ -134,11 +131,11 @@ func (p *DownloadPage) updateFileProgress(dp *dto.DownloadFileProgress) {
 	cell.SetExpansion(0)
 	cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	// p.downloadTable.t.Select(dp.FileId+1, col)
-	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	// p.encodingTable.t.Select(dp.FileId+1, col)
+	p.mq.SendMessage(mq.EncodingPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }
 
-func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
+func (p *EncodingPage) updateTotalProgress(dp *dto.EncodingProgress) {
 	if p.progressTable.GetRowCount() == 0 {
 		for i := 0; i < 2; i++ {
 			p.progressTable.appendRow("")
@@ -146,7 +143,7 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
 	}
 	infoCell := p.progressTable.t.GetCell(0, 0)
 	progressCell := p.progressTable.t.GetCell(1, 0)
-	infoCell.Text = fmt.Sprintf("  [yellow]Duration: [white]%10s | [yellow]Downloaded: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Duration, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
+	infoCell.Text = fmt.Sprintf("  [yellow]Duration: [white]%10s | [yellow]Encodinged: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Duration, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
 	w := p.progressTable.getColumnWidth(col) - 5
@@ -156,15 +153,5 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
 	// progressCell.SetExpansion(0)
 	// progressCell.SetMaxWidth(0)
 	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
-}
-
-func (p *DownloadPage) downloadComplete(c *dto.DownloadComplete) {
-	if config.IsReEncodeFiles() {
-	p.mq.SendMessage(mq.DownloadPage, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
-	} else {
-
-	}
+	p.mq.SendMessage(mq.EncodingPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }

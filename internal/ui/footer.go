@@ -26,8 +26,8 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f.busyIndicator.SetText("")
 	f.busyIndicator.SetTextAlign(tview.AlignCenter)
 	f.busyIndicator.SetBorder(false)
-	f.busyIndicator.SetTextColor(footerFgColor)
-	f.busyIndicator.SetBackgroundColor(footerBgColor)
+	f.busyIndicator.SetTextColor(busyIndicatorFgColor)
+	f.busyIndicator.SetBackgroundColor(busyIndicatorBgColor)
 
 	f.statusMessage = tview.NewTextView()
 	f.statusMessage.SetText("")
@@ -44,7 +44,7 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f.version.SetBackgroundColor(footerBgColor)
 
 	f.grid = tview.NewGrid()
-	f.grid.SetColumns(10, -1, 10)
+	f.grid.SetColumns(8, -1, 10)
 	f.grid.AddItem(f.busyIndicator, 0, 0, 1, 1, 0, 0, false)
 	f.grid.AddItem(f.statusMessage, 0, 1, 1, 1, 0, 0, false)
 	f.grid.AddItem(f.version, 0, 2, 1, 1, 0, 0, false)
@@ -78,26 +78,31 @@ func (f *footer) updateStatus(s *dto.UpdateStatus) {
 func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
 	if c.Busy {
 		f.busyFlag = true
+		f.busyIndicator.SetTextColor(busyIndicatorFgColor)
+		f.busyIndicator.SetBackgroundColor(busyIndicatorBgColor)
 		go f.updateBusyIndicator()
 	} else {
 		f.busyFlag = false
-
+		f.busyIndicator.SetText("")
+		f.busyIndicator.SetTextColor(footerFgColor)
+		f.busyIndicator.SetBackgroundColor(footerBgColor)
+		f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 	}
 }
 
 func (f *footer) updateBusyIndicator() {
-	// busyChars := []string{"[>    ]", "[ >   ]", "[  >  ]", "[   > ]", "[    >]", "[    <]", "[   < ]", "[  <  ]", "[ <   ]", "[<    ]"}
-	busyChars := []string{"[O----]", "[-O---]", "[--O--]", "[---O-]", "[----O]", "[---O-]", "[--O--]", "[-O---]"}
+	busyChars := []string{"[>    ]", "[ >   ]", "[  >  ]", "[   > ]", "[    >]", "[    <]", "[   < ]", "[  <  ]", "[ <   ]", "[<    ]"}
+	// busyChars := []string{"[O-----]", "[-O----]", "[--O---]", "[---O--]", "[----O-]", "[-----O]", "[----O-]", "[---O--]", "[--O---]", "[-O----]"}
+	// busyChars := []string{"█▒▒▒▒▒", "▒█▒▒▒▒", "▒▒█▒▒▒", "▒▒▒█▒▒", "▒▒▒▒█▒", "▒▒▒▒▒█", "▒▒▒▒█▒", "▒▒▒█▒▒", "▒▒█▒▒▒", "▒█▒▒▒▒"}
+	// busyChars := []string{"█     ", " █    ", "  █   ", "   █  ", "    █ ", "     █", "    █ ", "   █  ", "  █   ", " █    "}
 	for f.busyFlag {
 		for i := 0; i < len(busyChars); i++ {
 			f.busyIndicator.SetText(busyChars[i])
 			f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
-			time.Sleep(250 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)
 			if !f.busyFlag {
 				break
 			}
 		}
 	}
-	f.busyIndicator.SetText("")
-	f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }

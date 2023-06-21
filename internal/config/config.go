@@ -1,8 +1,6 @@
 package config
 
-import (
-
-)
+import ()
 
 // singleton
 var (
@@ -10,12 +8,14 @@ var (
 )
 
 type Config struct {
-	logFileName     string 
-	logLevel        string
-	useMock         bool
-	saveMock        bool
-	searchCondition string
+	logFileName       string
+	logLevel          string
+	useMock           bool
+	saveMock          bool
+	searchCondition   string
 	parrallelDownload bool
+	parrallelEncoding bool
+	reEncodeFiles     bool
 }
 
 func Load() {
@@ -26,6 +26,8 @@ func Load() {
 	config.saveMock = false
 	config.searchCondition = ""
 	config.parrallelDownload = false
+	config.parrallelEncoding = false
+	config.reEncodeFiles = true
 
 	// read config file here
 
@@ -79,3 +81,20 @@ func SaveParallelDownload(b bool) {
 func IsParallelDownload() bool {
 	return configInstance.parrallelDownload
 }
+
+func SaveParallelEncodingd(b bool) {
+	configInstance.parrallelEncoding = b
+}
+
+func IsParallelEncoding() bool {
+	return configInstance.parrallelEncoding
+}
+
+func SaveReEncodeFiles(b bool) {
+	configInstance.reEncodeFiles = b
+}
+
+func IsReEncodeFiles() bool {
+	return configInstance.reEncodeFiles
+}
+

@@ -12,12 +12,16 @@ var (
 	yellow = tcell.ColorYellow
 	black  = tcell.NewRGBColor(0, 0, 0)
 	cyan   = tcell.NewRGBColor(80, 176, 189)
+	red    = tcell.ColorRed
 
 	footerFgColor = black
 	footerBgColor = cyan
 
 	headerFgColor = black
 	headerBGColor = cyan
+
+	busyIndicatorFgColor = yellow
+	busyIndicatorBgColor  = cyan
 )
 
 func setColorTheme() {

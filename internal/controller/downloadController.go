@@ -78,6 +78,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	}
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
 }
 
 func (c *DownloadController) updateFileProgress(fileId int, fileName string, pos int64, percent int) {
@@ -123,15 +124,14 @@ func (c *DownloadController) updateDownloadProgress() {
 				eta = 0
 			}
 
+			durationH, _ := utils.SecondsToTime(duration)
 			bytesH, _ := utils.BytesToHuman(bytes)
 			filesH := fmt.Sprintf("%d/%d", files, len(c.item.Files))
 			speedH, _ := utils.SpeedToHuman(speed)
 			etaH, _ := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, true)
+			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{Duration: durationH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
 		}
 		time.Sleep(mq.PullFrequency)
 	}
-
-	// c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{}, true)
 }

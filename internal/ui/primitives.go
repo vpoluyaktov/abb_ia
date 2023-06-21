@@ -45,6 +45,7 @@ func (t *table) setHeaders(headers ...string) {
 
 func (t *table) setWeights(weights ...int) {
 	t.colWeight = weights
+	t.recalculateColumnWidths()
 }
 
 func (t *table) setAlign(aligns ...uint) {
