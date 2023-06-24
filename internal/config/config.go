@@ -8,14 +8,14 @@ var (
 )
 
 type Config struct {
-	logFileName       string
-	logLevel          string
-	useMock           bool
-	saveMock          bool
-	searchCondition   string
-	parrallelDownload bool
-	parrallelEncoding bool
-	reEncodeFiles     bool
+	logFileName        string
+	logLevel           string
+	useMock            bool
+	saveMock           bool
+	searchCondition    string
+	parrallelDownloads int
+	parrallelEncoders  int
+	reEncodeFiles      bool
 }
 
 func Load() {
@@ -25,8 +25,8 @@ func Load() {
 	config.useMock = false
 	config.saveMock = false
 	config.searchCondition = ""
-	config.parrallelDownload = false
-	config.parrallelEncoding = false
+	config.parrallelDownloads = 5
+	config.parrallelEncoders = 5
 	config.reEncodeFiles = true
 
 	// read config file here
@@ -74,20 +74,20 @@ func SearchCondition() string {
 	return configInstance.searchCondition
 }
 
-func SaveParallelDownload(b bool) {
-	configInstance.parrallelDownload = b
+func SaveParallelDownloads(n int) {
+	configInstance.parrallelDownloads = n
 }
 
-func IsParallelDownload() bool {
-	return configInstance.parrallelDownload
+func GetParallelDownloads() int {
+	return configInstance.parrallelDownloads
 }
 
-func SaveParallelEncodingd(b bool) {
-	configInstance.parrallelEncoding = b
+func SaveParallelEncoders(n int) {
+	configInstance.parrallelEncoders = n
 }
 
-func IsParallelEncoding() bool {
-	return configInstance.parrallelEncoding
+func GetParallelEncoders() int {
+	return configInstance.parrallelEncoders
 }
 
 func SaveReEncodeFiles(b bool) {
@@ -97,4 +97,3 @@ func SaveReEncodeFiles(b bool) {
 func IsReEncodeFiles() bool {
 	return configInstance.reEncodeFiles
 }
-

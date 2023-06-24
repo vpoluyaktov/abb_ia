@@ -65,17 +65,15 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.stopFlag = false
 	c.progress = make([]int, len(c.item.Files))
 	c.downloaded = make([]int64, len(c.item.Files))
-	go c.updateDownloadProgress()
+	jd := utils.NewJobDispatcher(config.GetParallelDownloads())
 	for i, f := range c.item.Files {
-		if c.stopFlag {
-			break
-		}
-		if config.IsParallelDownload() {
-			go ia.DownloadFile(outputDir, c.item.Server, c.item.Dir, f.Name, i, c.updateFileProgress)
-		} else {
-			ia.DownloadFile(outputDir, c.item.Server, c.item.Dir, f.Name, i, c.updateFileProgress)
-		}
+		jd.AddJob(i, ia.DownloadFile, outputDir, c.item.Server, c.item.Dir, f.Name, i, c.updateFileProgress)
 	}
+	// if c.stopFlag {
+	// 	break
+	// }
+	go c.updateDownloadProgress()
+	jd.Start()
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)

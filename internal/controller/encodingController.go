@@ -15,7 +15,6 @@ import (
 
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
@@ -78,11 +77,7 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 		if c.stopFlag {
 			break
 		}
-		if config.IsParallelEncoding() {
-			go c.encodeFile(i, outputDir, f.Name, c.updateFileProgress)
-		} else {
-			c.encodeFile(i, outputDir, f.Name, c.updateFileProgress)
-		}
+		c.encodeFile(i, outputDir, f.Name, c.updateFileProgress)
 	}
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
@@ -91,25 +86,25 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 type Fn func(int, string, int64, int)
 
 func (c *EncodingController) encodeFile(id int, dir string, file string, updateProgress Fn) {
-	
+
 	filePath := filepath.Join(dir, file)
 	tmpFile := filePath + ".tmp"
 	a, err := ffmpeg.Probe(filePath)
 	if err != nil {
-		panic(err)
+		logger.Error("FFMPEG Probe Error: " + err.Error())
 	}
 	totalDuration, err := probeDuration(a)
 	if err != nil {
-		panic(err)
+		logger.Error("FFMPEG ProbeDuration Error: " + err.Error())
 	}
-
+	TempSock(totalDuration)
 	err = ffmpeg.Input(filePath).
-		Output(tmpFile, ffmpeg.KwArgs{"c:v": "libx264", "preset": "veryslow"}).
-		GlobalArgs("-progress", "unix://"+TempSock(totalDuration)).
+		Output(tmpFile, ffmpeg.KwArgs{"c:v": "libx264", "preset": "veryslow", "f": "mp3"}).
+		GlobalArgs("-progress", "http://127.0.0.1:31001").
 		OverWriteOutput().
 		Run()
 	if err != nil {
-		panic(err)
+		logger.Error("FFMPEG Error: " + err.Error())
 	}
 }
 
@@ -170,22 +165,21 @@ func (c *EncodingController) updateEncodingProgress() {
 	// c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingComplete{}, true)
 }
 
-
 func TempSock(totalDuration float64) string {
 	// serve
 
 	rand.Seed(time.Now().Unix())
 	sockFileName := path.Join(os.TempDir(), fmt.Sprintf("%d_sock", rand.Int()))
-	l, err := net.Listen("unix", sockFileName)
+	l, err := net.Listen("tcp", "127.0.0.1:31001")
 	if err != nil {
-		panic(err)
+		logger.Error("Encoding progress listener Error: " + err.Error())
 	}
 
 	go func() {
 		re := regexp.MustCompile(`out_time_ms=(\d+)`)
 		fd, err := l.Accept()
 		if err != nil {
-			logger.Fatal("Accept error: " + err.Error())
+			logger.Error("Encoding progress listener Error: " + err.Error())
 		}
 		buf := make([]byte, 16)
 		data := ""
