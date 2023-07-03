@@ -17,11 +17,11 @@ type DownloadController struct {
 	mq        *mq.Dispatcher
 	item      *dto.IAItem
 	startTime time.Time
-	files     []file
+	files     []fileDownload
 	stopFlag  bool
 }
 
-type file struct {
+type fileDownload struct {
 	fileId          int
 	fileSize        int64
 	bytesDownloaded int64
@@ -69,7 +69,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	// download files
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
-	c.files = make([]file, len(c.item.Files))
+	c.files = make([]fileDownload, len(c.item.Files))
 	jd := utils.NewJobDispatcher(config.GetParallelDownloads())
 	for i, f := range c.item.Files {
 		jd.AddJob(i, ia.DownloadFile, outputDir, c.item.Server, c.item.Dir, f.Name, i, f.Size, c.updateFileProgress)

@@ -152,7 +152,7 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
 	w := p.progressTable.getColumnWidth(col) - 5
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+	progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 	// progressCell.SetExpansion(0)
 	// progressCell.SetMaxWidth(0)
 	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)

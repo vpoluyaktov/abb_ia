@@ -21,14 +21,21 @@ func (c *EncodingFileProgress) String() string {
 }
 
 type EncodingProgress struct {
-	Duration string // time since started
-	Percent  int
-	Files    string // files downloaded
-	Bytes    string // total bytes downloaded
-	Speed    string // download speed bytes/s
-	ETA      string // ETA in seconds
+	Elapsed string // time since started
+	Percent int
+	Files   string // files encoded
+	Speed   string // download speed bytes/s
+	ETA     string // ETA in seconds
 }
 
 func (c *EncodingProgress) String() string {
 	return fmt.Sprintf("EncodingProgress: %d", c.Percent)
+}
+
+type EncodingComplete struct {
+	Audiobook *Audiobook
+}
+
+func (c *EncodingComplete) String() string {
+	return fmt.Sprintf("EncodingComplete: %s", c.Audiobook.String())
 }

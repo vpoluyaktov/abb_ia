@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 )
@@ -87,6 +88,8 @@ func (p *EncodingPage) dispatchMessage(m *mq.Message) {
 		p.updateFileProgress(dto)
 	case *dto.EncodingProgress:
 		p.updateTotalProgress(dto)
+	case *dto.EncodingComplete:
+		p.encodingComplete(dto)
 	default:
 		m.UnsupportedTypeError(mq.EncodingPage)
 	}
@@ -143,15 +146,25 @@ func (p *EncodingPage) updateTotalProgress(dp *dto.EncodingProgress) {
 	}
 	infoCell := p.progressTable.t.GetCell(0, 0)
 	progressCell := p.progressTable.t.GetCell(1, 0)
-	infoCell.Text = fmt.Sprintf("  [yellow]Duration: [white]%10s | [yellow]Encodinged: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Duration, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
+	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
 	w := p.progressTable.getColumnWidth(col) - 5
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+	progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 	// progressCell.SetExpansion(0)
 	// progressCell.SetMaxWidth(0)
 	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 	p.mq.SendMessage(mq.EncodingPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+}
+
+func (p *EncodingPage) encodingComplete(c *dto.EncodingComplete) {
+	if config.IsReEncodeFiles() {
+	p.mq.SendMessage(mq.DownloadPage, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
+	p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
+	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
+	} else {
+
+	}
 }

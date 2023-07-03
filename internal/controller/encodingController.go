@@ -3,10 +3,8 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -15,6 +13,7 @@ import (
 
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
@@ -22,12 +21,16 @@ import (
 )
 
 type EncodingController struct {
-	mq         *mq.Dispatcher
-	item       *dto.IAItem
-	startTime  time.Time
-	progress   []int
-	downloaded []int64
-	stopFlag   bool
+	mq        *mq.Dispatcher
+	item      *dto.IAItem
+	startTime time.Time
+	files     []fileEncode
+	stopFlag  bool
+}
+
+type fileEncode struct {
+	fileId   int
+	progress int
 }
 
 func NewEncodingController(dispatcher *mq.Dispatcher) *EncodingController {
@@ -70,146 +73,151 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 
 	// re-encode files
 	c.stopFlag = false
-	c.progress = make([]int, len(c.item.Files))
-	c.downloaded = make([]int64, len(c.item.Files))
-	go c.updateEncodingProgress()
+	c.files = make([]fileEncode, len(c.item.Files))
+	jd := utils.NewJobDispatcher(config.GetParallelEncoders())
 	for i, f := range c.item.Files {
-		if c.stopFlag {
-			break
-		}
-		c.encodeFile(i, outputDir, f.Name, c.updateFileProgress)
+		jd.AddJob(i, c.encodeFile, i, outputDir, f.Name)
 	}
+	go c.updateTotalProgress()
+	// if c.stopFlag {
+	// 	break
+	// }
+
+	jd.Start()
+
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingComplete{Audiobook: cmd.Audiobook}, true)
 }
 
-type Fn func(int, string, int64, int)
+func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName string) {
 
-func (c *EncodingController) encodeFile(id int, dir string, file string, updateProgress Fn) {
-
-	filePath := filepath.Join(dir, file)
+	filePath := filepath.Join(outputDir, fileName)
 	tmpFile := filePath + ".tmp"
 	a, err := ffmpeg.Probe(filePath)
 	if err != nil {
 		logger.Error("FFMPEG Probe Error: " + err.Error())
 	}
+
 	totalDuration, err := probeDuration(a)
 	if err != nil {
 		logger.Error("FFMPEG ProbeDuration Error: " + err.Error())
 	}
-	TempSock(totalDuration)
+
+	// start progress listener
+	l, port := c.startProgressListener(fileId)
+	go c.updateFileProgress(fileId, fileName, totalDuration, l)
+
+	// start ffmpeg process
 	err = ffmpeg.Input(filePath).
 		Output(tmpFile, ffmpeg.KwArgs{"c:v": "libx264", "preset": "veryslow", "f": "mp3"}).
-		GlobalArgs("-progress", "http://127.0.0.1:31001").
+		GlobalArgs("-progress", "http://127.0.0.1:"+strconv.Itoa(port)).
 		OverWriteOutput().
 		Run()
 	if err != nil {
 		logger.Error("FFMPEG Error: " + err.Error())
+	} else {
+		err := os.Remove(filePath)
+		if err != nil {
+			logger.Error("Can't delete file " + filePath + ": " + err.Error())
+		} else {
+		  // os.Rename(tmpFile, filePath)
+		}
 	}
 }
 
-func (c *EncodingController) updateFileProgress(fileId int, fileName string, pos int64, percent int) {
-	if c.progress[fileId] != percent {
-		// sent a message only if progress changed
-		c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
+func (c *EncodingController) startProgressListener(fileId int) (net.Listener, int) {
+
+	basePortNumber := 31000
+	portNumber := basePortNumber + fileId
+
+	l, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(portNumber))
+	if err != nil {
+		logger.Error("Encoding progress: Start listener error: " + err.Error())
 	}
-	c.progress[fileId] = percent
-	c.downloaded[fileId] = pos
+	return l, portNumber
 }
 
-func (c *EncodingController) updateEncodingProgress() {
+func (c *EncodingController) updateFileProgress(fileId int, fileName string, totalDuration float64, l net.Listener) {
+
+	re := regexp.MustCompile(`out_time_ms=(\d+)`)
+	fd, err := l.Accept()
+	if err != nil {
+		logger.Error("Encoding progress: Listener Error: " + err.Error())
+	}
+	buf := make([]byte, 16)
+	data := ""
+	percent := 0
+	for {
+		_, err := fd.Read(buf)
+		if err != nil {
+			return
+		}
+		data += string(buf)
+		a := re.FindAllStringSubmatch(data, -1)
+		p := 0
+		pstr := ""
+		if len(a) > 0 && len(a[len(a)-1]) > 0 {
+			c, _ := strconv.Atoi(a[len(a)-1][len(a[len(a)-1])-1])
+			pstr = fmt.Sprintf("%.2f", float64(c)/totalDuration/1000000)
+		}
+		if strings.Contains(data, "progress=end") {
+			p = 100
+		}
+		if pstr == "" {
+			p = 0
+		}
+		pflt, err := strconv.ParseFloat(pstr, 64)
+		if err != nil {
+			p = 0
+		} else {
+			p = int(pflt * 100)
+		}
+
+		if p != percent {
+			percent = p
+			// sent a message only if progress changed
+			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
+		}
+		c.files[fileId].fileId = fileId
+		c.files[fileId].progress = percent
+	}
+}
+
+func (c *EncodingController) updateTotalProgress() {
 	var percent int = -1
-	var files int = 0
-	var speed int64 = 0
-	var eta float64 = 0
-	var bytes int64 = 0
 
 	for !c.stopFlag && percent <= 100 {
 		var totalPercent int = 0
-		files = 0
-		for _, p := range c.progress {
-			totalPercent += p
-			if p == 100 {
+		files := 0
+		for _, f := range c.files {
+			totalPercent += f.progress
+			if f.progress == 100 {
 				files++
 			}
 		}
-		p := int(totalPercent / len(c.progress))
+		p := int(totalPercent / len(c.files))
 
 		if percent != p {
 			// sent a message only if progress changed
 			percent = p
 
-			bytes = 0
-			for _, b := range c.downloaded {
-				bytes += b
-			}
-
-			duration := time.Since(c.startTime).Seconds()
-			speed = int64(float64(bytes) / duration)
-			eta = (100 / (float64(percent) / duration)) - duration
+			elapsed := time.Since(c.startTime).Seconds()
+			speed := int64(float64(percent) / elapsed)
+			eta := (100 / (float64(percent) / elapsed)) - elapsed
 			if eta < 0 || eta > (60*60*24*365) {
 				eta = 0
 			}
 
-			durationH, _ := utils.SecondsToTime(duration)
-			bytesH, _ := utils.BytesToHuman(bytes)
+			elapsedH, _ := utils.SecondsToTime(elapsed)
 			filesH := fmt.Sprintf("%d/%d", files, len(c.item.Files))
 			speedH, _ := utils.SpeedToHuman(speed)
 			etaH, _ := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingProgress{Duration: durationH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, true)
+			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, true)
 		}
 		time.Sleep(mq.PullFrequency)
 	}
-
-	// c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingComplete{}, true)
-}
-
-func TempSock(totalDuration float64) string {
-	// serve
-
-	rand.Seed(time.Now().Unix())
-	sockFileName := path.Join(os.TempDir(), fmt.Sprintf("%d_sock", rand.Int()))
-	l, err := net.Listen("tcp", "127.0.0.1:31001")
-	if err != nil {
-		logger.Error("Encoding progress listener Error: " + err.Error())
-	}
-
-	go func() {
-		re := regexp.MustCompile(`out_time_ms=(\d+)`)
-		fd, err := l.Accept()
-		if err != nil {
-			logger.Error("Encoding progress listener Error: " + err.Error())
-		}
-		buf := make([]byte, 16)
-		data := ""
-		progress := ""
-		for {
-			_, err := fd.Read(buf)
-			if err != nil {
-				return
-			}
-			data += string(buf)
-			a := re.FindAllStringSubmatch(data, -1)
-			cp := ""
-			if len(a) > 0 && len(a[len(a)-1]) > 0 {
-				c, _ := strconv.Atoi(a[len(a)-1][len(a[len(a)-1])-1])
-				cp = fmt.Sprintf("%.2f", float64(c)/totalDuration/1000000)
-			}
-			if strings.Contains(data, "progress=end") {
-				cp = "done"
-			}
-			if cp == "" {
-				cp = ".0"
-			}
-			if cp != progress {
-				progress = cp
-				logger.Debug("Encoding progress: " + progress)
-			}
-		}
-	}()
-
-	return sockFileName
 }
 
 type probeFormat struct {
