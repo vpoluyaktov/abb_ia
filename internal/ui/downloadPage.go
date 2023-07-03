@@ -146,7 +146,7 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
 	}
 	infoCell := p.progressTable.t.GetCell(0, 0)
 	progressCell := p.progressTable.t.GetCell(1, 0)
-	infoCell.Text = fmt.Sprintf("  [yellow]Duration: [white]%10s | [yellow]Downloaded: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Duration, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
+	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Downloaded: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
 	w := p.progressTable.getColumnWidth(col) - 5

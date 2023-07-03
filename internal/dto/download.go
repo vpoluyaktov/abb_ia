@@ -29,12 +29,12 @@ func (c *DownloadFileProgress) String() string {
 }
 
 type DownloadProgress struct {
-	Duration string // time since started
-	Percent  int
-	Files    string // files downloaded
-	Bytes    string // total bytes downloaded
-	Speed    string // download speed bytes/s
-	ETA      string // ETA in seconds
+	Elapsed string // time since started
+	Percent int
+	Files   string // files downloaded
+	Bytes   string // total bytes downloaded
+	Speed   string // download speed bytes/s
+	ETA     string // ETA in seconds
 }
 
 func (c *DownloadProgress) String() string {

@@ -62,9 +62,9 @@ func TestDownloadItem(t *testing.T) {
 	outputDir := "/tmp/audiobook_creator_IA"
 
 	ia := ia_client.New(false, false)
-	ia.DownloadFile(outputDir, server, dir, file, 1, UpdateProgress)
+	ia.DownloadFile(outputDir, server, dir, file, 1, 1024,  UpdateProgress)
 }
 
-func UpdateProgress(fileId int, fileName string, pos int64, percent int) {
+func UpdateProgress(fileId int, fileName string, size int64, pos int64, percent int) {
 	fmt.Printf("Downloading... %d%%\n", percent)
 }

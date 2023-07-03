@@ -27,7 +27,7 @@ func Load() {
 	config.searchCondition = ""
 	config.parrallelDownloads = 5
 	config.parrallelEncoders = 5
-	config.reEncodeFiles = true
+	config.reEncodeFiles = false
 
 	// read config file here
 

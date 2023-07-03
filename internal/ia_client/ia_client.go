@@ -17,7 +17,7 @@ import (
 const (
 	IA_BASE_URL     = "https://archive.org"
 	MAX_RESULT_ROWS = 25
-	MOCK_DIR = "mock"
+	MOCK_DIR        = "mock"
 )
 
 type IAClient struct {
@@ -27,7 +27,7 @@ type IAClient struct {
 }
 
 func New(useMock bool, saveMock bool) *IAClient {
-	client :=  &IAClient{}
+	client := &IAClient{}
 	client.loadMockResult = useMock
 	client.saveMockResult = saveMock
 
@@ -123,12 +123,12 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 	return result
 }
 
-func (client *IAClient) DownloadFile(outputDir string, server string, dir string, fileName string, fileId int, updateProgress Fn) {
+func (client *IAClient) DownloadFile(outputDir string, server string, dir string, fileName string, fileId int, estimatedSize int64, updateProgress Fn) {
 
 	if client.loadMockResult {
 		delay := time.Duration(rand.Intn(100))
 		for percent := 0; percent <= 100; percent++ {
-			updateProgress(fileId, fileName, int64(percent * 1024 + rand.Intn(1024)), percent)
+			updateProgress(fileId, fileName, estimatedSize, int64(float32(estimatedSize)*float32(percent)/100), percent)
 			time.Sleep(delay * time.Millisecond)
 		}
 		return
@@ -154,7 +154,7 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 	defer f.Close()
 
 	progressReader := &ProgressReader{
-		FileId: fileId,
+		FileId:   fileId,
 		FileName: fileName,
 		Reader:   resp.Body,
 		Size:     resp.ContentLength,
@@ -164,6 +164,12 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 	if _, err := io.Copy(f, progressReader); err != nil {
 		logger.Fatal("Error while downloading: " + err.Error())
 	}
+
+	// fix incorrect ContentLength problem 
+	if !client.loadMockResult { 
+		updateProgress(fileId, fileName, resp.ContentLength, resp.ContentLength, 100)
+	}
+
 	os.Rename(tempPath, outPath)
 	logger.Debug(fileName + " downloaded to " + outPath)
 }

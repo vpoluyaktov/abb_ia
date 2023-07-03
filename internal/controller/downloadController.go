@@ -14,12 +14,18 @@ import (
 )
 
 type DownloadController struct {
-	mq         *mq.Dispatcher
-	item       *dto.IAItem
-	startTime  time.Time
-	progress   []int
-	downloaded []int64
-	stopFlag   bool
+	mq        *mq.Dispatcher
+	item      *dto.IAItem
+	startTime time.Time
+	files     []file
+	stopFlag  bool
+}
+
+type file struct {
+	fileId          int
+	fileSize        int64
+	bytesDownloaded int64
+	progress        int
 }
 
 func NewDownloadController(dispatcher *mq.Dispatcher) *DownloadController {
@@ -63,72 +69,77 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	// download files
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
-	c.progress = make([]int, len(c.item.Files))
-	c.downloaded = make([]int64, len(c.item.Files))
+	c.files = make([]file, len(c.item.Files))
 	jd := utils.NewJobDispatcher(config.GetParallelDownloads())
 	for i, f := range c.item.Files {
-		jd.AddJob(i, ia.DownloadFile, outputDir, c.item.Server, c.item.Dir, f.Name, i, c.updateFileProgress)
+		jd.AddJob(i, ia.DownloadFile, outputDir, c.item.Server, c.item.Dir, f.Name, i, f.Size, c.updateFileProgress)
 	}
+	go c.updateTotalProgress()
 	// if c.stopFlag {
 	// 	break
 	// }
-	go c.updateDownloadProgress()
+
 	jd.Start()
+
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
 }
 
-func (c *DownloadController) updateFileProgress(fileId int, fileName string, pos int64, percent int) {
-	if c.progress[fileId] != percent {
+func (c *DownloadController) updateFileProgress(fileId int, fileName string, size int64, pos int64, percent int) {
+	if c.files[fileId].progress != percent {
 		// sent a message only if progress changed
-		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
+		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
 	}
-	c.progress[fileId] = percent
-	c.downloaded[fileId] = pos
+	c.files[fileId].fileId = fileId
+	c.files[fileId].fileSize = size
+	c.files[fileId].bytesDownloaded = pos
+	c.files[fileId].progress = percent
 }
 
-func (c *DownloadController) updateDownloadProgress() {
+func (c *DownloadController) updateTotalProgress() {
 	var percent int = -1
-	var files int = 0
-	var speed int64 = 0
-	var eta float64 = 0
-	var bytes int64 = 0
 
 	for !c.stopFlag && percent <= 100 {
-		var totalPercent int = 0
-		files = 0
-		for _, p := range c.progress {
-			totalPercent += p
-			if p == 100 {
-				files++
+		var totalSize = c.item.TotalSize
+		var totalBytesDownloaded int64 = 0
+		filesDownloaded := 0
+		for _, f := range c.files {
+			totalBytesDownloaded += f.bytesDownloaded
+			if f.progress == 100 {
+				filesDownloaded++
 			}
 		}
-		p := int(totalPercent / len(c.progress))
+
+		var p int = 0
+		if totalSize > 0 {
+			p = int(float64(totalBytesDownloaded)/float64(totalSize) * 100)
+		}
+
+		// fix wrong file size returned by IA metadata
+		if filesDownloaded == len(c.files) {
+			p = 100
+			totalBytesDownloaded = c.item.TotalSize
+		}
 
 		if percent != p {
 			// sent a message only if progress changed
 			percent = p
 
-			bytes = 0
-			for _, b := range c.downloaded {
-				bytes += b
-			}
-
-			duration := time.Since(c.startTime).Seconds()
-			speed = int64(float64(bytes) / duration)
-			eta = (100 / (float64(percent) / duration)) - duration
-			if eta < 0 || eta > (60 * 60 * 24 * 365) {
+			elapsed := time.Since(c.startTime).Seconds()
+			speed := int64(float64(totalBytesDownloaded) / elapsed)
+			eta := (100 / (float64(percent) / elapsed)) - elapsed
+			if eta < 0 || eta > (60*60*24*365) {
 				eta = 0
 			}
 
-			durationH, _ := utils.SecondsToTime(duration)
-			bytesH, _ := utils.BytesToHuman(bytes)
-			filesH := fmt.Sprintf("%d/%d", files, len(c.item.Files))
+			elapsedH, _ := utils.SecondsToTime(elapsed)
+			bytesH, _ := utils.BytesToHuman(totalBytesDownloaded)
+			filesH := fmt.Sprintf("%d/%d", filesDownloaded, len(c.item.Files))
 			speedH, _ := utils.SpeedToHuman(speed)
 			etaH, _ := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{Duration: durationH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
+			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
 		}
 		time.Sleep(mq.PullFrequency)
 	}

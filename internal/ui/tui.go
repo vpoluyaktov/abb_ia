@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"os"
+	"os/exec"
 	"time"
 
 	"github.com/rivo/tview"
@@ -71,6 +73,11 @@ func (ui *TUI) startEventListener() {
 }
 
 func (ui *TUI) Run() {
+	defer func() {
+		c := exec.Command("reset")
+		c.Stdout = os.Stdout
+		c.Run()
+	}()
 	go ui.startEventListener()
 	if err := ui.app.Run(); err != nil {
 		panic(err)
