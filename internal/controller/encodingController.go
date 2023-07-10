@@ -11,13 +11,12 @@ import (
 	"strings"
 	"time"
 
-	ffmpeg "github.com/u2takey/ffmpeg-go"
-
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
 	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
+	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ffmpeg"
 )
 
 type EncodingController struct {
@@ -106,13 +105,14 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 
 	// start progress listener
 	l, port := c.startProgressListener(fileId)
+	defer l.Close()
 	go c.updateFileProgress(fileId, fileName, totalDuration, l)
 
 	// start ffmpeg process
-	err = ffmpeg.Input(filePath).
-		Output(tmpFile, ffmpeg.KwArgs{"c:v": "libx264", "preset": "veryslow", "f": "mp3"}).
-		GlobalArgs("-progress", "http://127.0.0.1:"+strconv.Itoa(port)).
-		OverWriteOutput().
+	err = ffmpeg.NewFFmpeg().
+		Input(filePath, "f mp3").
+		Output(tmpFile, "c:v libx264 preset veryslow f mp3").
+		Params("-progress http://127.0.0.1:"+strconv.Itoa(port)).
 		Run()
 	if err != nil {
 		logger.Error("FFMPEG Error: " + err.Error())
