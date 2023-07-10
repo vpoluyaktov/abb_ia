@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
+	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 func TestMain(m *testing.M) {

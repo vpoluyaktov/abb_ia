@@ -4,9 +4,9 @@ import (
 	"flag"
 	"os"
 
-	"github.com/vpoluyaktov/audiobook_creator_IA/cmd"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/cmd"
+	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
 )
 
 func main() {

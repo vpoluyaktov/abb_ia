@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
 )
 
 // Check if a map contains a given key
@@ -77,7 +77,6 @@ func SpeedToHuman(b int64) (string, error) {
 	bytesH, _ := BytesToHuman(b)
 	return fmt.Sprintf("%s%s", bytesH, "/s"), nil
 }
-
 
 func FirstN(s string, n int) string {
 	if len(s) > n {

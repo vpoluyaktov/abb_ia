@@ -1,10 +1,11 @@
 package main_test
 
 import (
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
 	"os"
 	"testing"
+
+	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
 )
 
 func TestMain(m *testing.M) {

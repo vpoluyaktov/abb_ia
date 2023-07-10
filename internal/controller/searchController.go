@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ia_client"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
+	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"github.com/vpoluyaktov/abb_ia/internal/ia_client"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type SearchController struct {

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
 type components interface {

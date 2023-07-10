@@ -1,4 +1,4 @@
-module github.com/vpoluyaktov/audiobook_creator_IA
+module github.com/vpoluyaktov/abb_ia
 
 go 1.18
 

@@ -2,8 +2,8 @@ package ui
 
 import (
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
 type header struct {
@@ -15,7 +15,7 @@ func newHeader(dispatcher *mq.Dispatcher) *header {
 	h := &header{}
 	h.mq = dispatcher
 	h.view = tview.NewTextView()
-	h.view.SetText("Audiobook Creator (Internet Archive version)")
+	h.view.SetText("Audiobook Builder - Internet Archive version")
 	h.view.SetBorder(false)
 	h.view.SetTextColor(headerFgColor)
 	h.view.SetBackgroundColor(headerBGColor)
@@ -34,8 +34,8 @@ func (h *header) checkMQ() {
 func (h *header) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.DrawCommand:
-			if dto.Primitive == nil {
-			}
+		if dto.Primitive == nil {
+		}
 	default:
 		m.UnsupportedTypeError(mq.Header)
 	}

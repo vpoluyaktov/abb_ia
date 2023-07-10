@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 const (
@@ -165,8 +165,8 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 		logger.Fatal("Error while downloading: " + err.Error())
 	}
 
-	// fix incorrect ContentLength problem 
-	if !client.loadMockResult { 
+	// fix incorrect ContentLength problem
+	if !client.loadMockResult {
 		updateProgress(fileId, fileName, resp.ContentLength, resp.ContentLength, 100)
 	}
 

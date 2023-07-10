@@ -1,7 +1,5 @@
 package config
 
-import ()
-
 // singleton
 var (
 	configInstance *Config
@@ -20,7 +18,7 @@ type Config struct {
 
 func Load() {
 	config := &Config{}
-	config.logFileName = "/tmp/audiobook_creator_IA.log"
+	config.logFileName = "/tmp/abb_ia.log"
 	config.logLevel = "INFO"
 	config.useMock = false
 	config.saveMock = false

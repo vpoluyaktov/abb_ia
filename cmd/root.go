@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/controller"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ui"
+	"github.com/vpoluyaktov/abb_ia/internal/controller"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/ui"
 )
 
 func Execute() {

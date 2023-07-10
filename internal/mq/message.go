@@ -3,8 +3,8 @@ package mq
 import (
 	"fmt"
 
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
 )
 
 type Message struct {

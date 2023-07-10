@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ia_client"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"github.com/vpoluyaktov/abb_ia/internal/ia_client"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
 )
 
 const (
-	logFileName string = "/tmp/audiobook_creator_IA.test.log"
+	logFileName string = "/tmp/abb_ia.test.log"
 	logLevel           = logger.DEBUG
 )
 
@@ -59,10 +59,10 @@ func TestDownloadItem(t *testing.T) {
 	server := "ia800303.us.archive.org"
 	dir := "/21/items/OTRR_Frank_Race_Singles"
 	file := "/Frank_Race_49-xx-xx_ep13_The_Adventure_Of_The_Garrulous_Bartender_spectrogram.png"
-	outputDir := "/tmp/audiobook_creator_IA"
+	outputDir := "/tmp/abb_ia"
 
 	ia := ia_client.New(false, false)
-	ia.DownloadFile(outputDir, server, dir, file, 1, 1024,  UpdateProgress)
+	ia.DownloadFile(outputDir, server, dir, file, 1, 1024, UpdateProgress)
 }
 
 func UpdateProgress(fileId int, fileName string, size int64, pos int64, percent int) {

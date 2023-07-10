@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
 )
 
 type JobDispatcher struct {

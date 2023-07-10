@@ -1,4 +1,4 @@
-project_name: audiobook_creator_IA
+project_name: abb_ia
 before:
   hooks:
     - go mod tidy
@@ -53,7 +53,7 @@ changelog:
 # release:
 #   github:
 #     owner: Vladimir Poluyaktov
-#     name: audiobook_creator_IA
+#     name: abb_ia
 #   draft: true
 #   prerelease: auto
 #   discussion_category_name: General
@@ -92,9 +92,9 @@ changelog:
 #     commit_author:
 #       name: Vladimir Poluyaktov
 #       email: vpoluyaktov@gmail.com
-#     install: bin.install "audiobook_creator_IA"
+#     install: bin.install "abb_ia"
 #     test: |
-#       system "#{bin/audiobook_creator_IA}"
+#       system "#{bin/abb_ia}"
 # nfpms:
 #   - maintainer: Vladimir Poluyaktov
 #     description: "Create an audiobook in .m4b format from an Internet Archive collection."

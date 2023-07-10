@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
 type DownloadPage struct {
@@ -161,9 +161,9 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
 
 func (p *DownloadPage) downloadComplete(c *dto.DownloadComplete) {
 	if config.IsReEncodeFiles() {
-	p.mq.SendMessage(mq.DownloadPage, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
+		p.mq.SendMessage(mq.DownloadPage, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
 	} else {
 
 	}

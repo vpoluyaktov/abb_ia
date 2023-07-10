@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/config"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/mq"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/utils"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/ffmpeg"
+	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"github.com/vpoluyaktov/abb_ia/internal/ffmpeg"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type EncodingController struct {
@@ -112,7 +112,7 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 	err = ffmpeg.NewFFmpeg().
 		Input(filePath, "f mp3").
 		Output(tmpFile, "c:v libx264 preset veryslow f mp3").
-		Params("-progress http://127.0.0.1:"+strconv.Itoa(port)).
+		Params("-progress http://127.0.0.1:" + strconv.Itoa(port)).
 		Run()
 	if err != nil {
 		logger.Error("FFMPEG Error: " + err.Error())
@@ -121,7 +121,7 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 		if err != nil {
 			logger.Error("Can't delete file " + filePath + ": " + err.Error())
 		} else {
-		  // os.Rename(tmpFile, filePath)
+			// os.Rename(tmpFile, filePath)
 		}
 	}
 }

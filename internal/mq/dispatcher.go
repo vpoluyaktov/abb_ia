@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/dto"
-	"github.com/vpoluyaktov/audiobook_creator_IA/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
 )
 
 type Dispatcher struct {
@@ -18,7 +18,8 @@ type Dispatcher struct {
 type messageQueue struct {
 	messages *list.List
 }
-const PullFrequency = 10 * time.Millisecond  
+
+const PullFrequency = 10 * time.Millisecond
 
 type CallBackFunc func(*Message)
 
