@@ -21,15 +21,15 @@ builds:
         goarch: arm64
     main: ./main.go
     ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
-    binary: abcIA
-archives:
-  - name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: x86
-      amd64: x86_64
+    binary: abb_ia
+# archives:
+#   - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+#     replacements:
+#       darwin: Darwin
+#       linux: Linux
+#       windows: Windows
+#       386: x86
+#       amd64: x86_64
 snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
 checksum:
@@ -77,16 +77,14 @@ changelog:
 #     - Item 1
 #     - Item 2
 #   footer: |
-#     ## Thanks!
-
-#     Read more on our documentation page: https://github.com/vpoluyaktov/audioboook_creator_IA 
+#     Read more on our documentation page: https://github.com/vpoluyaktov/abb_ia
 # brews:
 #   - tap:
 #       owner: Vladimir Poluyaktov
-#       name: dbui
-#     name: dbui
-#     description: "Create an audiobook in .m4b format from an Internet Archive collection."
-#     homepage: "https://github.com/vpoluyaktov/audioboook_creator_IA"
+#       name: abb_ia
+#     name: abb_ia
+#     description: "Audiobook Builder: Create an audiobook in .m4b format from an Internet Archive collection."
+#     homepage: "https://github.com/vpoluyaktov/abb_ia"
 #     license: "Apache 2.0"
 #     folder: Formula
 #     commit_author:
@@ -97,8 +95,8 @@ changelog:
 #       system "#{bin/abb_ia}"
 # nfpms:
 #   - maintainer: Vladimir Poluyaktov
-#     description: "Create an audiobook in .m4b format from an Internet Archive collection."
-#     homepage: "https://github.com/vpoluyaktov/audioboook_creator_IA"
+#     description: "Audiobook Builder: Create an audiobook in .m4b format from an Internet Archive collection."
+#     homepage: "https://github.com/vpoluyaktov/abb_ia"
 #     license: "Apache 2.0"
 #     formats:
 #       - deb

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-goreleaser build --clean
+goreleaser build --clean --snapshot
