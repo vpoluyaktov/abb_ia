@@ -16,7 +16,7 @@ func NewArgs() *args {
 
 func (a *args) Append(arg ...string) *args {
 	for _, ar := range arg {
-		ars := strings.Split(ar, " ")
+		ars := strings.Fields(ar)
 		a.args = append(a.args, ars...)
 	}
 	return a

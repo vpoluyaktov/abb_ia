@@ -2,7 +2,6 @@ package ffmpeg
 
 import (
 	"os/exec"
-	"strings"
 
 	"github.com/vpoluyaktov/abb_ia/internal/logger"
 )
@@ -68,12 +67,13 @@ func (f *FFmpeg) Overwrite(b bool) *FFmpeg {
 func (f *FFmpeg) Run() (string, *exitErr) {
 	cmd := "ffmpeg"
 	args := NewArgs().
-		Append("-i", f.input.fileName, f.input.args).
-		Append(f.params.args).
 		Append("-hide_banner").
-		Append(f.output.fileName, f.output.args)
-	logger.Debug("FFMPEG cmd: " + cmd + " " + strings.Join(args.String(), " "))
-	out, err := exec.Command(cmd, args.String()...).Output()
+		Append(f.params.args).
+		Append(f.input.args, "-i", f.input.fileName).
+		Append(f.output.args, f.output.fileName)
+	command := exec.Command(cmd, args.String()...)
+	logger.Debug("FFMPEG cmd: " + command.String())
+	out, err := command.Output()
 	if err != nil {
 		return string(out), ExitErr(err)
 	} else {

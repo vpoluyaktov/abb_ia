@@ -24,7 +24,7 @@ func Load() {
 	config.saveMock = false
 	config.searchCondition = ""
 	config.parrallelDownloads = 10
-	config.parrallelEncoders = 1
+	config.parrallelEncoders = 5
 	config.reEncodeFiles = true
 
 	// read config file here
