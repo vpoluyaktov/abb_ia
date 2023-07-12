@@ -1,10 +1,8 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -93,31 +91,26 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 
 	filePath := filepath.Join(outputDir, fileName)
 	tmpFile := filePath + ".tmp"
-	a, err := ffmpeg.Probe(filePath)
-	if err != nil {
-		logger.Error("FFMPEG Probe Error: " + err.Error())
-	}
-
-	totalDuration, err := probeDuration(a)
-	if err != nil {
-		logger.Error("FFMPEG ProbeDuration Error: " + err.Error())
-	}
+	p, _ := ffmpeg.NewFFProbe(filePath)
+	duration := p.GetDuration()
 
 	// start progress listener
 	l, port := c.startProgressListener(fileId)
 	defer l.Close()
-	go c.updateFileProgress(fileId, fileName, totalDuration, l)
+	go c.updateFileProgress(fileId, fileName, duration, l)
 
 	// start ffmpeg process
-	err = ffmpeg.NewFFmpeg().
-		Input(filePath, "f mp3").
-		Output(tmpFile, "c:v libx264 preset veryslow f mp3").
-		Params("-progress http://127.0.0.1:" + strconv.Itoa(port)).
+	_, err := ffmpeg.NewFFmpeg().
+		Input(filePath, "-f mp3").
+		Output(tmpFile, "-f mp3").
+		Overwrite(true).
+		Params("").
+		SendProgressTo("http://127.0.0.1:"+strconv.Itoa(port)).
 		Run()
 	if err != nil {
-		logger.Error("FFMPEG Error: " + err.Error())
+		logger.Error("FFMPEG Error: " + string(err.Error()))
 	} else {
-		err := os.Remove(filePath)
+		// err := os.Remove(filePath)
 		if err != nil {
 			logger.Error("Can't delete file " + filePath + ": " + err.Error())
 		} else {
@@ -143,7 +136,7 @@ func (c *EncodingController) updateFileProgress(fileId int, fileName string, tot
 	re := regexp.MustCompile(`out_time_ms=(\d+)`)
 	fd, err := l.Accept()
 	if err != nil {
-		logger.Error("Encoding progress: Listener Error: " + err.Error())
+		return // listener is closed
 	}
 	buf := make([]byte, 16)
 	data := ""
@@ -151,7 +144,7 @@ func (c *EncodingController) updateFileProgress(fileId int, fileName string, tot
 	for {
 		_, err := fd.Read(buf)
 		if err != nil {
-			return
+			return // listener is closed
 		}
 		data += string(buf)
 		a := re.FindAllStringSubmatch(data, -1)
@@ -218,25 +211,4 @@ func (c *EncodingController) updateTotalProgress() {
 		}
 		time.Sleep(mq.PullFrequency)
 	}
-}
-
-type probeFormat struct {
-	Duration string `json:"duration"`
-}
-
-type probeData struct {
-	Format probeFormat `json:"format"`
-}
-
-func probeDuration(a string) (float64, error) {
-	pd := probeData{}
-	err := json.Unmarshal([]byte(a), &pd)
-	if err != nil {
-		return 0, err
-	}
-	f, err := strconv.ParseFloat(pd.Format.Duration, 64)
-	if err != nil {
-		return 0, err
-	}
-	return f, nil
 }

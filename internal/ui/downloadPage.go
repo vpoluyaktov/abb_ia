@@ -129,7 +129,14 @@ func (p *DownloadPage) updateFileProgress(dp *dto.DownloadFileProgress) {
 	w := p.filesTable.getColumnWidth(col) - 5
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+	if barWidth < 0 {
+		barWidth = 0
+	}
+	fillerWidth := w - len(progressText) - barWidth
+	if fillerWidth < 0 {
+		fillerWidth = 0
+	}
+	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
 	cell := p.filesTable.t.GetCell(dp.FileId+1, col)
 	cell.SetExpansion(0)
 	cell.SetMaxWidth(50)

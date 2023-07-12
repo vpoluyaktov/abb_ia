@@ -1,5 +1,12 @@
 package ffmpeg
 
+import (
+	"os/exec"
+	"strings"
+
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
+)
+
 type FFmpeg struct {
 	input  input
 	output output
@@ -42,12 +49,34 @@ func (f *FFmpeg) Output(fileName string, args string) *FFmpeg {
 }
 
 func (f *FFmpeg) Params(args string) *FFmpeg {
-	f.params.args = args
+	f.params.args += " " + args
 	return f
 }
 
-func (f *FFmpeg) Run() error {
+func (f *FFmpeg) SendProgressTo(url string) *FFmpeg {
+	f.params.args += " -progress " + url
+	return f
+}
 
-	var err error
-	return err
+func (f *FFmpeg) Overwrite(b bool) *FFmpeg {
+	if b {
+		f.params.args += " -y"
+	}
+	return f
+}
+
+func (f *FFmpeg) Run() (string, *exitErr) {
+	cmd := "ffmpeg"
+	args := NewArgs().
+		Append("-i", f.input.fileName, f.input.args).
+		Append(f.params.args).
+		Append("-hide_banner").
+		Append(f.output.fileName, f.output.args)
+	logger.Debug("FFMPEG cmd: " + cmd + " " + strings.Join(args.String(), " "))
+	out, err := exec.Command(cmd, args.String()...).Output()
+	if err != nil {
+		return string(out), ExitErr(err)
+	} else {
+		return string(out), nil
+	}
 }

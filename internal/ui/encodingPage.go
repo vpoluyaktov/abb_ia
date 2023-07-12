@@ -161,10 +161,10 @@ func (p *EncodingPage) updateTotalProgress(dp *dto.EncodingProgress) {
 
 func (p *EncodingPage) encodingComplete(c *dto.EncodingComplete) {
 	if config.IsReEncodeFiles() {
-		p.mq.SendMessage(mq.DownloadPage, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
-		p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
-		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
-	} else {
+	// 	p.mq.SendMessage(mq.DownloadPage, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
+	// 	p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
+	// 	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
+	// } else {
 
 	}
 }
