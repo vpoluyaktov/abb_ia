@@ -1,15 +1,16 @@
 # Audiobook Builder (Internet Archive version)
 
 ## Description
-There are thousands of free “old-time radio” shows, audiobooks, and lectures, available for download from the Internet Archive site (for example  https://archive.org/details/oldtimeradio). You can listen to them right on your web browser but if you would like to listen to the shows on your mobile device it is not very convenient - in most cases, they are provided as a set of single .mp3 files. You have to download all the files to your mobile device, create a playlist, always remember the last file and position you have listened to.<br>
 
-It would be much easier if there was a simple way to create an audiobook from a radio show or a book you like.<br>
+The Internet Archive site offers a vast collection of free "old-time radio" shows, audiobooks, and lectures that can be downloaded. While you can listen to them on your web browser, it can be inconvenient if you want to listen to them on your mobile device. Typically, these shows are provided as individual .mp3 files, requiring you to download them all, create a playlist, and remember your last listened file and position.
 
-That is why I developed Audiobook Builder. Using this app, all you need is a show or a book name or a direct link on archive.org. It will download the book .mp3 files, re-encode all of them with the same bit rate, produce a list of chapters (you can edit it in the middle of the process), and then it will create an audiobook in .m4b format.<br>
+To make this process easier, I developed Audiobook Builder. With this app, all you need is the name of a show or book, or a direct link on archive.org. It will download the .mp3 files for the book, re-encode them with the same bit rate, generate a list of chapters (which can be edited during the process), and ultimately create an audiobook in .m4b format.
+<br>
 
 ![abb_ia](https://github.com/vpoluyaktov/abb_ia/assets/1992836/511505d9-85b2-4562-9a5b-a71c4c25d564)
 
 <br><br>
 
 ## Disclaimer
-Because the copyrights expired for most old-time radio shows and most of them are in Public Domain now, you can download and listen to them for free. But also there is some copyright content on the Internet Archive site. Please do respect others' legal rights and don't break the law. This script is just a tool that helps you create an audiobook. The author is not responsible for how you use it in any way. This is your responsibility to obey the terms of an item copyright license.
+
+Since the copyrights for the majority of old-time radio shows have expired and many of them are now in the Public Domain, you have the ability to freely download and listen to them. However, it's important to note that there is also copyrighted content available on the Internet Archive site. It is crucial that you respect the legal rights of others and refrain from engaging in any unlawful activities. This script serves as a tool solely for the purpose of creating an audiobook. The author holds no responsibility for how you choose to utilize this tool. It is your responsibility to adhere to the terms outlined in the copyright license of each item.
