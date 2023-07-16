@@ -55,5 +55,5 @@ func TestBytesToHuman(t *testing.T) {
 	b := int64((5 * 1024 * 1024) + (245 * 1024) + 35)
 	size, err := utils.BytesToHuman(b)
 	assert.NoError(t, err)
-	assert.Equal(t, "5.2 MiB", size)
+	assert.Equal(t, "5.2 Mb", size)
 }
