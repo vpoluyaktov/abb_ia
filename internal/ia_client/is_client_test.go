@@ -47,9 +47,9 @@ func TestGetItemById(t *testing.T) {
 			fmt.Printf("Creator: %s\n", item.Metadata.Creator[0])
 			fmt.Printf("Image: %s\n", item.Misc.Image)
 
-			for file, meta := range item.Files {
+			// for file, meta := range item.Files {
 				// fmt.Printf("%s -> %s\n", file, meta.Format)
-			}
+			// }
 		}
 	}
 }
