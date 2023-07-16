@@ -43,12 +43,12 @@ func TestGetItemById(t *testing.T) {
 			fmt.Printf("Title: %s\n", item.Metadata.Title[0])
 			fmt.Printf("Server: %s\n", item.Server)
 			fmt.Printf("Directory: %s\n", item.Dir)
-			fmt.Printf("Description: %s\n", ia.Html2Text(item.Metadata.Description[0]))
+			// fmt.Printf("Description: %s\n", ia.Html2Text(item.Metadata.Description[0]))
 			fmt.Printf("Creator: %s\n", item.Metadata.Creator[0])
 			fmt.Printf("Image: %s\n", item.Misc.Image)
 
 			for file, meta := range item.Files {
-				fmt.Printf("%s -> %s\n", file, meta.Format)
+				// fmt.Printf("%s -> %s\n", file, meta.Format)
 			}
 		}
 	}
