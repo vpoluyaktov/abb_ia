@@ -3,11 +3,11 @@ name: Release Go project
 on:
   push:
     tags:
-      - "v.*" 
+      - "*" 
 
 jobs:
   build:
-    name: GoReleaser build
+    name: Go Release
     runs-on: ubuntu-latest
 
     steps:
