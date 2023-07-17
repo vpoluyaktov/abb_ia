@@ -1,35 +1,38 @@
 project_name: abb_ia
 before:
   hooks:
+    - go mod download
     - go mod tidy
+    - go test -race ./...
 builds:
-  - goos:
+  - id: default
+    main: ./main.go
+    env: [CGO_ENABLED=0]
+    goos:
       - linux
       - darwin
       - windows
     goarch:
       - amd64
-      - 386
-      - arm
       - arm64
-    goarm:
-      - 6
-    ignore:
-      - goos: windows
-        goarch: arm
-      - goos: windows
-        goarch: arm64
-    main: ./main.go
-    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
     binary: abb_ia
-# archives:
-#   - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-#     replacements:
-#       darwin: Darwin
-#       linux: Linux
-#       windows: Windows
-#       386: x86
-#       amd64: x86_64
+
+release:
+  ids: [ default ]
+  draft: true
+  replace_existing_draft: true
+  target_commitish: "{{ .Commit }}"
+  prerelease: auto
+  mode: replace
+  header: |
+    ## ⚙️ The `{{ .Tag }}` release
+  footer: |
+    ## Install from binaries
+archives:
+  - format_overrides:
+      - goos: windows
+        format: zip
+    files: [ LICENSE, README.md ]
 snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
 checksum:
@@ -50,56 +53,3 @@ changelog:
       - '^docs:'
       - '^test:'
       - '^conf:'
-# release:
-#   github:
-#     owner: Vladimir Poluyaktov
-#     name: abb_ia
-#   draft: true
-#   prerelease: auto
-#   discussion_category_name: General
-#   header: |
-#     ## Features
-
-#     List of newly introduced features:
-
-#     - Item 1
-#     - Item 2
-
-#     ## Bug fixes
-
-#     List of fixed issues:
-
-#     - Item 1
-#     - Item 2
-
-#     ## Code changes
-
-#     - Item 1
-#     - Item 2
-#   footer: |
-#     Read more on our documentation page: https://github.com/vpoluyaktov/abb_ia
-# brews:
-#   - tap:
-#       owner: Vladimir Poluyaktov
-#       name: abb_ia
-#     name: abb_ia
-#     description: "Audiobook Builder: Create an audiobook in .m4b format from an Internet Archive collection."
-#     homepage: "https://github.com/vpoluyaktov/abb_ia"
-#     license: "Apache 2.0"
-#     folder: Formula
-#     commit_author:
-#       name: Vladimir Poluyaktov
-#       email: vpoluyaktov@gmail.com
-#     install: bin.install "abb_ia"
-#     test: |
-#       system "#{bin/abb_ia}"
-# nfpms:
-#   - maintainer: Vladimir Poluyaktov
-#     description: "Audiobook Builder: Create an audiobook in .m4b format from an Internet Archive collection."
-#     homepage: "https://github.com/vpoluyaktov/abb_ia"
-#     license: "Apache 2.0"
-#     formats:
-#       - deb
-#       - rpm
-#     replacements:
-#       darwin: Darwin
