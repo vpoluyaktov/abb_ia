@@ -3,7 +3,7 @@ before:
   hooks:
     - go mod download
     - go mod tidy
-    - go test -race ./...
+    - go test -v ./...
 builds:
   - id: default
     main: ./main.go
