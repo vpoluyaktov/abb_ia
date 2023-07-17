@@ -67,10 +67,9 @@ func (f *FFmpeg) Overwrite(b bool) *FFmpeg {
 func (f *FFmpeg) Run() (string, *exitErr) {
 	cmd := "ffmpeg"
 	args := NewArgs().
-		Append("-hide_banner").
-		Append(f.params.args).
-		Append(f.input.args, "-i", f.input.fileName).
-		Append(f.output.args, f.output.fileName)
+		AppendArgs(f.params.args).
+		AppendArgs(f.input.args).AppendArgs("-i").AppendFileName(f.input.fileName).
+		AppendArgs(f.output.args).AppendFileName(f.output.fileName)
 	command := exec.Command(cmd, args.String()...)
 	logger.Debug("FFMPEG cmd: " + command.String())
 	out, err := command.Output()

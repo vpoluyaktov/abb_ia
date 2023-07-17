@@ -70,7 +70,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
 	c.files = make([]fileDownload, len(c.item.Files))
-	jd := utils.NewJobDispatcher(config.GetParallelDownloads())
+	jd := utils.NewJobDispatcher(config.ParallelDownloads())
 	for i, f := range c.item.Files {
 		jd.AddJob(i, ia.DownloadFile, outputDir, c.item.Server, c.item.Dir, f.Name, i, f.Size, c.updateFileProgress)
 	}

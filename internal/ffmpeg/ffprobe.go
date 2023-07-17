@@ -41,11 +41,11 @@ func NewFFProbe(fileName string) (*FFProbe, error) {
 	p := &FFProbe{fileName, Metadata{}}
 	cmd := "ffprobe"
 	args := NewArgs().
-		Append("-loglevel error").
-		Append("-show_format").
-		Append("-show_streams").
-		Append("-of json").
-		Append(p.fileName)
+		AppendArgs("-loglevel error").
+		AppendArgs("-show_format").
+		AppendArgs("-show_streams").
+		AppendArgs("-of json").
+		AppendFileName(p.fileName)
 	out, err := exec.Command(cmd, args.String()...).Output()
 	if err == nil {
 		err = json.Unmarshal([]byte(out), &p.metadata)

@@ -14,11 +14,13 @@ type Config struct {
 	parrallelDownloads int
 	parrallelEncoders  int
 	reEncodeFiles      bool
+	bitRate            string
+	sampleRate         string
 }
 
 func Load() {
 	config := &Config{}
-	config.logFileName = "/tmp/abb_ia.log"
+	config.logFileName = "abb_ia.log"
 	config.logLevel = "INFO"
 	config.useMock = false
 	config.saveMock = false
@@ -26,6 +28,8 @@ func Load() {
 	config.parrallelDownloads = 10
 	config.parrallelEncoders = 5
 	config.reEncodeFiles = true
+	config.bitRate = "128k"
+	config.sampleRate = "44100"
 
 	// read config file here
 
@@ -72,26 +76,42 @@ func SearchCondition() string {
 	return configInstance.searchCondition
 }
 
-func SaveParallelDownloads(n int) {
+func SetParallelDownloads(n int) {
 	configInstance.parrallelDownloads = n
 }
 
-func GetParallelDownloads() int {
+func ParallelDownloads() int {
 	return configInstance.parrallelDownloads
 }
 
-func SaveParallelEncoders(n int) {
+func SetParallelEncoders(n int) {
 	configInstance.parrallelEncoders = n
 }
 
-func GetParallelEncoders() int {
+func ParallelEncoders() int {
 	return configInstance.parrallelEncoders
 }
 
-func SaveReEncodeFiles(b bool) {
+func SetReEncodeFiles(b bool) {
 	configInstance.reEncodeFiles = b
 }
 
 func IsReEncodeFiles() bool {
 	return configInstance.reEncodeFiles
+}
+
+func SetBitRate(b string) {
+	configInstance.bitRate = b
+}
+
+func BitRate() string {
+	return configInstance.bitRate
+}
+
+func SetSampleRate(b string) {
+	configInstance.sampleRate = b
+}
+
+func SampleRate() string {
+	return configInstance.sampleRate
 }

@@ -14,7 +14,12 @@ func NewArgs() *args {
 	return a
 }
 
-func (a *args) Append(arg ...string) *args {
+func (a *args) AppendFileName(arg string) *args {
+	a.args = append(a.args, arg)
+	return a
+}
+
+func (a *args) AppendArgs(arg ...string) *args {
 	for _, ar := range arg {
 		ars := strings.Fields(ar)
 		a.args = append(a.args, ars...)

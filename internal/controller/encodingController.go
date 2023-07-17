@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -71,7 +72,7 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	// re-encode files
 	c.stopFlag = false
 	c.files = make([]fileEncode, len(c.item.Files))
-	jd := utils.NewJobDispatcher(config.GetParallelEncoders())
+	jd := utils.NewJobDispatcher(config.ParallelEncoders())
 	for i, f := range c.item.Files {
 		jd.AddJob(i, c.encodeFile, i, outputDir, f.Name)
 	}
@@ -94,27 +95,27 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 	p, _ := ffmpeg.NewFFProbe(filePath)
 	duration := p.GetDuration()
 
-	// start progress listener
+	// launch progress listener
 	l, port := c.startProgressListener(fileId)
 	defer l.Close()
 	go c.updateFileProgress(fileId, fileName, duration, l)
 
-	// start ffmpeg process
+	// launch ffmpeg process
 	_, err := ffmpeg.NewFFmpeg().
 		Input(filePath, "-f mp3").
-		Output(tmpFile, "-f mp3").
+		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %s -ar %s -vn", config.BitRate(), config.SampleRate())).
 		Overwrite(true).
-		Params("").
-		SendProgressTo("http://127.0.0.1:"+strconv.Itoa(port)).
+		Params("-hide_banner -nostdin -nostats -loglevel fatal").
+		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).
 		Run()
 	if err != nil {
 		logger.Error("FFMPEG Error: " + string(err.Error()))
 	} else {
-		// err := os.Remove(filePath)
+		err := os.Remove(filePath)
 		if err != nil {
 			logger.Error("Can't delete file " + filePath + ": " + err.Error())
 		} else {
-			// os.Rename(tmpFile, filePath)
+			os.Rename(tmpFile, filePath)
 		}
 	}
 }
