@@ -32,7 +32,7 @@ archives:
   - format_overrides:
       - goos: windows
         format: zip
-    files: [ LICENSE, README.md ]
+    files: [ LICENSE.txt, README.md ]
 snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
 checksum:
