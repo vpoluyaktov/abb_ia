@@ -23,7 +23,7 @@ release:
   draft: true
   replace_existing_draft: true
   target_commitish: "{{ .Commit }}"
-  prerelease: auto
+  prerelease: false
   mode: replace
   header: |
     ## ⚙️ The `{{ .Tag }}` release
@@ -37,24 +37,8 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
-  - id: format_overrides
-    format_overrides:
-      - goos: windows
-        format: zip
-    files: [ LICENSE.txt, README.md ]
-snapshot:
-  name_template: SNAPSHOT-{{ .Commit }}
 checksum:
   name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
-signs:
-  - cmd: gpg
-    args:
-      - --output
-      - $signature
-      - --detach-sig
-      - $artifact
-    signature: ${artifact}.sig
-    artifacts: none
 changelog:
   sort: asc
   filters:
