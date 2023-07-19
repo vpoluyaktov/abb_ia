@@ -3,7 +3,7 @@ name: Release Go project
 on:
   push:
     tags:
-      - "*" 
+      - "v*" 
 
 jobs:
   build:
