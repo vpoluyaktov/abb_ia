@@ -30,7 +30,7 @@ release:
   footer: |
     ## Install from binaries
 archives:
-  - id: archive_name
+  - id: default
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
