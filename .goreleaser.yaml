@@ -14,6 +14,7 @@ builds:
       - windows
     goarch:
       - amd64
+      - 386
       - arm64
     binary: abb_ia
 
@@ -29,7 +30,15 @@ release:
   footer: |
     ## Install from binaries
 archives:
-  - format_overrides:
+  - id: archive_name
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+  - id: format_overrides
+    format_overrides:
       - goos: windows
         format: zip
     files: [ LICENSE.txt, README.md ]
