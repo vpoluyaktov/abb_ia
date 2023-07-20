@@ -28,7 +28,7 @@ func Load() {
 	config.useMock = false
 	config.saveMock = false
 	config.searchCondition = ""
-	config.parrallelDownloads = 10
+	config.parrallelDownloads = 5
 	config.parrallelEncoders = 5
 	config.reEncodeFiles = true
 	config.bitRate = "128k"

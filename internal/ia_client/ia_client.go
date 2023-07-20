@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -147,10 +148,16 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 	}
 	defer resp.Body.Close()
 
-	if err := os.MkdirAll(fmt.Sprintf("%s/%s", outputDir, dir), 0750); err != nil {
-		logger.Fatal("Error while creating output directory: " + err.Error())
+	tempDir := filepath.Dir(tempPath)
+	if err := os.MkdirAll(tempDir, 0750); err != nil {
+		logger.Fatal("Can't create output directory: " + err.Error())
+		return
 	}
-	f, _ := os.OpenFile(tempPath, os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(tempPath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err !=nil {
+		logger.Fatal("Can't create temporary file: " + err.Error())
+		return
+	}
 	defer f.Close()
 
 	progressReader := &ProgressReader{
