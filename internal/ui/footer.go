@@ -14,7 +14,6 @@ type footer struct {
 	busyFlag      bool
 	busyIndicator *tview.TextView
 	statusMessage *tview.TextView
-	version       *tview.TextView
 }
 
 func newFooter(dispatcher *mq.Dispatcher) *footer {
@@ -36,18 +35,10 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f.statusMessage.SetTextColor(footerFgColor)
 	f.statusMessage.SetBackgroundColor(footerBgColor)
 
-	f.version = tview.NewTextView()
-	f.version.SetText("v.0.0.1")
-	f.version.SetTextAlign(tview.AlignRight)
-	f.version.SetBorder(false)
-	f.version.SetTextColor(footerFgColor)
-	f.version.SetBackgroundColor(footerBgColor)
-
 	f.grid = tview.NewGrid()
-	f.grid.SetColumns(8, -1, 10)
+	f.grid.SetColumns(8, -1)
 	f.grid.AddItem(f.busyIndicator, 0, 0, 1, 1, 0, 0, false)
 	f.grid.AddItem(f.statusMessage, 0, 1, 1, 1, 0, 0, false)
-	f.grid.AddItem(f.version, 0, 2, 1, 1, 0, 0, false)
 
 	return f
 }

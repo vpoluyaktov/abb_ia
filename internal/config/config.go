@@ -1,8 +1,11 @@
 package config
 
+import "time"
+
 // singleton
 var (
 	configInstance *Config
+	appVersion, buildDate string
 )
 
 type Config struct {
@@ -114,4 +117,22 @@ func SetSampleRate(b string) {
 
 func SampleRate() string {
 	return configInstance.sampleRate
+}
+
+func AppVersion() string {
+	if appVersion == "" {
+		appVersion = "0.0.0"
+	}
+	return appVersion
+}
+
+func BuildDate() string {
+	// 2023-07-20T14:45:12Z
+	fmt := "01/02/2006"
+	bd, err := time.Parse(time.RFC3339, buildDate)
+	if buildDate != "" && err != nil {
+		return bd.Format(fmt)
+	} else {
+		return time.Now().Format(fmt)
+	}
 }

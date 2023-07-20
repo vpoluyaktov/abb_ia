@@ -25,7 +25,7 @@ func newFrame(dispatcher *mq.Dispatcher) *frame {
 }
 
 func (f *frame) addHeader(header *header) {
-	f.grid.AddItem(header.view, 0, 0, 1, 1, 0, 0, false)
+	f.grid.AddItem(header.grid, 0, 0, 1, 1, 0, 0, false)
 }
 
 func (f *frame) addFooter(footer *footer) {
