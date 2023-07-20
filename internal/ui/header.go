@@ -2,7 +2,6 @@ package ui
 
 import (
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
@@ -20,13 +19,13 @@ func newHeader(dispatcher *mq.Dispatcher) *header {
 	h.mq.RegisterListener(mq.Header, h.dispatchMessage)
 
 	h.appName = tview.NewTextView()
-	h.appName.SetText("Audiobook Builder - Internet Archive version")
+	h.appName.SetText(" Audiobook Builder")
 	h.appName.SetBorder(false)
 	h.appName.SetTextColor(headerFgColor)
 	h.appName.SetBackgroundColor(headerBGColor)
 
 	h.version = tview.NewTextView()
-	h.version.SetText("v" + config.AppVersion() + " (" + config.BuildDate() + ")")
+	h.version.SetText("Internet Archive version ")
 	h.version.SetTextAlign(tview.AlignRight)
 	h.version.SetBorder(false)
 	h.version.SetTextColor(footerFgColor)
