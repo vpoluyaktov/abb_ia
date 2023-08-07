@@ -5,6 +5,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,8 +59,10 @@ func (client *IAClient) searchByTitle(title string, mediaType string) *SearchRes
 			logger.Error("IA Client SearchByTitle() mock load error: " + err.Error())
 		}
 	} else {
-		var searchURL = IA_BASE_URL + "/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1"
-		_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, title, mediaType, MAX_RESULT_ROWS))
+		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1",
+			url.QueryEscape(title), mediaType, MAX_RESULT_ROWS)
+		logger.Debug("IA request: " + searchURL)
+		_, err := client.restyClient.R().SetResult(result).Get(searchURL)
 		if err != nil {
 			logger.Error("IAClient SearchByTitle() error: " + err.Error())
 		}
@@ -81,10 +84,10 @@ func (client *IAClient) searchByID(itemId string, mediaType string) *SearchRespo
 			logger.Error("IAClient SearchByID() mock load error: " + err.Error())
 		}
 	} else {
-		var searchURL = IA_BASE_URL + "/advancedsearch.php?q=identifier:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1"
-		req := fmt.Sprintf(searchURL, itemId, mediaType, MAX_RESULT_ROWS)
-		logger.Debug("req: " + req)
-		_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(searchURL, itemId, mediaType, MAX_RESULT_ROWS))
+		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=identifier:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1",
+			itemId, mediaType, MAX_RESULT_ROWS)
+		logger.Debug("IA request: " + searchURL)
+		_, err := client.restyClient.R().SetResult(result).Get(searchURL)
 		if err != nil {
 			logger.Error("IAClient SearchByID() error: " + err.Error())
 		}
@@ -127,7 +130,7 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 func (client *IAClient) DownloadFile(outputDir string, server string, dir string, fileName string, fileId int, estimatedSize int64, updateProgress Fn) {
 
 	if client.loadMockResult {
-		delay := time.Duration(rand.Intn(100))
+		delay := time.Duration(rand.Intn(10)) // 100
 		for percent := 0; percent <= 100; percent++ {
 			updateProgress(fileId, fileName, estimatedSize, int64(float32(estimatedSize)*float32(percent)/100), percent)
 			time.Sleep(delay * time.Millisecond)
@@ -154,7 +157,7 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 		return
 	}
 	f, err := os.OpenFile(tempPath, os.O_CREATE|os.O_WRONLY, 0644)
-	if err !=nil {
+	if err != nil {
 		logger.Fatal("Can't create temporary file: " + err.Error())
 		return
 	}

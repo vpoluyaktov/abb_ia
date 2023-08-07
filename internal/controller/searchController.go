@@ -79,6 +79,9 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			if len(d.Metadata.Description) > 0 {
 				item.Description = tview.Escape(ia.Html2Text(d.Metadata.Description[0]))
 			}
+			if len(d.Misc.Image) > 0 {	
+				item.Cover = d.Misc.Image
+			}
 			for name, metadata := range d.Files {
 				format := metadata.Format
 				if utils.Contains(dto.FormatList, format) {

@@ -21,6 +21,7 @@ func NewConductor(dispatcher *mq.Dispatcher) *Conductor {
 	c.controllers = append(c.controllers, NewSearchController(c.dispatcher))
 	c.controllers = append(c.controllers, NewDownloadController(c.dispatcher))
 	c.controllers = append(c.controllers, NewEncodingController(c.dispatcher))
+	c.controllers = append(c.controllers, NewChaptersController(c.dispatcher))
 	return c
 }
 

@@ -4,7 +4,7 @@ import "time"
 
 // singleton
 var (
-	configInstance *Config
+	configInstance        *Config
 	appVersion, buildDate string
 )
 
@@ -19,6 +19,7 @@ type Config struct {
 	reEncodeFiles      bool
 	bitRate            string
 	sampleRate         string
+	maxFileSize        int64
 }
 
 func Load() {
@@ -30,9 +31,10 @@ func Load() {
 	config.searchCondition = ""
 	config.parrallelDownloads = 5
 	config.parrallelEncoders = 5
-	config.reEncodeFiles = true
+	config.reEncodeFiles = false
 	config.bitRate = "128k"
 	config.sampleRate = "44100"
+	config.maxFileSize = 1024 * 1024
 
 	// read config file here
 

@@ -7,6 +7,7 @@ type IAItem struct {
 	Title        string
 	Creator      string
 	Description  string
+	Cover        string
 	Server       string
 	Dir          string
 	FilesCount   int

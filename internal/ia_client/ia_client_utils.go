@@ -134,3 +134,4 @@ func RemoveHtmlTag(html string, tag string) string {
 	html = strings.Replace(html, tag[0:1] + "/" + tag[1:], "", -1)
 	return html
 }
+

@@ -172,6 +172,8 @@ func (p *DownloadPage) downloadComplete(c *dto.DownloadComplete) {
 		p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
 		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
 	} else {
-
+		p.mq.SendMessage(mq.DownloadPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.DownloadPage, mq.ChaptersController, &dto.ChaptersEditCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
 	}
 }

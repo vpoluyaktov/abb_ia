@@ -10,7 +10,9 @@ const (
 	SearchPage         = "SearchPage"
 	DownloadPage       = "DownloadPage"
 	EncodingPage       = "EncodingPage"
+	ChaptersPage       = "ChaptersPage"
 	SearchController   = "SearchController"
 	DownloadController = "DownloadController"
 	EncodingController = "EncodingController"
+	ChaptersController = "ChaptersController"
 )

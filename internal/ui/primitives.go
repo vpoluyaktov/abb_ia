@@ -107,7 +107,7 @@ func (t *table) getColumnWidth(col int) int {
 	return t.colWidth[col]
 }
 
-func (t *table) GetRowCount()int {
+func (t *table) GetRowCount() int {
 	return t.t.GetColumnCount()
 }
 
@@ -242,12 +242,22 @@ func (f *form) AddFormItem(item tview.FormItem) *tview.FormItem {
 // //////////////////////////////////////////////////////////////
 // tview.TextView wrapper
 // //////////////////////////////////////////////////////////////
-func newText(text string) *tview.TextView {
+func newTextView(text string) *tview.TextView {
 	tv := tview.NewTextView()
 	tv.SetTextAlign(tview.AlignCenter)
 	tv.SetText(text)
 	return tv
 }
+
+// //////////////////////////////////////////////////////////////
+// tview.TextArea wrapper
+// //////////////////////////////////////////////////////////////
+func newTextArea(text string) *tview.TextArea {
+	ta := tview.NewTextArea()
+	ta.SetText(text, false)
+	return ta
+}
+
 
 // //////////////////////////////////////////////////////////////
 // tview.Button wrapper

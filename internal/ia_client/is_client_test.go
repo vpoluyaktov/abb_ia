@@ -25,7 +25,7 @@ func TestMain(m *testing.M) {
 func TestSearch(t *testing.T) {
 	ia := ia_client.New(false, false)
 
-	res := ia.Search("NASA", "audio") // search by title
+	res := ia.Search("Single Episodes", "audio") // search by title
 	assert.NotNil(t, res)
 	assert.Equal(t, 25, len(res.Response.Docs))
 

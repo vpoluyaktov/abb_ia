@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
@@ -46,7 +45,7 @@ func newEncodingPage(dispatcher *mq.Dispatcher) *EncodingPage {
 	// files re-encoding section
 	filesSection := tview.NewGrid()
 	filesSection.SetColumns(-1)
-	filesSection.SetTitle(" Encodinging .mp3 files... ")
+	filesSection.SetTitle(" Re-encodinging .mp3 files to the same bitrate... ")
 	filesSection.SetTitleAlign(tview.AlignLeft)
 	filesSection.SetBorder(true)
 
@@ -160,11 +159,7 @@ func (p *EncodingPage) updateTotalProgress(dp *dto.EncodingProgress) {
 }
 
 func (p *EncodingPage) encodingComplete(c *dto.EncodingComplete) {
-	if config.IsReEncodeFiles() {
-	// 	p.mq.SendMessage(mq.DownloadPage, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
-	// 	p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
-	// 	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
-	// } else {
-
-	}
+	p.mq.SendMessage(mq.DownloadPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
+	p.mq.SendMessage(mq.DownloadPage, mq.ChaptersController, &dto.ChaptersEditCommand{Audiobook: c.Audiobook}, true)
+	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
 }
