@@ -81,6 +81,7 @@ func (ui *TUI) Run() {
 		c.Stdout = os.Stdout
 		c.Run()
 	}()
+	ui.mq.RegisterListener(mq.TUI, ui.dispatchMessage)
 	go ui.startEventListener()
 	if err := ui.app.Run(); err != nil {
 		panic(err)

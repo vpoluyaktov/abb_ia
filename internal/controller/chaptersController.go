@@ -28,8 +28,8 @@ func (c *ChaptersController) checkMQ() {
 
 func (c *ChaptersController) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
-	case *dto.EncodeCommand:
-		go c.startChapters(dto)
+	case *dto.ChaptersCreate:
+		go c.createChapters(dto)
 	case *dto.StopCommand:
 		go c.stopChapters(dto)
 	default:
@@ -42,11 +42,20 @@ func (c *ChaptersController) stopChapters(cmd *dto.StopCommand) {
 	logger.Debug(mq.ChaptersController + ": Received StopChapters command")
 }
 
-func (c *ChaptersController) startChapters(cmd *dto.EncodeCommand) {
+func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
+
+	logger.Debug(mq.ChaptersController + ": Received Create Chapters command")
+	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: "Calculating book parts and chapters..."}, false)
+	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 
 	c.ab = cmd.Audiobook
-
-	// c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	// c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	// c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.ChaptersComplete{Audiobook: cmd.Audiobook}, true)
+	c.ab.Chapters = nil
+	for i, file := range c.ab.IAItem.Files {
+		chapter := dto.Chapter{Number: i, Start: 0, End: 0, Duration: 0, Name: file.Name}
+		c.ab.Chapters = append(c.ab.Chapters, chapter)
+		c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.AddChapterCommand{Chapter: &chapter}, true)
+	}
+	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
+	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.ChaptersReady{Audiobook: cmd.Audiobook}, true)
 }

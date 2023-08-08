@@ -2,10 +2,12 @@ package ui
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type ChaptersPage struct {
@@ -15,6 +17,7 @@ type ChaptersPage struct {
 	title             *tview.InputField
 	cover             *tview.InputField
 	descriptionEditor *tview.TextArea
+	chaptersSection   *tview.Grid
 	chaptersTable     *table
 	ab                *dto.Audiobook
 }
@@ -70,20 +73,21 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	f4.AddButton("Replace", p.createBook)
 	f4.AddButton(" Undo  ", p.stopConfirmation)
 	f4.f.SetButtonsAlign(tview.AlignRight)
-	descriptionSection.AddItem(f4.f, 0, 1, 1, 1, 0, 0, false)
+	descriptionSection.AddItem(f4.f, 0, 1, 1, 1, 0, 0, true)
 	p.grid.AddItem(descriptionSection, 1, 0, 1, 1, 0, 0, true)
 
 	// chapters section
-	chaptersSection := tview.NewGrid()
-	chaptersSection.SetColumns(-1, 40)
+	p.chaptersSection = tview.NewGrid()
+	p.chaptersSection.SetColumns(-1, 40)
 	p.chaptersTable = newTable()
 	p.chaptersTable.t.SetBorder(true)
 	p.chaptersTable.t.SetTitle(" Book chapters: ")
 	p.chaptersTable.t.SetTitleAlign(tview.AlignLeft)
-	p.chaptersTable.setHeaders("  # ", "Duration", "Chapter name")
-	p.chaptersTable.setWeights(1, 1, 20)
-	p.chaptersTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft)
-	chaptersSection.AddItem(p.chaptersTable.t, 0, 0, 1, 1, 0, 0, false)
+	p.chaptersTable.setHeaders("  # ", "Start", "End", "Duration", "Chapter name")
+	p.chaptersTable.setWeights(1, 1, 1, 1, 20)
+	p.chaptersTable.setAlign(tview.AlignRight, tview.AlignRight, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
+	p.chaptersTable.t.SetSelectedFunc(p.updateChapterEntry)
+	p.chaptersSection.AddItem(p.chaptersTable.t, 0, 0, 1, 1, 0, 0, true)
 	f5 := newForm()
 	f5.f.SetBorder(true)
 	f5.SetHorizontal(true)
@@ -92,8 +96,8 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	f5.AddButton("Replace", p.createBook)
 	f5.AddButton(" Undo  ", p.stopConfirmation)
 	f5.f.SetButtonsAlign(tview.AlignRight)
-	chaptersSection.AddItem(f5.f, 0, 1, 1, 1, 0, 0, false)
-	p.grid.AddItem(chaptersSection, 2, 0, 1, 1, 0, 0, false)
+	p.chaptersSection.AddItem(f5.f, 0, 1, 1, 1, 0, 0, false)
+	p.grid.AddItem(p.chaptersSection, 2, 0, 1, 1, 0, 0, true)
 
 	return p
 }
@@ -109,6 +113,8 @@ func (p *ChaptersPage) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.DisplayBookInfoCommand:
 		p.displayBookInfo(dto.Audiobook)
+	case *dto.AddChapterCommand:
+		p.addChapter(dto.Chapter)
 	default:
 		m.UnsupportedTypeError(mq.ChaptersPage)
 	}
@@ -121,17 +127,45 @@ func (p *ChaptersPage) displayBookInfo(ab *dto.Audiobook) {
 	p.cover.SetText(ab.IAItem.Cover)
 	p.descriptionEditor.SetText(ab.IAItem.Description, false)
 
-
 	p.chaptersTable.clear()
 	p.chaptersTable.showHeader()
-	for i, f := range ab.IAItem.Files {
-		p.chaptersTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.LengthH, f.Name)
-	}
 	p.chaptersTable.t.ScrollToBeginning()
 }
 
+func (p *ChaptersPage) addChapter(chapter *dto.Chapter) {
+	number := strconv.Itoa(chapter.Number)
+	startH, _ := utils.SecondsToTime(chapter.Start)
+	endH, _ := utils.SecondsToTime(chapter.End)
+	durationH, _ := utils.SecondsToTime(chapter.Duration)
+
+	p.chaptersTable.appendRow(number, startH, endH, durationH, chapter.Name)
+	p.chaptersTable.t.ScrollToBeginning()
+}
+
+func (p *ChaptersPage) updateChapterEntry(row int, col int) {
+	chapter := p.ab.Chapters[row-1]
+	durationH, _ := utils.SecondsToTime(chapter.Duration)
+	d := newDialogWindow(p.mq, 11, 80, p.chaptersSection)
+	f := newForm()
+	f.SetTitle("Update Chapter Name:")
+	f.AddTextView("Chapter #:  ", strconv.Itoa(chapter.Number), 5, 1, true, false)
+	f.AddTextView("Duration:   ", strings.TrimLeft(durationH, " "), 10, 1, true, false)
+	nameF := f.AddInputField("Chapter name:", chapter.Name, 60, nil, nil)
+	f.AddButton("Save changes", func() {
+		cell := p.chaptersTable.t.GetCell(row, col)
+		cell.Text = nameF.GetText()
+		p.ab.Chapters[row-1].Name = nameF.GetText()
+		d.Close()
+	})
+	f.AddButton("Cancel", func() {
+		d.Close()
+	})
+	d.setForm(f.f)
+	d.Show()
+}
+
 func (p *ChaptersPage) stopConfirmation() {
-	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop editing chapters?", p.stopChapters, func() {})
+	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop editing chapters?", p.chaptersSection, p.stopChapters, func() {})
 }
 
 func (p *ChaptersPage) stopChapters() {

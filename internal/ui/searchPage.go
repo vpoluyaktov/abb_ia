@@ -184,7 +184,7 @@ func (p *SearchPage) createBook() {
 	if row > 0 && len(p.searchResult) > 0 && len(p.searchResult) >= row {
 		item := p.searchResult[row-1]
 
-		d := newDialogWindow(p.mq, 12, 80)
+		d := newDialogWindow(p.mq, 12, 80, p.resultSection)
 		f := newForm()
 		f.SetTitle("Create Audiobook")
 		author := f.AddInputField("Book Author", item.Creator, 60, nil, nil)
@@ -203,7 +203,7 @@ func (p *SearchPage) createBook() {
 		d.setForm(f.f)
 		d.Show()
 	} else {
-		newMessageDialog(p.mq, "Error", "Please perform a search first")
+		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection)
 	}
 }
 

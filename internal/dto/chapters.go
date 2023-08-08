@@ -2,18 +2,26 @@ package dto
 
 import "fmt"
 
-type ChaptersEditCommand struct {
+type ChaptersCreate struct {
 	Audiobook *Audiobook
 }
 
-func (c *ChaptersEditCommand) String() string {
-	return fmt.Sprintf("ChaptersEditCommand: %s", c.Audiobook.String())
+func (c *ChaptersCreate) String() string {
+	return fmt.Sprintf("ChaptersCreate %s", c.Audiobook.String())
 }
 
-type ChaptersEditComplete struct {
+type AddChapterCommand struct {
+	Chapter *Chapter
+}
+
+func (c *AddChapterCommand) String() string {
+	return fmt.Sprintf("AddChapterCommand: %s", c.Chapter.Name)
+}
+
+type ChaptersReady struct {
 	Audiobook *Audiobook
 }
 
-func (c *ChaptersEditComplete) String() string {
-	return fmt.Sprintf("ChaptersEditComplete: %s", c.Audiobook.String())
+func (c *ChaptersReady) String() string {
+	return fmt.Sprintf("ChaptersReady: %s", c.Audiobook.String())
 }

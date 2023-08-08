@@ -15,6 +15,7 @@ type DownloadPage struct {
 	mq            *mq.Dispatcher
 	grid          *tview.Grid
 	infoPanel     *infoPanel
+	filesSection  *tview.Grid
 	filesTable    *table
 	progressTable *table
 }
@@ -44,18 +45,18 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	p.grid.AddItem(infoSection, 0, 0, 1, 1, 0, 0, false)
 
 	// files downnload section
-	filesSection := tview.NewGrid()
-	filesSection.SetColumns(-1)
-	filesSection.SetTitle(" Downloading .mp3 files... ")
-	filesSection.SetTitleAlign(tview.AlignLeft)
-	filesSection.SetBorder(true)
+	p.filesSection = tview.NewGrid()
+	p.filesSection.SetColumns(-1)
+	p.filesSection.SetTitle(" Downloading .mp3 files... ")
+	p.filesSection.SetTitleAlign(tview.AlignLeft)
+	p.filesSection.SetBorder(true)
 
 	p.filesTable = newTable()
 	p.filesTable.setHeaders("  # ", "File name", "Format", "Duration", "Total Size", "Download progress")
 	p.filesTable.setWeights(1, 2, 1, 1, 1, 5)
 	p.filesTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
-	filesSection.AddItem(p.filesTable.t, 0, 0, 1, 1, 0, 0, true)
-	p.grid.AddItem(filesSection, 1, 0, 1, 1, 0, 0, true)
+	p.filesSection.AddItem(p.filesTable.t, 0, 0, 1, 1, 0, 0, true)
+	p.grid.AddItem(p.filesSection, 1, 0, 1, 1, 0, 0, true)
 
 	// download progress section
 	progressSection := tview.NewGrid()
@@ -115,7 +116,7 @@ func (p *DownloadPage) displayBookInfo(ab *dto.Audiobook) {
 }
 
 func (p *DownloadPage) stopConfirmation() {
-	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop the download?", p.stopDownload, func() {})
+	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop the download?", p.filesSection, p.stopDownload, func() {})
 }
 
 func (p *DownloadPage) stopDownload() {
@@ -173,7 +174,7 @@ func (p *DownloadPage) downloadComplete(c *dto.DownloadComplete) {
 		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
 	} else {
 		p.mq.SendMessage(mq.DownloadPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
-		p.mq.SendMessage(mq.DownloadPage, mq.ChaptersController, &dto.ChaptersEditCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.DownloadPage, mq.ChaptersController, &dto.ChaptersCreate{Audiobook: c.Audiobook}, true)
 		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
 	}
 }
