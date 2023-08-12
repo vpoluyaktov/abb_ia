@@ -34,6 +34,36 @@ func newTable() *table {
 	return t
 }
 
+// Enter Key
+func (t *table) SetSelectedFunc(f func(row, column int)) {
+	t.t.SetSelectedFunc(f)
+}
+
+// Mouse Double Click
+func (t *table) SetMouseDblClickFunc(f func(row, column int)) {
+	t.t.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		switch action {
+		case tview.MouseLeftDoubleClick:
+			{
+				f(t.t.GetSelection())
+			}
+		}
+		return action, event
+	})
+}
+
+func (t *table) SetBorder(b bool) {
+	t.t.SetBorder(b)
+}
+
+func (t *table) SetTitle(s string) {
+	t.t.SetTitle(s)
+}
+
+func (t *table) SetTitleAlign(a int) {
+	t.t.SetTitleAlign(a)
+}
+
 func (t *table) draw(screen tcell.Screen, x int, y int, width int, height int) (int, int, int, int) {
 	t.recalculateColumnWidths()
 	return t.t.GetInnerRect()
@@ -167,6 +197,31 @@ func (f *form) SetTitle(t string) {
 	f.f.SetTitle(" " + t + " ")
 }
 
+func (f *form) SetBorder(b bool) {
+	f.f.SetBorder(b)
+}
+
+func (f *form) SetButtonsAlign(a int) {
+	f.f.SetButtonsAlign(a)
+}
+
+func (f *form) SetBorderPadding(top int, bottom int, left int, right int) {
+	f.f.SetBorderPadding(top, bottom, left, right)
+}
+
+// Mouse Double Click
+func (f *form) SetMouseDblClickFunc(fn func()) {
+	f.f.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		switch action {
+		case tview.MouseLeftDoubleClick:
+			{
+				fn()
+			}
+		}
+		return action, event
+	})
+}
+
 func (f *form) AddInputField(label, value string, fieldWidth int, accept func(textToCheck string, lastChar rune) bool, changed func(text string)) *tview.InputField {
 	f.mu.Lock()
 	f.f.AddInputField(label, value, fieldWidth, accept, changed)
@@ -257,7 +312,6 @@ func newTextArea(text string) *tview.TextArea {
 	ta.SetText(text, false)
 	return ta
 }
-
 
 // //////////////////////////////////////////////////////////////
 // tview.Button wrapper

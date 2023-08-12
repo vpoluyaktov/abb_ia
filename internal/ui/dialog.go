@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
@@ -33,6 +34,19 @@ func newDialogWindow(dispatcher *mq.Dispatcher, height int, width int, focus tvi
 	d.grid = tview.NewGrid()
 	d.grid.SetRows(-1, d.height, -1)
 	d.grid.SetColumns(-1, d.width, -1)
+
+	d.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		return action, event
+	})
+
+	d.grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+			case tcell.KeyEscape: {
+				d.Close()
+			}
+		}		
+		return event
+	})
 
 	return d
 }

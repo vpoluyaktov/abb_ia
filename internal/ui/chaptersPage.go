@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
@@ -31,6 +32,15 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.grid.SetRows(9, -1, -1)
 	p.grid.SetColumns(0)
 
+	// Ignore mouse events when has no focus
+	p.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		if p.grid.HasFocus() {
+			return action, event
+		} else {
+			return action, nil
+		}
+	})
+
 	// book info section
 	infoSection := tview.NewGrid()
 	infoSection.SetColumns(50, -1, 30)
@@ -39,17 +49,17 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	infoSection.SetTitle(" Audiobook information: ")
 	infoSection.SetTitleAlign(tview.AlignLeft)
 	f0 := newForm()
-	f0.f.SetBorderPadding(1, 0, 1, 1)
+	f0.SetBorderPadding(1, 0, 1, 1)
 	p.author = f0.AddInputField("Author:", "", 40, nil, func(s string) { p.ab.Author = s })
 	p.title = f0.AddInputField("Title:", "", 40, nil, func(s string) { p.ab.Title = s })
 	infoSection.AddItem(f0.f, 0, 0, 1, 1, 0, 0, true)
 	f1 := newForm()
-	f1.f.SetBorderPadding(0, 1, 1, 1)
+	f1.SetBorderPadding(0, 1, 1, 1)
 	p.cover = f1.AddInputField("Book cover:", "", 0, nil, func(s string) { p.ab.IAItem.Cover = s })
 	infoSection.AddItem(f1.f, 1, 0, 1, 2, 0, 0, true)
 	f3 := newForm()
 	f3.SetHorizontal(false)
-	f3.f.SetButtonsAlign(tview.AlignRight)
+	f3.SetButtonsAlign(tview.AlignRight)
 	f3.AddButton("Create Book", p.createBook)
 	f3.AddButton("Cancel", p.stopConfirmation)
 	infoSection.AddItem(f3.f, 0, 2, 1, 1, 0, 0, false)
@@ -65,14 +75,14 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.descriptionEditor.SetTitleAlign(tview.AlignLeft)
 	descriptionSection.AddItem(p.descriptionEditor, 0, 0, 1, 1, 0, 0, true)
 	f4 := newForm()
-	f4.f.SetBorder(true)
+	f4.SetBorder(true)
 	f4.SetHorizontal(true)
 
 	f4.AddInputField("Search: ", "", 30, nil, func(s string) { p.ab.Author = s })
 	f4.AddInputField("Replace:", "", 30, nil, func(s string) { p.ab.Author = s })
 	f4.AddButton("Replace", p.createBook)
 	f4.AddButton(" Undo  ", p.stopConfirmation)
-	f4.f.SetButtonsAlign(tview.AlignRight)
+	f4.SetButtonsAlign(tview.AlignRight)
 	descriptionSection.AddItem(f4.f, 0, 1, 1, 1, 0, 0, true)
 	p.grid.AddItem(descriptionSection, 1, 0, 1, 1, 0, 0, true)
 
@@ -80,22 +90,24 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.chaptersSection = tview.NewGrid()
 	p.chaptersSection.SetColumns(-1, 40)
 	p.chaptersTable = newTable()
-	p.chaptersTable.t.SetBorder(true)
-	p.chaptersTable.t.SetTitle(" Book chapters: ")
-	p.chaptersTable.t.SetTitleAlign(tview.AlignLeft)
+	p.chaptersTable.SetBorder(true)
+	p.chaptersTable.SetTitle(" Book chapters: ")
+	p.chaptersTable.SetTitleAlign(tview.AlignLeft)
 	p.chaptersTable.setHeaders("  # ", "Start", "End", "Duration", "Chapter name")
 	p.chaptersTable.setWeights(1, 1, 1, 1, 20)
 	p.chaptersTable.setAlign(tview.AlignRight, tview.AlignRight, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
-	p.chaptersTable.t.SetSelectedFunc(p.updateChapterEntry)
+	p.chaptersTable.SetSelectedFunc(p.updateChapterEntry)
+	p.chaptersTable.SetMouseDblClickFunc(p.updateChapterEntry)
 	p.chaptersSection.AddItem(p.chaptersTable.t, 0, 0, 1, 1, 0, 0, true)
 	f5 := newForm()
-	f5.f.SetBorder(true)
+	f5.SetBorder(true)
 	f5.SetHorizontal(true)
 	f5.AddInputField("Search: ", "", 30, nil, func(s string) { p.ab.Author = s })
 	f5.AddInputField("Replace:", "", 30, nil, func(s string) { p.ab.Author = s })
 	f5.AddButton("Replace", p.createBook)
 	f5.AddButton(" Undo  ", p.stopConfirmation)
-	f5.f.SetButtonsAlign(tview.AlignRight)
+	f5.SetButtonsAlign(tview.AlignRight)
+	f5.SetMouseDblClickFunc(func() {})
 	p.chaptersSection.AddItem(f5.f, 0, 1, 1, 1, 0, 0, false)
 	p.grid.AddItem(p.chaptersSection, 2, 0, 1, 1, 0, 0, true)
 
@@ -130,6 +142,7 @@ func (p *ChaptersPage) displayBookInfo(ab *dto.Audiobook) {
 	p.chaptersTable.clear()
 	p.chaptersTable.showHeader()
 	p.chaptersTable.t.ScrollToBeginning()
+	p.mq.SendMessage(mq.EncodingPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.chaptersSection}, false)
 }
 
 func (p *ChaptersPage) addChapter(chapter *dto.Chapter) {

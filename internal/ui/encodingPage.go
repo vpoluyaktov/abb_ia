@@ -160,7 +160,7 @@ func (p *EncodingPage) updateTotalProgress(dp *dto.EncodingProgress) {
 }
 
 func (p *EncodingPage) encodingComplete(c *dto.EncodingComplete) {
-	p.mq.SendMessage(mq.DownloadPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.ChaptersController, &dto.ChaptersCreate{Audiobook: c.Audiobook}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
+	p.mq.SendMessage(mq.EncodingPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
+	p.mq.SendMessage(mq.EncodingPage, mq.ChaptersController, &dto.ChaptersCreate{Audiobook: c.Audiobook}, true)
+	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
 }
