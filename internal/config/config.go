@@ -1,6 +1,11 @@
 package config
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"github.com/spf13/viper"
+)
 
 // singleton
 var (
@@ -9,116 +14,134 @@ var (
 )
 
 type Config struct {
-	logFileName        string
-	logLevel           string
-	useMock            bool
-	saveMock           bool
-	searchCondition    string
-	parrallelDownloads int
-	parrallelEncoders  int
-	reEncodeFiles      bool
-	bitRate            string
-	sampleRate         string
-	maxFileSize        int64
+	LogFileName        string
+	LogLevel           string
+	UseMock            bool
+	SaveMock           bool
+	SearchCondition    string
+	ParrallelDownloads int
+	ParrallelEncoders  int
+	ReEncodeFiles      bool
+	BitRate            string
+	SampleRate         string
+	MaxFileSize        int64
 }
 
 func Load() {
 	config := &Config{}
-	config.logFileName = "abb_ia.log"
-	config.logLevel = "INFO"
-	config.useMock = false
-	config.saveMock = false
-	config.searchCondition = ""
-	config.parrallelDownloads = 5
-	config.parrallelEncoders = 5
-	config.reEncodeFiles = false
-	config.bitRate = "128k"
-	config.sampleRate = "44100"
-	config.maxFileSize = 1024 * 1024
 
-	// read config file here
+	// default settings
+	viper.SetDefault("LogFileName", "abb_ia.log")
+	viper.SetDefault("LogLevel", "INFO")
+	viper.SetDefault("UseMock", false)
+	viper.SetDefault("SaveMock", false)
+	viper.SetDefault("SearchCondition", "")
+	viper.SetDefault("ParrallelDownloads", 5)
+	viper.SetDefault("ParrallelEncoders", 5)
+	viper.SetDefault("ReEncodeFiles", false)
+	viper.SetDefault("BitRate", "128k")
+	viper.SetDefault("SampleRate", 44100)
+	viper.SetDefault("MaxFileSize", 1024*1024)
 
+	viper.SetConfigType("yaml")
+	viper.SetConfigFile("./config.yaml")
+
+	fmt.Printf("Using config: %s\n", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("Config file not found. Using default values\n")
+		viper.WriteConfig()
+	}
+	err := viper.Unmarshal(config)
+	if err != nil {
+		fmt.Printf("Can't parse config file\n")
+	}
 	configInstance = config
 }
 
+func SaveConfig() {
+	viper.WriteConfig()
+}
+
 func SetLogfileName(fileName string) {
-	configInstance.logFileName = fileName
+	configInstance.LogFileName = fileName
+	viper.Set("logfile", fileName)
+	SaveConfig()
 }
 
 func LogFileName() string {
-	return configInstance.logFileName
+	return configInstance.LogFileName
 }
 
 func SetLogLevel(logLevel string) {
-	configInstance.logLevel = logLevel
+	configInstance.LogLevel = logLevel
 }
 
 func LogLevel() string {
-	return configInstance.logLevel
+	return configInstance.LogLevel
 }
 
 func UseMock(b bool) {
-	configInstance.useMock = b
+	configInstance.UseMock = b
 }
 
 func IsUseMock() bool {
-	return configInstance.useMock
+	return configInstance.UseMock
 }
 
 func SaveMock(b bool) {
-	configInstance.saveMock = b
+	configInstance.SaveMock = b
 }
 
 func IsSaveMock() bool {
-	return configInstance.saveMock
+	return configInstance.SaveMock
 }
 
 func SetSearchCondition(c string) {
-	configInstance.searchCondition = c
+	configInstance.SearchCondition = c
 }
 
 func SearchCondition() string {
-	return configInstance.searchCondition
+	return configInstance.SearchCondition
 }
 
 func SetParallelDownloads(n int) {
-	configInstance.parrallelDownloads = n
+	configInstance.ParrallelDownloads = n
 }
 
 func ParallelDownloads() int {
-	return configInstance.parrallelDownloads
+	return configInstance.ParrallelDownloads
 }
 
 func SetParallelEncoders(n int) {
-	configInstance.parrallelEncoders = n
+	configInstance.ParrallelEncoders = n
 }
 
 func ParallelEncoders() int {
-	return configInstance.parrallelEncoders
+	return configInstance.ParrallelEncoders
 }
 
 func SetReEncodeFiles(b bool) {
-	configInstance.reEncodeFiles = b
+	configInstance.ReEncodeFiles = b
 }
 
 func IsReEncodeFiles() bool {
-	return configInstance.reEncodeFiles
+	return configInstance.ReEncodeFiles
 }
 
 func SetBitRate(b string) {
-	configInstance.bitRate = b
+	configInstance.BitRate = b
 }
 
 func BitRate() string {
-	return configInstance.bitRate
+	return configInstance.BitRate
 }
 
 func SetSampleRate(b string) {
-	configInstance.sampleRate = b
+	configInstance.SampleRate = b
 }
 
 func SampleRate() string {
-	return configInstance.sampleRate
+	return configInstance.SampleRate
 }
 
 func AppVersion() string {

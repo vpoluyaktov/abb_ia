@@ -3,6 +3,7 @@ package ffmpeg
 import (
 	"encoding/json"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 )
 
@@ -59,4 +60,12 @@ func (p *FFProbe) GetDuration() float64 {
 		return 0
 	}
 	return f
+}
+
+func (p *FFProbe) GetTitle() string {
+	if p.metadata.Format.Tags.Title == "" {
+		return filepath.Base(p.metadata.Format.Filename)
+	} else {
+		return p.metadata.Format.Tags.Title
+	}
 }

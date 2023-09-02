@@ -1,7 +1,10 @@
 package controller
 
 import (
+	"path/filepath"
+
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"github.com/vpoluyaktov/abb_ia/internal/ffmpeg"
 	"github.com/vpoluyaktov/abb_ia/internal/logger"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
@@ -50,9 +53,13 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 
 	c.ab = cmd.Audiobook
 	c.ab.Chapters = nil
+
+	var offset float64 = 0
 	for i, file := range c.ab.IAItem.Files {
-		chapter := dto.Chapter{Number: i, Start: 0, End: 0, Duration: 0, Name: file.Name}
+		p, _ := ffmpeg.NewFFProbe(filepath.Join("output", c.ab.IAItem.ID, c.ab.IAItem.Dir, file.Name))
+		chapter := dto.Chapter{Number: i + 1, Start: offset, End: offset + p.GetDuration(), Duration: p.GetDuration(), Name: p.GetTitle()}
 		c.ab.Chapters = append(c.ab.Chapters, chapter)
+		offset += p.GetDuration()
 		c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.AddChapterCommand{Chapter: &chapter}, true)
 	}
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)

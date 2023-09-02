@@ -7,6 +7,7 @@ import (
 	"github.com/vpoluyaktov/abb_ia/cmd"
 	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 func main() {
@@ -29,11 +30,19 @@ func main() {
 	}
 
 	// save runtime configuration
-	config.SetSearchCondition(searchCondition)
-	config.SetLogLevel(*logLevel)
-	config.UseMock(*useMock)
-	config.SaveMock(*saveMock)
+	if searchCondition != "" {
+		config.SetSearchCondition(searchCondition)
+	}
+	if utils.IsFlagPassed("log-level") {
+		config.SetLogLevel(*logLevel)
+	}
+	if utils.IsFlagPassed("mock-load")  {
+		config.UseMock(*useMock)
+	}
+	if utils.IsFlagPassed("mock-save") {
+		config.SaveMock(*saveMock)
+	}
 
-	logger.Init(config.LogFileName(), *logLevel)
+	logger.Init(config.LogFileName(), config.LogLevel())
 	cmd.Execute()
 }

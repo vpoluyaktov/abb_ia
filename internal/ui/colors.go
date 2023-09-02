@@ -21,7 +21,7 @@ var (
 	headerBGColor = cyan
 
 	busyIndicatorFgColor = yellow
-	busyIndicatorBgColor  = cyan
+	busyIndicatorBgColor = cyan
 )
 
 func setColorTheme() {

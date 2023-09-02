@@ -2,6 +2,7 @@ package mq
 
 import (
 	"container/list"
+	"reflect"
 	"sync"
 	"time"
 
@@ -44,12 +45,16 @@ func (d *Dispatcher) SendMessage(from string, to string, dto dto.Dto, async bool
 			d.recipients[m.To] = messageQueue{list.New()}
 		}
 		d.mu.Lock()
-		d.recipients[m.To].messages.PushBack(m)
+		// TODO check if such message is already in queue
+		if !d.messageExists(m) {
+			d.recipients[m.To].messages.PushBack(m)
+		}
 		d.mu.Unlock()
 		logger.Debug("MQ <-- async " + m.String())
 	} else if _, ok := d.listeners[m.To]; ok {
-		logger.Debug("MQ <-- sync  " + m.String())
 		// call recepient method in blocking mode
+		logger.Debug("MQ <-- sync  " + m.String())
+
 		d.listeners[m.To](m)
 		logger.Debug("MQ  sync --> " + m.String())
 	}
@@ -68,6 +73,18 @@ func (d *Dispatcher) GetMessage(recipient string) *Message {
 		d.mu.Unlock()
 	}
 	return m
+}
+
+func (d *Dispatcher) messageExists(m *Message) bool {
+	found := false
+	for e := d.recipients[m.To].messages.Front(); e != nil; e = e.Next() {
+		mm := e.Value.(*Message)
+		if reflect.DeepEqual(m, mm) {
+			found = true
+			break
+		}
+	}
+	return found
 }
 
 func (d *Dispatcher) RegisterListener(recipient string, callBackFunc CallBackFunc) {

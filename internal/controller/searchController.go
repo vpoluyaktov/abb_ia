@@ -80,7 +80,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 				item.Description = tview.Escape(ia.Html2Text(d.Metadata.Description[0]))
 			}
 			if len(d.Misc.Image) > 0 {	
-				item.Cover = d.Misc.Image
+				item.Cover = strings.ReplaceAll(d.Misc.Image, "_thumb", "") // ??? TODO Check if all images have _thumb suffix. 
 			}
 			for name, metadata := range d.Files {
 				format := metadata.Format
