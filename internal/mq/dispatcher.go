@@ -48,13 +48,12 @@ func (d *Dispatcher) SendMessage(from string, to string, dto dto.Dto, async bool
 		// TODO check if such message is already in queue
 		if !d.messageExists(m) {
 			d.recipients[m.To].messages.PushBack(m)
+			logger.Debug("MQ <-- async " + m.String())
 		}
 		d.mu.Unlock()
-		logger.Debug("MQ <-- async " + m.String())
 	} else if _, ok := d.listeners[m.To]; ok {
 		// call recepient method in blocking mode
 		logger.Debug("MQ <-- sync  " + m.String())
-
 		d.listeners[m.To](m)
 		logger.Debug("MQ  sync --> " + m.String())
 	}

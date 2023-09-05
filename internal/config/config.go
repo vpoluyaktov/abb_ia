@@ -2,14 +2,20 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
 	"time"
 
-	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 // singleton
 var (
-	configInstance        *Config
+	configInstance *Config
+)
+
+// global vars
+var (
+	configFile            = "config.yaml"
 	appVersion, buildDate string
 )
 
@@ -31,41 +37,57 @@ func Load() {
 	config := &Config{}
 
 	// default settings
-	viper.SetDefault("LogFileName", "abb_ia.log")
-	viper.SetDefault("LogLevel", "INFO")
-	viper.SetDefault("UseMock", false)
-	viper.SetDefault("SaveMock", false)
-	viper.SetDefault("SearchCondition", "")
-	viper.SetDefault("ParrallelDownloads", 5)
-	viper.SetDefault("ParrallelEncoders", 5)
-	viper.SetDefault("ReEncodeFiles", false)
-	viper.SetDefault("BitRate", "128k")
-	viper.SetDefault("SampleRate", 44100)
-	viper.SetDefault("MaxFileSize", 1024*1024)
+	config.LogFileName = "abb_ia.log"
+	config.LogLevel = "INFO"
+	config.UseMock = false
+	config.SaveMock = false
+	config.SearchCondition = ""
+	config.ParrallelDownloads = 5
+	config.ParrallelEncoders = 5
+	config.ReEncodeFiles = false
+	config.BitRate = "128k"
+	config.SampleRate = "44100"
+	config.MaxFileSize = 1024 * 1024
 
-	viper.SetConfigType("yaml")
-	viper.SetConfigFile("./config.yaml")
-
-	fmt.Printf("Using config: %s\n", viper.ConfigFileUsed())
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Config file not found. Using default values\n")
-		viper.WriteConfig()
-	}
-	err := viper.Unmarshal(config)
-	if err != nil {
-		fmt.Printf("Can't parse config file\n")
+	fmt.Printf("Using config: %s\n", configFile)
+	if ReadConfig(config) != nil {
+		fmt.Printf("Can read config file. Creating new one\n")
+		SaveConfig(config)
 	}
 	configInstance = config
 }
 
-func SaveConfig() {
-	viper.WriteConfig()
+func ReadConfig(c *Config) error {
+	buf, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return err
+	} else {
+		err = yaml.Unmarshal(buf, c)
+		if err != nil {
+			fmt.Printf("Can parse config file. Creating new one\n")
+			return err
+		}
+	}
+	return nil
+}
+
+func SaveConfig(c *Config) error {
+	yaml, err := yaml.Marshal(c)
+	if err != nil {
+		fmt.Printf("Can not marshal config structure: %s\n", err.Error())
+		return err
+	} else {
+		err = ioutil.WriteFile(configFile, yaml, 0644)
+		if err != nil {
+			fmt.Printf("Can not write config file: %s\n", err.Error())
+		}
+		configInstance = c
+		return nil
+	}
 }
 
 func SetLogfileName(fileName string) {
 	configInstance.LogFileName = fileName
-	viper.Set("logfile", fileName)
-	SaveConfig()
 }
 
 func LogFileName() string {
@@ -160,4 +182,8 @@ func BuildDate() string {
 	} else {
 		return time.Now().Format(fmt)
 	}
+}
+
+func GetCopy() Config {
+	return *configInstance
 }

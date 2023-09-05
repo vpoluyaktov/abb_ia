@@ -57,7 +57,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	f.SetHorizontal(false)
 	f.f.SetButtonsAlign(tview.AlignRight)
 	p.searchButton = f.AddButton("Create Audiobook", p.createBook)
-	p.clearButton = f.AddButton("Settings", p.clearEverything)
+	p.clearButton = f.AddButton("Settings", p.updateConfig)
 	p.searchSection.AddItem(f.f, 0, 1, 1, 1, 0, 0, false)
 
 	p.grid.AddItem(p.searchSection, 0, 0, 1, 1, 0, 0, true)
@@ -211,4 +211,9 @@ func (p *SearchPage) launchDownload(ab *dto.Audiobook) {
 	p.mq.SendMessage(mq.SearchPage, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: ab}, true)
 	p.mq.SendMessage(mq.SearchPage, mq.DownloadController, &dto.DownloadCommand{Audiobook: ab}, true)
 	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "DownloadPage"}, false)
+}
+
+func (p *SearchPage) updateConfig() {
+	p.mq.SendMessage(mq.SearchPage, mq.ConfigPage, &dto.DisplayConfigCommand{Config: config.GetCopy()}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ConfigPage"}, false)
 }

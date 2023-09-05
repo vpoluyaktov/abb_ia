@@ -60,7 +60,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	f3 := newForm()
 	f3.SetHorizontal(false)
 	f3.SetButtonsAlign(tview.AlignRight)
-	f3.AddButton("Create Book", p.createBook)
+	f3.AddButton("Create Book", p.buildBook)
 	f3.AddButton("Cancel", p.stopConfirmation)
 	infoSection.AddItem(f3.f, 0, 2, 1, 1, 0, 0, false)
 	p.grid.AddItem(infoSection, 0, 0, 1, 1, 0, 0, false)
@@ -80,7 +80,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 
 	f4.AddInputField("Search: ", "", 30, nil, func(s string) { p.ab.Author = s })
 	f4.AddInputField("Replace:", "", 30, nil, func(s string) { p.ab.Author = s })
-	f4.AddButton("Replace", p.createBook)
+	f4.AddButton("Replace", p.buildBook)
 	f4.AddButton(" Undo  ", p.stopConfirmation)
 	f4.SetButtonsAlign(tview.AlignRight)
 	descriptionSection.AddItem(f4.f, 0, 1, 1, 1, 0, 0, true)
@@ -104,7 +104,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	f5.SetHorizontal(true)
 	f5.AddInputField("Search: ", "", 30, nil, func(s string) { p.ab.Author = s })
 	f5.AddInputField("Replace:", "", 30, nil, func(s string) { p.ab.Author = s })
-	f5.AddButton("Replace", p.createBook)
+	f5.AddButton("Replace", p.buildBook)
 	f5.AddButton(" Undo  ", p.stopConfirmation)
 	f5.SetButtonsAlign(tview.AlignRight)
 	f5.SetMouseDblClickFunc(func() {})
@@ -187,8 +187,8 @@ func (p *ChaptersPage) stopChapters() {
 	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }
 
-func (p *ChaptersPage) createBook() {
-	p.mq.SendMessage(mq.DownloadPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: p.ab}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.ChaptersController, &dto.EncodeCommand{Audiobook: p.ab}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
+func (p *ChaptersPage) buildBook() {
+	p.mq.SendMessage(mq.ChaptersPage, mq.BuildPage, &dto.DisplayBookInfoCommand{Audiobook: p.ab}, true)
+	p.mq.SendMessage(mq.ChaptersPage, mq.BuildController, &dto.BuildCommand{Audiobook: p.ab}, true)
+	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, false)
 }

@@ -19,9 +19,11 @@ func NewConductor(dispatcher *mq.Dispatcher) *Conductor {
 	c := &Conductor{}
 	c.dispatcher = dispatcher
 	c.controllers = append(c.controllers, NewSearchController(c.dispatcher))
+	c.controllers = append(c.controllers, NewConfigController(c.dispatcher))
 	c.controllers = append(c.controllers, NewDownloadController(c.dispatcher))
 	c.controllers = append(c.controllers, NewEncodingController(c.dispatcher))
 	c.controllers = append(c.controllers, NewChaptersController(c.dispatcher))
+	c.controllers = append(c.controllers, NewBuildController(c.dispatcher))
 	return c
 }
 

@@ -38,26 +38,32 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	header := newHeader(dispatcher)
 	footer := newFooter(dispatcher)
 	searchPage := newSearchPage(dispatcher)
+	configPage := newConfigPage(dispatcher)
 	downloadPage := newDownloadPage(dispatcher)
 	encodingPage := newEncodingPage(dispatcher)
 	chaptersPage := newChaptersPage(dispatcher)
+	buildPage := newBuildPage(dispatcher)
 
 	// UI main frame
 	frame := newFrame(dispatcher)
 	frame.addHeader(header)
 	frame.addFooter(footer)
 	frame.addPage("SearchPage", searchPage.grid)
+	frame.addPage("ConfigPage", configPage.grid)
 	frame.addPage("DownloadPage", downloadPage.grid)
 	frame.addPage("EncodingPage", encodingPage.grid)
 	frame.addPage("ChaptersPage", chaptersPage.grid)
+	frame.addPage("BuildPage", buildPage.grid)
 
 	ui.components = append(ui.components, frame)
 	ui.components = append(ui.components, header)
 	ui.components = append(ui.components, footer)
 	ui.components = append(ui.components, searchPage)
+	ui.components = append(ui.components, configPage)
 	ui.components = append(ui.components, downloadPage)
 	ui.components = append(ui.components, encodingPage)
 	ui.components = append(ui.components, chaptersPage)
+	ui.components = append(ui.components, buildPage)
 
 	frame.switchToPage("SearchPage")
 

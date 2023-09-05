@@ -24,6 +24,16 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
+// Find an index of elements in a string slice
+func GetIndex(s []string, str string) int {
+	for i, e := range s {
+		 if e == str {  // check the condition if its true return index
+				return i
+		 }
+	}
+	return -1
+}
+
 // Convert time in HH:MM:SS or SSSSS.MI string format to seconds
 func TimeToSeconds(t string) (float64, error) {
 	slices := strings.Split(t, ":")

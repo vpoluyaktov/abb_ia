@@ -94,6 +94,10 @@ func Debug(message string) {
 	}
 }
 
+func LogLeves() []string { // TODO: Refactor this
+	return []string{"DEBUG", "INFO", "WARN", "ERROR", "FATAL"}
+}
+
 func (logger *Logger) writeMessage(logLevel string, message string) {
 	currentTime := time.Now().Format("2006-01-02 15:04:05")
 	loggerInstance.logFile.WriteString(currentTime + " " + logLevel + ": " + message + "\n")
