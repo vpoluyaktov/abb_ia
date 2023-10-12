@@ -150,7 +150,7 @@ func (p *SearchPage) updateResult(i *dto.IAItem) {
 	logger.Debug(mq.SearchPage + ": Got AI Item: " + i.Title)
 	p.searchResult = append(p.searchResult, i)
 	p.resultTable.appendRow(i.Creator, i.Title, strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
-	p.resultTable.t.ScrollToBeginning()
+	p.resultTable.ScrollToBeginning()
 	// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.resultTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
 	p.updateDetails(1, 0)
 	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
@@ -173,7 +173,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 		for _, f := range files {
 			p.filesTable.appendRow(f.Name, f.Format, f.LengthH, f.SizeH)
 		}
-		p.filesTable.t.ScrollToBeginning()
+		p.filesTable.ScrollToBeginning()
 		// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.filesTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
 	}
 }
@@ -181,19 +181,20 @@ func (p *SearchPage) updateDetails(row int, col int) {
 func (p *SearchPage) createBook() {
 	// get selectet row from the results table
 	row, _ := p.resultTable.t.GetSelection()
-	if row > 0 && len(p.searchResult) > 0 && len(p.searchResult) >= row {
+	if row <= 0 || len(p.searchResult) <= 0 || len(p.searchResult) < row {
+		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection)
+	} else {
 		item := p.searchResult[row-1]
-
 		d := newDialogWindow(p.mq, 12, 80, p.resultSection)
 		f := newForm()
 		f.SetTitle("Create Audiobook")
-		author := f.AddInputField("Book Author", item.Creator, 60, nil, nil)
-		title := f.AddInputField("Book Title", item.Title, 60, nil, nil)
+		// author := f.AddInputField("Book Author", item.Creator, 60, nil, nil)
+		// title := f.AddInputField("Book Title", item.Title, 60, nil, nil)
 		f.AddButton("Create Audiobook", func() {
 			ab := &dto.Audiobook{}
 			ab.IAItem = item
-			ab.Title = title.GetText()
-			ab.Author = author.GetText()
+			// ab.Title = title.GetText()
+			// ab.Author = author.GetText()
 			p.launchDownload(ab)
 			d.Close()
 		})
@@ -202,8 +203,6 @@ func (p *SearchPage) createBook() {
 		})
 		d.setForm(f.f)
 		d.Show()
-	} else {
-		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection)
 	}
 }
 

@@ -127,6 +127,10 @@ func (p *ChaptersPage) dispatchMessage(m *mq.Message) {
 		p.displayBookInfo(dto.Audiobook)
 	case *dto.AddChapterCommand:
 		p.addChapter(dto.Chapter)
+	case *dto.AddPartCommand:
+		p.addPart(dto.Part)	
+	case *dto.ChaptersReady:
+		p.displayParts(dto.Audiobook)	
 	default:
 		m.UnsupportedTypeError(mq.ChaptersPage)
 	}
@@ -141,8 +145,27 @@ func (p *ChaptersPage) displayBookInfo(ab *dto.Audiobook) {
 
 	p.chaptersTable.clear()
 	p.chaptersTable.showHeader()
-	p.chaptersTable.t.ScrollToBeginning()
+	p.chaptersTable.ScrollToBeginning()
 	p.mq.SendMessage(mq.EncodingPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.chaptersSection}, false)
+}
+
+func (p *ChaptersPage) displayParts(ab *dto.Audiobook) {
+	if len(ab.Parts) > 1 {
+		p.chaptersTable.clear()
+		for _, part := range ab.Parts {
+			p.addPart(&part)
+		}
+	}
+	p.mq.SendMessage(mq.ChaptersPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
+}
+
+func (p *ChaptersPage) addPart(part *dto.Part) {
+	number := strconv.Itoa(part.Number)
+	p.chaptersTable.appendSeparator("", "", "", "", "Part Number " + number)
+	for _, chapter := range part.Chapters {
+		p.addChapter(&chapter)
+	}
+	p.mq.SendMessage(mq.ChaptersPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
 }
 
 func (p *ChaptersPage) addChapter(chapter *dto.Chapter) {
@@ -150,13 +173,18 @@ func (p *ChaptersPage) addChapter(chapter *dto.Chapter) {
 	startH, _ := utils.SecondsToTime(chapter.Start)
 	endH, _ := utils.SecondsToTime(chapter.End)
 	durationH, _ := utils.SecondsToTime(chapter.Duration)
-
 	p.chaptersTable.appendRow(number, startH, endH, durationH, chapter.Name)
-	p.chaptersTable.t.ScrollToBeginning()
+	p.chaptersTable.ScrollToBeginning()
 }
 
 func (p *ChaptersPage) updateChapterEntry(row int, col int) {
-	chapter := p.ab.Chapters[row-1]
+	chapterNo, err := strconv.Atoi(p.chaptersTable.t.GetCell(row, 0).Text)
+	if err != nil {
+		// Part Number line found
+		return
+	}
+
+	chapter, _ := p.ab.GetChapter(chapterNo)
 	durationH, _ := utils.SecondsToTime(chapter.Duration)
 	d := newDialogWindow(p.mq, 11, 80, p.chaptersSection)
 	f := newForm()
@@ -167,7 +195,8 @@ func (p *ChaptersPage) updateChapterEntry(row int, col int) {
 	f.AddButton("Save changes", func() {
 		cell := p.chaptersTable.t.GetCell(row, col)
 		cell.Text = nameF.GetText()
-		p.ab.Chapters[row-1].Name = nameF.GetText()
+		chapter.Name = nameF.GetText()
+		p.ab.SetChapter(chapterNo, chapter) 
 		d.Close()
 	})
 	f.AddButton("Cancel", func() {

@@ -47,7 +47,7 @@ func Load() {
 	config.ReEncodeFiles = false
 	config.BitRate = "128k"
 	config.SampleRate = "44100"
-	config.MaxFileSize = 1024 * 1024
+	config.MaxFileSize = 1024 * 1024 * 10
 
 	fmt.Printf("Using config: %s\n", configFile)
 	if ReadConfig(config) != nil {
@@ -164,6 +164,10 @@ func SetSampleRate(b string) {
 
 func SampleRate() string {
 	return configInstance.SampleRate
+}
+
+func MaxFileSize() int64 {
+	return configInstance.MaxFileSize
 }
 
 func AppVersion() string {

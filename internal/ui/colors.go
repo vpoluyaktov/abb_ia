@@ -6,13 +6,15 @@ import (
 )
 
 var (
-	white  = tcell.NewRGBColor(255, 255, 255)
-	gray   = tcell.NewRGBColor(202, 202, 202)
-	blue   = tcell.NewRGBColor(12, 34, 184)
-	yellow = tcell.ColorYellow
-	black  = tcell.NewRGBColor(0, 0, 0)
-	cyan   = tcell.NewRGBColor(80, 176, 189)
-	red    = tcell.ColorRed
+	white     = tcell.NewRGBColor(255, 255, 255)
+	gray      = tcell.NewRGBColor(202, 202, 202)
+	blue      = tcell.NewRGBColor(12, 34, 184)
+	lightBlue = tcell.ColorBlue
+	darkBlue  = tcell.ColorDarkBlue
+	yellow    = tcell.ColorYellow
+	black     = tcell.NewRGBColor(0, 0, 0)
+	cyan      = tcell.NewRGBColor(80, 176, 189)
+	red       = tcell.ColorRed
 
 	footerFgColor = black
 	footerBgColor = cyan

@@ -63,7 +63,7 @@ func (c *EncodingController) stopEncoding(cmd *dto.StopCommand) {
 
 func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	c.startTime = time.Now()
-	logger.Debug(mq.EncodingController + ": Received StartEncoding command with IA item: " + cmd.String())
+	logger.Info(mq.EncodingController + " received " + cmd.String())
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: "Re-encoding mp3 files..."}, false)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 	c.item = cmd.Audiobook.IAItem
@@ -92,8 +92,8 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 
 	filePath := filepath.Join(outputDir, fileName)
 	tmpFile := filePath + ".tmp"
-	p, _ := ffmpeg.NewFFProbe(filePath)
-	duration := p.GetDuration()
+	mp3, _ := ffmpeg.NewFFProbe(filePath)
+	duration := mp3.Duration()
 
 	// launch progress listener
 	l, port := c.startProgressListener(fileId)

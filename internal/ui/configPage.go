@@ -14,10 +14,14 @@ type ConfigPage struct {
 	mq   *mq.Dispatcher
 	grid *tview.Grid
 
-	configCopy       config.Config
-	configSection    *tview.Grid
+	configCopy    config.Config
+	configSection *tview.Grid
+
 	logFileNameField *tview.InputField
-	logLevelField *tview.DropDown
+	logLevelField    *tview.DropDown
+	useMockField     *tview.Checkbox
+	saveMockField    *tview.Checkbox
+
 	saveConfigButton *tview.Button
 	cancelButton     *tview.Button
 }
@@ -28,7 +32,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.mq.RegisterListener(mq.ConfigPage, p.dispatchMessage)
 
 	p.grid = tview.NewGrid()
-	p.grid.SetRows(5, -1, -1)
+	p.grid.SetRows(-1, -1, -1)
 	p.grid.SetColumns(0)
 
 	// config section
@@ -38,10 +42,11 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.configSection.SetTitle(" Audiobook Builder Default Configuration")
 	p.configSection.SetTitleAlign(tview.AlignLeft)
 	f := newForm()
-	f.SetHorizontal(true)
-	p.logFileNameField = f.AddInputField("Log file name", "", 40, nil, func(t string) { p.configCopy.LogFileName = t })
-	p.logLevelField = f.AddDropdown("Log level", logger.LogLeves(), 1, func(o string, i int) { p.configCopy.LogLevel = o })
-
+	f.SetHorizontal(false)
+	p.logFileNameField = f.AddInputField("Log file name:", "", 40, nil, func(t string) { p.configCopy.LogFileName = t })
+	p.logLevelField = f.AddDropdown("Log level:", logger.LogLeves(), 1, func(o string, i int) { p.configCopy.LogLevel = o })
+	p.useMockField = f.AddCheckbox("Use mock:", false, func(t bool) { p.configCopy.UseMock = t })
+	p.saveMockField = f.AddCheckbox("Save mock:", false, func(t bool) { p.configCopy.SaveMock = t })
 
 	p.configSection.AddItem(f.f, 0, 0, 1, 1, 0, 0, true)
 	f = newForm()
@@ -73,7 +78,9 @@ func (p *ConfigPage) dispatchMessage(m *mq.Message) {
 func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 	p.configCopy = c.Config
 	p.logFileNameField.SetText(p.configCopy.LogFileName)
-	p.logLevelField.SetCurrentOption(utils.GetIndex(logger.LogLeves(),p.configCopy.LogLevel))
+	p.logLevelField.SetCurrentOption(utils.GetIndex(logger.LogLeves(), p.configCopy.LogLevel))
+	p.useMockField.SetChecked(p.configCopy.UseMock)
+	p.saveMockField.SetChecked(p.configCopy.SaveMock)
 
 	p.mq.SendMessage(mq.ConfigPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 	p.mq.SendMessage(mq.ConfigPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.configSection}, true)

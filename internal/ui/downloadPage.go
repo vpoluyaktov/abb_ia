@@ -110,7 +110,7 @@ func (p *DownloadPage) displayBookInfo(ab *dto.Audiobook) {
 	for i, f := range ab.IAItem.Files {
 		p.filesTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, f.Format, f.LengthH, f.SizeH, "")
 	}
-	p.filesTable.t.ScrollToBeginning()
+	p.filesTable.ScrollToBeginning()
 	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.filesTable.t}, true)
 	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }

@@ -111,7 +111,7 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	// for i, f := range ab.IAItem.Files {
 	// 	p.buildTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, f.Format, f.LengthH, f.SizeH, "")
 	// }
-	p.buildTable.t.ScrollToBeginning()
+	p.buildTable.ScrollToBeginning()
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.buildTable.t}, true)
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }

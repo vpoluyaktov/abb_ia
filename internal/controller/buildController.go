@@ -58,7 +58,7 @@ func (c *BuildController) stopBuild(cmd *dto.StopCommand) {
 
 func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	c.startTime = time.Now()
-	logger.Debug(mq.BuildController + ": Received StartBuild command with IA item: " + cmd.String())
+	logger.Info(mq.BuildController + " received " + cmd.String())
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: "Building mp3 files..."}, false)
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 	c.item = cmd.Audiobook.IAItem

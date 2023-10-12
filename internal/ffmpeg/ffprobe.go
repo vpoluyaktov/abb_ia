@@ -54,7 +54,7 @@ func NewFFProbe(fileName string) (*FFProbe, error) {
 	return p, err
 }
 
-func (p *FFProbe) GetDuration() float64 {
+func (p *FFProbe) Duration() float64 {
 	f, err := strconv.ParseFloat(p.metadata.Format.Duration, 64)
 	if err != nil {
 		return 0
@@ -62,10 +62,19 @@ func (p *FFProbe) GetDuration() float64 {
 	return f
 }
 
-func (p *FFProbe) GetTitle() string {
+func (p *FFProbe) Title() string {
 	if p.metadata.Format.Tags.Title == "" {
 		return filepath.Base(p.metadata.Format.Filename)
 	} else {
 		return p.metadata.Format.Tags.Title
+	}
+}
+
+func (p *FFProbe) Size() int64 {
+	s, err := strconv.ParseInt(p.metadata.Format.Size, 0, 64)
+	if err == nil {
+		return s
+	} else {
+		return 0
 	}
 }

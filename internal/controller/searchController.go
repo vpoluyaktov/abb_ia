@@ -42,7 +42,7 @@ func (c *SearchController) dispatchMessage(m *mq.Message) {
 }
 
 func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
-	logger.Debug(mq.SearchController + ": Received SearchCommand with condition: " + cmd.SearchCondition)
+	logger.Info(mq.SearchController + " received " + cmd.String())
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
@@ -61,6 +61,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 		item.Title = tview.Escape(doc.Title)
 
 		// collect mp3 files
+		// TODO: Implement filtering for mp3 files with multiple bitrates (see https://archive.org/details/voyage_moon_1512_librivox for ex.)
 		item.FilesCount = 0
 		item.Files = make([]dto.File, 0)
 		var totalSize int64 = 0
@@ -116,6 +117,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			c.mq.SendMessage(mq.SearchController, mq.SearchPage, item, true)
 		}
 	}
+	logger.Info(mq.SearchController + " fetched first " + strconv.Itoa(itemsFetched) + " items from " + strconv.Itoa(itemsTotal) + " total" )
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 }

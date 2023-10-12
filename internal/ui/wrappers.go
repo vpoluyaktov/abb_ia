@@ -26,7 +26,7 @@ func newTable() *table {
 	t.t.SetSelectable(true, false)
 	t.t.SetSeparator(tview.Borders.Vertical)
 	// t.t.SetSortClicked(false)
-	// t.t.SetSortFunc() // TODO
+	// t.t.SetSortFunc() // TODO implement sorting
 	// t.t.ShowFocus(true)
 	t.t.SetBorder(false)
 	t.t.Clear()
@@ -106,6 +106,24 @@ func (t *table) appendRow(cols ...string) {
 		cell.SetMaxWidth(t.colWidth[col])
 		t.t.SetCell(row, col, cell)
 	}
+}
+
+func (t *table) appendSeparator(cols ...string) {
+	row := t.t.GetRowCount()
+	for col, val := range cols {
+		cell := tview.NewTableCell(val)
+		cell.SetAlign(int(t.aligns[col]))
+		cell.SetExpansion(t.colWeight[col])
+		cell.SetMaxWidth(t.colWidth[col])
+		// cell.NotSelectable = true
+		cell.SetTextColor(tview.Styles.PrimaryTextColor)
+		cell.SetBackgroundColor(lightBlue)
+		t.t.SetCell(row, col, cell)
+	}
+}
+
+func (t *table) ScrollToBeginning() {
+	t.t.ScrollToBeginning()
 }
 
 func (t *table) clear() {

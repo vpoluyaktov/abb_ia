@@ -15,7 +15,7 @@ import (
 
 type DownloadController struct {
 	mq        *mq.Dispatcher
-	item      *dto.IAItem
+	ab        *dto.Audiobook
 	startTime time.Time
 	files     []fileDownload
 	stopFlag  bool
@@ -60,19 +60,25 @@ func (c *DownloadController) stopDownload(cmd *dto.StopCommand) {
 
 func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.startTime = time.Now()
-	logger.Debug(mq.DownloadController + ": Received StartDownload command with IA item: " + cmd.String())
+	logger.Info(mq.DownloadController + " received " + cmd.String())
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: "Downloading mp3 files..."}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
-	c.item = cmd.Audiobook.IAItem
-	outputDir := filepath.Join("output", c.item.ID)
+
+	c.ab = cmd.Audiobook
+	item := c.ab.IAItem
+	outputDir := filepath.Join("output", item.ID)
+
+	c.ab.Author = item.Creator
+	c.ab.Title = item.Title
+	c.ab.Description = item.Description
 
 	// download files
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
-	c.files = make([]fileDownload, len(c.item.Files))
+	c.files = make([]fileDownload, len(item.Files))
 	jd := utils.NewJobDispatcher(config.ParallelDownloads())
-	for i, f := range c.item.Files {
-		jd.AddJob(i, ia.DownloadFile, outputDir, c.item.Server, c.item.Dir, f.Name, i, f.Size, c.updateFileProgress)
+	for i, f := range item.Files {
+		jd.AddJob(i, ia.DownloadFile, outputDir, item.Server, item.Dir, f.Name, i, f.Size, c.updateFileProgress)
 	}
 	go c.updateTotalProgress()
 	// if c.stopFlag {
@@ -100,8 +106,9 @@ func (c *DownloadController) updateFileProgress(fileId int, fileName string, siz
 func (c *DownloadController) updateTotalProgress() {
 	var percent int = -1
 
+	item := c.ab.IAItem
 	for !c.stopFlag && percent <= 100 {
-		var totalSize = c.item.TotalSize
+		var totalSize = item.TotalSize
 		var totalBytesDownloaded int64 = 0
 		filesDownloaded := 0
 		for _, f := range c.files {
@@ -119,7 +126,7 @@ func (c *DownloadController) updateTotalProgress() {
 		// fix wrong file size returned by IA metadata
 		if filesDownloaded == len(c.files) {
 			p = 100
-			totalBytesDownloaded = c.item.TotalSize
+			totalBytesDownloaded = item.TotalSize
 		}
 
 		if percent != p {
@@ -135,7 +142,7 @@ func (c *DownloadController) updateTotalProgress() {
 
 			elapsedH, _ := utils.SecondsToTime(elapsed)
 			bytesH, _ := utils.BytesToHuman(totalBytesDownloaded)
-			filesH := fmt.Sprintf("%d/%d", filesDownloaded, len(c.item.Files))
+			filesH := fmt.Sprintf("%d/%d", filesDownloaded, len(item.Files))
 			speedH, _ := utils.SpeedToHuman(speed)
 			etaH, _ := utils.SecondsToTime(eta)
 

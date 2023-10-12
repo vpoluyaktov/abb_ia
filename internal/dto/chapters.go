@@ -10,6 +10,14 @@ func (c *ChaptersCreate) String() string {
 	return fmt.Sprintf("ChaptersCreate %s", c.Audiobook.String())
 }
 
+type AddPartCommand struct {
+	Part *Part
+}
+
+func (c *AddPartCommand) String() string {
+	return fmt.Sprintf("AddPartCommand: %d", c.Part.Number)
+}
+
 type AddChapterCommand struct {
 	Chapter *Chapter
 }
