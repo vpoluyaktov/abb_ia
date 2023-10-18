@@ -6,7 +6,10 @@ type Audiobook struct {
 	Author      string
 	Title       string
 	Description string
-	Cover       string
+	Genre       string
+	CoverURL    string
+	CoverFile   string
+	IaURL       string
 	Series      string
 	SeriesNo    int
 	Copyright   string
@@ -15,12 +18,14 @@ type Audiobook struct {
 }
 
 type Part struct {
-	Number   int
-	FileName string
-	Size     int64
-	Duration float64
-	Chapters []Chapter
-	Files    []Mp3File
+	Number       int
+	AACFile      string
+	M4BFile      string
+	FListFile    string
+	MetadataFile string
+	Size         int64
+	Duration     float64
+	Chapters     []Chapter
 }
 
 type Chapter struct {
@@ -30,6 +35,7 @@ type Chapter struct {
 	Duration float64
 	Start    float64
 	End      float64
+	Files    []Mp3File
 }
 
 type Mp3File struct {

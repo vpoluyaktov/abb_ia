@@ -58,8 +58,8 @@ func (c *ChaptersController) stopChapters(cmd *dto.StopCommand) {
  * @param {dto.ChaptersCreate} cmd - The command to create chapters.
  * @returns {void}
  *
- * This function is useful for splitting an audiobook into parts and chapters. 
- * It takes in a command object containing the audiobook and then splits the audiobook into parts and chapters. 
+ * This function is useful for splitting an audiobook into parts and chapters.
+ * It takes in a command object containing the audiobook and then splits the audiobook into parts and chapters.
  * It then sends messages to the ChaptersPage and Footer to update the status and busy indicator.
  */
 func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
@@ -78,30 +78,30 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	var offset float64 = 0
 	var partSize int64 = 0
 	var partDuration float64 = 0
-	var partFiles []dto.Mp3File = []dto.Mp3File{}
 	var partChapters []dto.Chapter = []dto.Chapter{}
+	var chapterFiles []dto.Mp3File = []dto.Mp3File{}
 
 	for i, file := range c.ab.IAItem.Files {
 		filePath := filepath.Join("output", c.ab.IAItem.ID, c.ab.IAItem.Dir, file.Name)
 		mp3, _ := ffmpeg.NewFFProbe(filePath)
-		partFiles = append(partFiles, dto.Mp3File{Number: fileNo, FileName: filePath, Size: mp3.Size(), Duration: mp3.Duration()})
+		chapterFiles = append(chapterFiles, dto.Mp3File{Number: fileNo, FileName: filePath, Size: mp3.Size(), Duration: mp3.Duration()})
 		fileNo++
 		partSize += mp3.Size()
 		partDuration += mp3.Duration()
-		chapter := dto.Chapter{Number: chapterNo, Name: c.getMp3Title(mp3.Title()), Size: mp3.Size(), Duration: mp3.Duration(), Start: offset, End: offset + mp3.Duration()}
+		chapter := dto.Chapter{Number: chapterNo, Name: c.getMp3Title(mp3.Title()), Size: mp3.Size(), Duration: mp3.Duration(), Start: offset, End: offset + mp3.Duration(), Files: chapterFiles}
 		partChapters = append(partChapters, chapter)
 		c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.AddChapterCommand{Chapter: &chapter}, true)
 		offset += mp3.Duration()
 		chapterNo++
+		chapterFiles = []dto.Mp3File{}
 		if partSize >= config.MaxFileSize() || i == len(c.ab.IAItem.Files)-1 {
-			part := dto.Part{Number: partNo, FileName: "", Size: partSize, Duration: partDuration, Chapters: partChapters, Files: partFiles}
+			part := dto.Part{Number: partNo, Size: partSize, Duration: partDuration, Chapters: partChapters}
 			c.ab.Parts = append(c.ab.Parts, part)
 			partNo++
 			fileNo = 1
 			partSize = 0
 			partDuration = 0
 			offset = 0
-			partFiles = []dto.Mp3File{}
 			partChapters = []dto.Chapter{}
 		}
 	}

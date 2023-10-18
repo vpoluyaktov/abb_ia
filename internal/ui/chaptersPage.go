@@ -55,7 +55,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	infoSection.AddItem(f0.f, 0, 0, 1, 1, 0, 0, true)
 	f1 := newForm()
 	f1.SetBorderPadding(0, 1, 1, 1)
-	p.cover = f1.AddInputField("Book cover:", "", 0, nil, func(s string) { p.ab.IAItem.Cover = s })
+	p.cover = f1.AddInputField("Book cover:", "", 0, nil, func(s string) { p.ab.CoverURL = s })
 	infoSection.AddItem(f1.f, 1, 0, 1, 2, 0, 0, true)
 	f3 := newForm()
 	f3.SetHorizontal(false)
@@ -128,9 +128,9 @@ func (p *ChaptersPage) dispatchMessage(m *mq.Message) {
 	case *dto.AddChapterCommand:
 		p.addChapter(dto.Chapter)
 	case *dto.AddPartCommand:
-		p.addPart(dto.Part)	
+		p.addPart(dto.Part)
 	case *dto.ChaptersReady:
-		p.displayParts(dto.Audiobook)	
+		p.displayParts(dto.Audiobook)
 	default:
 		m.UnsupportedTypeError(mq.ChaptersPage)
 	}
@@ -140,7 +140,7 @@ func (p *ChaptersPage) displayBookInfo(ab *dto.Audiobook) {
 	p.ab = ab
 	p.author.SetText(ab.Author)
 	p.title.SetText(ab.Title)
-	p.cover.SetText(ab.IAItem.Cover)
+	p.cover.SetText(ab.CoverURL)
 	p.descriptionEditor.SetText(ab.IAItem.Description, false)
 
 	p.chaptersTable.clear()
@@ -152,6 +152,7 @@ func (p *ChaptersPage) displayBookInfo(ab *dto.Audiobook) {
 func (p *ChaptersPage) displayParts(ab *dto.Audiobook) {
 	if len(ab.Parts) > 1 {
 		p.chaptersTable.clear()
+		p.chaptersTable.showHeader()
 		for _, part := range ab.Parts {
 			p.addPart(&part)
 		}
@@ -161,7 +162,7 @@ func (p *ChaptersPage) displayParts(ab *dto.Audiobook) {
 
 func (p *ChaptersPage) addPart(part *dto.Part) {
 	number := strconv.Itoa(part.Number)
-	p.chaptersTable.appendSeparator("", "", "", "", "Part Number " + number)
+	p.chaptersTable.appendSeparator("", "", "", "", "Part Number "+number)
 	for _, chapter := range part.Chapters {
 		p.addChapter(&chapter)
 	}
@@ -196,7 +197,7 @@ func (p *ChaptersPage) updateChapterEntry(row int, col int) {
 		cell := p.chaptersTable.t.GetCell(row, col)
 		cell.Text = nameF.GetText()
 		chapter.Name = nameF.GetText()
-		p.ab.SetChapter(chapterNo, chapter) 
+		p.ab.SetChapter(chapterNo, chapter)
 		d.Close()
 	})
 	f.AddButton("Cancel", func() {

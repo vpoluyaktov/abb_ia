@@ -13,8 +13,8 @@ type FFmpeg struct {
 }
 
 type input struct {
-	fileName string
-	args     string
+	fileNames []string
+	args      string
 }
 
 type output struct {
@@ -36,8 +36,8 @@ func NewFFmpeg() *FFmpeg {
 }
 
 func (f *FFmpeg) Input(fileName string, args string) *FFmpeg {
-	f.input.fileName = fileName
-	f.input.args = args
+	f.input.fileNames = append(f.input.fileNames, fileName)
+	f.input.args += args
 	return f
 }
 
@@ -68,8 +68,11 @@ func (f *FFmpeg) Run() (string, *exitErr) {
 	cmd := "ffmpeg"
 	args := NewArgs().
 		AppendArgs(f.params.args).
-		AppendArgs(f.input.args).AppendArgs("-i").AppendFileName(f.input.fileName).
-		AppendArgs(f.output.args).AppendFileName(f.output.fileName)
+		AppendArgs(f.input.args)
+	for _, fileName := range f.input.fileNames {
+		args = args.AppendArgs("-i").AppendFileName(fileName)
+	}
+	args = args.AppendArgs(f.output.args).AppendFileName(f.output.fileName)
 	command := exec.Command(cmd, args.String()...)
 	logger.Debug("FFMPEG cmd: " + command.String())
 	out, err := command.Output()

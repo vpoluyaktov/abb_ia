@@ -71,6 +71,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.ab.Author = item.Creator
 	c.ab.Title = item.Title
 	c.ab.Description = item.Description
+	c.ab.CoverURL = item.Cover
 
 	// download files
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
