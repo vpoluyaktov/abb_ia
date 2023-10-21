@@ -20,17 +20,20 @@ var (
 )
 
 type Config struct {
-	LogFileName        string
-	LogLevel           string
-	UseMock            bool
-	SaveMock           bool
-	SearchCondition    string
-	ParrallelDownloads int
-	ParrallelEncoders  int
-	ReEncodeFiles      bool
-	BitRate            string
-	SampleRate         string
-	MaxFileSize        int64
+	LogFileName          string
+	OutputDir            string
+	LogLevel             string
+	UseMock              bool
+	SaveMock             bool
+	SearchCondition      string
+	ParrallelDownloads   int
+	ParrallelEncoders    int
+	ReEncodeFiles        bool
+	BitRate              string
+	SampleRate           string
+	MaxFileSize          int64
+	CopyToAudiobookshelf bool
+	AudiobookshelfDir    string
 }
 
 func Load() {
@@ -38,6 +41,7 @@ func Load() {
 
 	// default settings
 	config.LogFileName = "abb_ia.log"
+	config.OutputDir = "output"
 	config.LogLevel = "INFO"
 	config.UseMock = false
 	config.SaveMock = false
@@ -48,6 +52,8 @@ func Load() {
 	config.BitRate = "128k"
 	config.SampleRate = "44100"
 	config.MaxFileSize = 1024 * 1024 * 10
+	config.CopyToAudiobookshelf = true
+	config.AudiobookshelfDir = "audiobookshelf"
 
 	fmt.Printf("Using config: %s\n", configFile)
 	if ReadConfig(config) != nil {
@@ -92,6 +98,14 @@ func SetLogfileName(fileName string) {
 
 func LogFileName() string {
 	return configInstance.LogFileName
+}
+
+func SetOutputDir(outputDir string) {
+	configInstance.OutputDir = outputDir
+}
+
+func OutputDir() string {
+	return configInstance.OutputDir
 }
 
 func SetLogLevel(logLevel string) {
@@ -168,6 +182,22 @@ func SampleRate() string {
 
 func MaxFileSize() int64 {
 	return configInstance.MaxFileSize
+}
+
+func SetCopyToAudiobookshelf(b bool) {
+	configInstance.CopyToAudiobookshelf = b
+}
+
+func IsCopyToAudiobookshelf() bool {
+	return configInstance.CopyToAudiobookshelf
+}
+
+func AudiobookshelfDir() string {
+	return configInstance.AudiobookshelfDir
+}
+
+func SetAudiobookshelfDir(d string) {
+	configInstance.AudiobookshelfDir = d
 }
 
 func AppVersion() string {

@@ -3,18 +3,22 @@ package dto
 import "fmt"
 
 type Audiobook struct {
-	Author      string
-	Title       string
-	Description string
-	Genre       string
-	CoverURL    string
-	CoverFile   string
-	IaURL       string
-	Series      string
-	SeriesNo    int
-	Copyright   string
-	Parts       []Part
-	IAItem      *IAItem
+	Author        string
+	Title         string
+	Description   string
+	Genre         string
+	CoverURL      string
+	CoverFile     string
+	IaURL         string
+	Series        string
+	SeriesNo      int
+	Copyright     string
+	OutputDir     string
+	Mp3Files      []Mp3File
+	TotalDuration float64
+	TotalSize     int64
+	Parts         []Part
+	IAItem        *IAItem
 }
 
 type Part struct {

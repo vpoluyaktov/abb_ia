@@ -66,20 +66,26 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 
 	c.ab = cmd.Audiobook
 	item := c.ab.IAItem
-	outputDir := filepath.Join("output", item.ID)
-
 	c.ab.Author = item.Creator
 	c.ab.Title = item.Title
 	c.ab.Description = item.Description
 	c.ab.CoverURL = item.Cover
+	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(config.OutputDir(), item.ID))
+	c.ab.TotalSize = item.TotalSize
+	c.ab.TotalDuration = item.TotalLength
+
+	// update Book info on UI
+	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 
 	// download files
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
 	c.files = make([]fileDownload, len(item.Files))
 	jd := utils.NewJobDispatcher(config.ParallelDownloads())
-	for i, f := range item.Files {
-		jd.AddJob(i, ia.DownloadFile, outputDir, item.Server, item.Dir, f.Name, i, f.Size, c.updateFileProgress)
+	for i, iaFile := range item.Files {
+		localFileName := utils.SanitizeFilePath(filepath.Join(item.Dir, iaFile.Name))
+		c.ab.Mp3Files = append(c.ab.Mp3Files, dto.Mp3File{Number: i, FileName: localFileName, Size: iaFile.Size, Duration: iaFile.Length})
+		jd.AddJob(i, ia.DownloadFile, c.ab.OutputDir, localFileName, item.Server, item.Dir, iaFile.Name, i, iaFile.Size, c.updateFileProgress)
 	}
 	go c.updateTotalProgress()
 	// if c.stopFlag {
@@ -141,11 +147,11 @@ func (c *DownloadController) updateTotalProgress() {
 				eta = 0
 			}
 
-			elapsedH, _ := utils.SecondsToTime(elapsed)
-			bytesH, _ := utils.BytesToHuman(totalBytesDownloaded)
+			elapsedH := utils.SecondsToTime(elapsed)
+			bytesH := utils.BytesToHuman(totalBytesDownloaded)
 			filesH := fmt.Sprintf("%d/%d", filesDownloaded, len(item.Files))
-			speedH, _ := utils.SpeedToHuman(speed)
-			etaH, _ := utils.SecondsToTime(eta)
+			speedH := utils.SpeedToHuman(speed)
+			etaH := utils.SecondsToTime(eta)
 
 			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
 		}

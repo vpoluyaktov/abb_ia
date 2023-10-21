@@ -9,6 +9,7 @@ import (
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/logger"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type SearchPage struct {
@@ -149,7 +150,7 @@ func (p *SearchPage) clearEverything() {
 func (p *SearchPage) updateResult(i *dto.IAItem) {
 	logger.Debug(mq.SearchPage + ": Got AI Item: " + i.Title)
 	p.searchResult = append(p.searchResult, i)
-	p.resultTable.appendRow(i.Creator, i.Title, strconv.Itoa(i.FilesCount), i.TotalLengthH, i.TotalSizeH)
+	p.resultTable.appendRow(i.Creator, i.Title, strconv.Itoa(i.FilesCount), utils.SecondsToTime(i.TotalLength), utils.BytesToHuman(i.TotalSize))
 	p.resultTable.ScrollToBeginning()
 	// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.resultTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
 	p.updateDetails(1, 0)
@@ -171,7 +172,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 		p.filesTable.showHeader()
 		files := p.searchResult[row-1].Files
 		for _, f := range files {
-			p.filesTable.appendRow(f.Name, f.Format, f.LengthH, f.SizeH)
+			p.filesTable.appendRow(f.Name, f.Format, utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size))
 		}
 		p.filesTable.ScrollToBeginning()
 		// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.filesTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
@@ -195,7 +196,7 @@ func (p *SearchPage) createBook() {
 			ab.IAItem = item
 			// ab.Title = title.GetText()
 			// ab.Author = author.GetText()
-			p.launchDownload(ab)
+			p.startDownload(ab)
 			d.Close()
 		})
 		f.AddButton("Cancel", func() {
@@ -206,8 +207,7 @@ func (p *SearchPage) createBook() {
 	}
 }
 
-func (p *SearchPage) launchDownload(ab *dto.Audiobook) {
-	p.mq.SendMessage(mq.SearchPage, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: ab}, true)
+func (p *SearchPage) startDownload(ab *dto.Audiobook) {
 	p.mq.SendMessage(mq.SearchPage, mq.DownloadController, &dto.DownloadCommand{Audiobook: ab}, true)
 	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "DownloadPage"}, false)
 }

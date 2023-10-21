@@ -171,9 +171,9 @@ func (p *ChaptersPage) addPart(part *dto.Part) {
 
 func (p *ChaptersPage) addChapter(chapter *dto.Chapter) {
 	number := strconv.Itoa(chapter.Number)
-	startH, _ := utils.SecondsToTime(chapter.Start)
-	endH, _ := utils.SecondsToTime(chapter.End)
-	durationH, _ := utils.SecondsToTime(chapter.Duration)
+	startH := utils.SecondsToTime(chapter.Start)
+	endH := utils.SecondsToTime(chapter.End)
+	durationH := utils.SecondsToTime(chapter.Duration)
 	p.chaptersTable.appendRow(number, startH, endH, durationH, chapter.Name)
 	p.chaptersTable.ScrollToBeginning()
 }
@@ -186,7 +186,7 @@ func (p *ChaptersPage) updateChapterEntry(row int, col int) {
 	}
 
 	chapter, _ := p.ab.GetChapter(chapterNo)
-	durationH, _ := utils.SecondsToTime(chapter.Duration)
+	durationH := utils.SecondsToTime(chapter.Duration)
 	d := newDialogWindow(p.mq, 11, 80, p.chaptersSection)
 	f := newForm()
 	f.SetTitle("Update Chapter Name:")
@@ -218,7 +218,6 @@ func (p *ChaptersPage) stopChapters() {
 }
 
 func (p *ChaptersPage) buildBook() {
-	p.mq.SendMessage(mq.ChaptersPage, mq.BuildPage, &dto.DisplayBookInfoCommand{Audiobook: p.ab}, true)
 	p.mq.SendMessage(mq.ChaptersPage, mq.BuildController, &dto.BuildCommand{Audiobook: p.ab}, true)
 	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, false)
 }

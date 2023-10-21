@@ -8,6 +8,7 @@ import (
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type EncodingPage struct {
@@ -100,14 +101,14 @@ func (p *EncodingPage) displayBookInfo(ab *dto.Audiobook) {
 	// p.infoPanel.appendRow("", "")
 	p.infoPanel.appendRow("Title:", ab.Title)
 	p.infoPanel.appendRow("Author:", ab.Author)
-	p.infoPanel.appendRow("Duration:", ab.IAItem.TotalLengthH)
-	p.infoPanel.appendRow("Size:", ab.IAItem.TotalSizeH)
+	p.infoPanel.appendRow("Duration:", utils.SecondsToTime(ab.IAItem.TotalLength))
+	p.infoPanel.appendRow("Size:", utils.BytesToHuman(ab.IAItem.TotalSize))
 	p.infoPanel.appendRow("Files", strconv.Itoa(ab.IAItem.FilesCount))
 
 	p.filesTable.clear()
 	p.filesTable.showHeader()
 	for i, f := range ab.IAItem.Files {
-		p.filesTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, f.Format, f.LengthH, f.SizeH, "")
+		p.filesTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, f.Format, utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size), "")
 	}
 	p.filesTable.t.ScrollToBeginning()
 	p.mq.SendMessage(mq.EncodingPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.filesTable.t}, true)
@@ -160,7 +161,6 @@ func (p *EncodingPage) updateTotalProgress(dp *dto.EncodingProgress) {
 }
 
 func (p *EncodingPage) encodingComplete(c *dto.EncodingComplete) {
-	p.mq.SendMessage(mq.EncodingPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
 	p.mq.SendMessage(mq.EncodingPage, mq.ChaptersController, &dto.ChaptersCreate{Audiobook: c.Audiobook}, true)
 	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
 }

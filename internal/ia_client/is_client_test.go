@@ -3,6 +3,7 @@ package ia_client_test
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -62,7 +63,7 @@ func TestDownloadItem(t *testing.T) {
 	outputDir := "/tmp/abb_ia"
 
 	ia := ia_client.New(false, false)
-	ia.DownloadFile(outputDir, server, dir, file, 1, 1024, UpdateProgress)
+	ia.DownloadFile(outputDir, filepath.Join(outputDir, dir, file), server, dir, file, 1, 1024, UpdateProgress)
 }
 
 func UpdateProgress(fileId int, fileName string, size int64, pos int64, percent int) {

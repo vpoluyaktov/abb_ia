@@ -127,22 +127,22 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 	return result
 }
 
-func (client *IAClient) DownloadFile(outputDir string, server string, dir string, fileName string, fileId int, estimatedSize int64, updateProgress Fn) {
+func (client *IAClient) DownloadFile(localDir string, localFile string, iaServer string, iaDir string, iaFile string, fileId int, estimatedSize int64, updateProgress Fn) {
 
 	if client.loadMockResult {
 		delay := time.Duration(rand.Intn(10)) // 100
 		for percent := 0; percent <= 100; percent++ {
-			updateProgress(fileId, fileName, estimatedSize, int64(float32(estimatedSize)*float32(percent)/100), percent)
+			updateProgress(fileId, iaFile, estimatedSize, int64(float32(estimatedSize)*float32(percent)/100), percent)
 			time.Sleep(delay * time.Millisecond)
 		}
 		return
 	}
 
-	dir = strings.TrimPrefix(dir, "/")
-	fileName = strings.TrimPrefix(fileName, "/")
-	fileUrl := fmt.Sprintf("https://%s/%s/%s", server, dir, fileName)
-	outPath := fmt.Sprintf("%s/%s/%s", outputDir, dir, fileName)
-	tempPath := outPath + ".tmp"
+	iaDir = strings.TrimPrefix(iaDir, "/")
+	iaFile = strings.TrimPrefix(iaFile, "/")
+	fileUrl := fmt.Sprintf("https://%s/%s/%s", iaServer, iaDir, iaFile)
+	localPath := filepath.Join(localDir, localFile)
+	tempPath := localPath + ".tmp"
 
 	req, _ := http.NewRequest("GET", fileUrl, nil)
 	resp, _ := http.DefaultClient.Do(req)
@@ -165,7 +165,7 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 
 	progressReader := &ProgressReader{
 		FileId:   fileId,
-		FileName: fileName,
+		FileName: iaFile,
 		Reader:   resp.Body,
 		Size:     resp.ContentLength,
 		Callback: updateProgress,
@@ -177,9 +177,9 @@ func (client *IAClient) DownloadFile(outputDir string, server string, dir string
 
 	// fix incorrect ContentLength problem
 	if !client.loadMockResult {
-		updateProgress(fileId, fileName, resp.ContentLength, resp.ContentLength, 100)
+		updateProgress(fileId, iaFile, resp.ContentLength, resp.ContentLength, 100)
 	}
 
-	os.Rename(tempPath, outPath)
-	logger.Debug(fileName + " downloaded to " + outPath)
+	os.Rename(tempPath, localPath)
+	logger.Debug(iaFile + " downloaded to " + localPath)
 }

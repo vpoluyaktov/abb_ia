@@ -58,34 +58,34 @@ func TimeToSeconds(t string) (float64, error) {
 }
 
 // Convert time in seconds to HH:MM:SS striing format
-func SecondsToTime(sec float64) (string, error) {
+func SecondsToTime(sec float64) (string) {
 	ss := int(sec) % 60
 	sec /= 60
 	mm := int(sec) % 60
 	sec /= 60
 	hh := int(sec)
 	time := fmt.Sprintf("%2d:%02d:%02d", hh, mm, ss)
-	return time, nil
+	return time
 }
 
 // Convert bytes to Gb, Kb, Mb, string format
-func BytesToHuman(b int64) (string, error) {
+func BytesToHuman(b int64) (string) {
 	const unit = 1024
 	if b < unit {
-		return fmt.Sprintf("%d b", b), nil
+		return fmt.Sprintf("%d b", b)
 	}
 	div, exp := int64(unit), 0
 	for n := b / unit; n >= unit; n /= unit {
 		div *= unit
 		exp++
 	}
-	return fmt.Sprintf("%.1f %cb", float64(b)/float64(div), "KMGTPE"[exp]), nil
+	return fmt.Sprintf("%.1f %cb", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
 // Convert download speed to Gb/s, Kb/s, Mb/s, string format
-func SpeedToHuman(b int64) (string, error) {
-	bytesH, _ := BytesToHuman(b)
-	return fmt.Sprintf("%s%s", bytesH, "/s"), nil
+func SpeedToHuman(b int64) (string) {
+	bytesH := BytesToHuman(b)
+	return fmt.Sprintf("%s%s", bytesH, "/s")
 }
 
 func FirstN(s string, n int) string {

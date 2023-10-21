@@ -65,10 +65,12 @@ func (c *ChaptersController) stopChapters(cmd *dto.StopCommand) {
 func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 
 	logger.Debug(mq.ChaptersController + " received " + cmd.String())
+
+	c.ab = cmd.Audiobook
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: "Calculating book parts and chapters..."}, false)
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 
-	c.ab = cmd.Audiobook
 
 	// Split the book into parts
 	c.ab.Parts = []dto.Part{}
@@ -81,8 +83,8 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	var partChapters []dto.Chapter = []dto.Chapter{}
 	var chapterFiles []dto.Mp3File = []dto.Mp3File{}
 
-	for i, file := range c.ab.IAItem.Files {
-		filePath := filepath.Join("output", c.ab.IAItem.ID, c.ab.IAItem.Dir, file.Name)
+	for i, file := range c.ab.Mp3Files {
+		filePath := filepath.Join(c.ab.OutputDir, file.FileName)
 		mp3, _ := ffmpeg.NewFFProbe(filePath)
 		chapterFiles = append(chapterFiles, dto.Mp3File{Number: fileNo, FileName: filePath, Size: mp3.Size(), Duration: mp3.Duration()})
 		fileNo++
@@ -94,7 +96,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		offset += mp3.Duration()
 		chapterNo++
 		chapterFiles = []dto.Mp3File{}
-		if partSize >= config.MaxFileSize() || i == len(c.ab.IAItem.Files)-1 {
+		if partSize >= config.MaxFileSize() || i == len(c.ab.Mp3Files)-1 {
 			part := dto.Part{Number: partNo, Size: partSize, Duration: partDuration, Chapters: partChapters}
 			c.ab.Parts = append(c.ab.Parts, part)
 			partNo++
@@ -112,5 +114,6 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 }
 
 func (c *ChaptersController) getMp3Title(title string) string {
+	// TODO: Concatenate Chapter names here
 	return title
 }

@@ -20,7 +20,7 @@ import (
 
 type EncodingController struct {
 	mq        *mq.Dispatcher
-	item      *dto.IAItem
+	ab        *dto.Audiobook
 	startTime time.Time
 	files     []fileEncode
 	stopFlag  bool
@@ -64,17 +64,19 @@ func (c *EncodingController) stopEncoding(cmd *dto.StopCommand) {
 func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	c.startTime = time.Now()
 	logger.Info(mq.EncodingController + " received " + cmd.String())
+
+	c.ab = cmd.Audiobook
+
+	c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: "Re-encoding mp3 files..."}, false)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
-	c.item = cmd.Audiobook.IAItem
-	outputDir := filepath.Join("output", c.item.ID, c.item.Dir)
 
 	// re-encode files
 	c.stopFlag = false
-	c.files = make([]fileEncode, len(c.item.Files))
+	c.files = make([]fileEncode, len(c.ab.Mp3Files))
 	jd := utils.NewJobDispatcher(config.ParallelEncoders())
-	for i, f := range c.item.Files {
-		jd.AddJob(i, c.encodeFile, i, outputDir, f.Name)
+	for i, f := range c.ab.Mp3Files {
+		jd.AddJob(i, c.encodeFile, i, c.ab.OutputDir, f.FileName)
 	}
 	go c.updateTotalProgress()
 	// if c.stopFlag {
@@ -206,10 +208,10 @@ func (c *EncodingController) updateTotalProgress() {
 				eta = 0
 			}
 
-			elapsedH, _ := utils.SecondsToTime(elapsed)
-			filesH := fmt.Sprintf("%d/%d", files, len(c.item.Files))
-			speedH, _ := utils.SpeedToHuman(speed)
-			etaH, _ := utils.SecondsToTime(eta)
+			elapsedH := utils.SecondsToTime(elapsed)
+			filesH := fmt.Sprintf("%d/%d", files, len(c.ab.Mp3Files))
+			speedH := utils.SpeedToHuman(speed)
+			etaH := utils.SecondsToTime(eta)
 
 			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, true)
 		}

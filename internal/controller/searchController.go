@@ -92,9 +92,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 						file := dto.File{}
 						file.Name = strings.TrimPrefix(name, "/")
 						file.Size = size
-						file.SizeH, _ = utils.BytesToHuman(size)
 						file.Length = length
-						file.LengthH, _ = utils.SecondsToTime(length)
 						file.Format = metadata.Format
 						totalSize += size
 						totalLength += length
@@ -102,12 +100,10 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 					}
 				}
 			}
-			// sort files by name
+			// sort files by name TODO: Check if sort is needed
 			sort.Slice(item.Files, func(i, j int) bool { return item.Files[i].Name < item.Files[j].Name })
 			item.TotalSize = totalSize
-			item.TotalSizeH, _ = utils.BytesToHuman(totalSize)
 			item.TotalLength = totalLength
-			item.TotalLengthH, _ = utils.SecondsToTime(totalLength)
 			item.FilesCount = len(item.Files)
 		}
 		if item.FilesCount > 0 {

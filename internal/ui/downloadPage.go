@@ -9,6 +9,7 @@ import (
 	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type DownloadPage struct {
@@ -101,14 +102,14 @@ func (p *DownloadPage) displayBookInfo(ab *dto.Audiobook) {
 	// p.infoPanel.appendRow("", "")
 	p.infoPanel.appendRow("Title:", ab.Title)
 	p.infoPanel.appendRow("Author:", ab.Author)
-	p.infoPanel.appendRow("Duration:", ab.IAItem.TotalLengthH)
-	p.infoPanel.appendRow("Size:", ab.IAItem.TotalSizeH)
+	p.infoPanel.appendRow("Duration:", utils.SecondsToTime(ab.IAItem.TotalLength))
+	p.infoPanel.appendRow("Size:", utils.BytesToHuman(ab.IAItem.TotalSize))
 	p.infoPanel.appendRow("Files", strconv.Itoa(ab.IAItem.FilesCount))
 
 	p.filesTable.clear()
 	p.filesTable.showHeader()
 	for i, f := range ab.IAItem.Files {
-		p.filesTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, f.Format, f.LengthH, f.SizeH, "")
+		p.filesTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, f.Format, utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size), "")
 	}
 	p.filesTable.ScrollToBeginning()
 	p.mq.SendMessage(mq.DownloadPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.filesTable.t}, true)
@@ -169,7 +170,6 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
 
 func (p *DownloadPage) downloadComplete(c *dto.DownloadComplete) {
 	if config.IsReEncodeFiles() {
-		p.mq.SendMessage(mq.DownloadPage, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
 		p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
 		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
 	} else {

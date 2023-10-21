@@ -2,10 +2,12 @@ package ui
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
 	"github.com/vpoluyaktov/abb_ia/internal/utils"
@@ -53,9 +55,9 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.buildSection.SetBorder(true)
 
 	p.buildTable = newTable()
-	p.buildTable.setHeaders(" Part # ", "File name", "Format", "Duration", "Total Size", "Build progress")
-	p.buildTable.setWeights(1, 2, 1, 1, 1, 5)
-	p.buildTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
+	p.buildTable.setHeaders(" Part # ", "File name", "Duration", "Total Size", "Build progress")
+	p.buildTable.setWeights(1, 2, 1, 1, 5)
+	p.buildTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	p.buildSection.AddItem(p.buildTable.t, 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(p.buildSection, 1, 0, 1, 1, 0, 0, true)
 
@@ -63,7 +65,7 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	copySection := tview.NewGrid()
 	copySection.SetColumns(-1)
 	copySection.SetBorder(true)
-	copySection.SetTitle(" Copy to audioshelf catalog progress: ")
+	copySection.SetTitle(" Audiobookshelf copy progress: ")
 	copySection.SetTitleAlign(tview.AlignLeft)
 	p.copyTable = newTable()
 	p.copyTable.setHeaders(" Part # ", "File name", "Duration", "Total Size", "Copy progress")
@@ -100,9 +102,9 @@ func (p *BuildPage) dispatchMessage(m *mq.Message) {
 	case *dto.DisplayBookInfoCommand:
 		p.displayBookInfo(dto.Audiobook)
 	case *dto.BuildFileProgress:
-		p.updateFileProgress(dto)
+		p.updateFileBuildProgress(dto)
 	case *dto.BuildProgress:
-		p.updateTotalProgress(dto)	
+		p.updateTotalBuildProgress(dto)	
 	case *dto.BuildComplete:
 		p.buildComplete(dto)
 	case *dto.CopyComplete:
@@ -117,16 +119,16 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	// p.infoPanel.appendRow("", "")
 	p.infoPanel.appendRow("Title:", ab.Title)
 	p.infoPanel.appendRow("Author:", ab.Author)
-	p.infoPanel.appendRow("Duration:", ab.IAItem.TotalLengthH)
-	p.infoPanel.appendRow("Size:", ab.IAItem.TotalSizeH)
+	p.infoPanel.appendRow("Duration:", utils.SecondsToTime(ab.TotalDuration))
+	p.infoPanel.appendRow("Size:", utils.BytesToHuman(ab.IAItem.TotalSize))
 	p.infoPanel.appendRow("Files", strconv.Itoa(ab.IAItem.FilesCount))
 
 	p.buildTable.clear()
 	p.buildTable.showHeader()
 	for i, part := range ab.Parts {
-		durationH, _ := utils.SecondsToTime(part.Duration)
-		sizeH, _ := utils.BytesToHuman(part.Size)
-		p.buildTable.appendRow(" "+strconv.Itoa(i+1)+" ", part.M4BFile, ".m4b", durationH, sizeH, "")
+		durationH := utils.SecondsToTime(part.Duration)
+		sizeH := utils.BytesToHuman(part.Size)
+		p.buildTable.appendRow(" "+strconv.Itoa(i+1)+" ", filepath.Base(part.M4BFile), durationH, sizeH, "")
 	}
 	p.buildTable.ScrollToBeginning()
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.buildTable.t}, true)
@@ -143,17 +145,14 @@ func (p *BuildPage) stopBuild() {
 	p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }
 
-func (p *BuildPage) updateFileProgress(dp *dto.BuildFileProgress) {
-	// update file name TODO: refactor this
-	cell := p.buildTable.t.GetCell(dp.FileId+1, 1)
-	cell.Text = dp.FileName
+func (p *BuildPage) updateFileBuildProgress(dp *dto.BuildFileProgress) {
 	// update file progress
-	col := 5
+	col := 4
 	w := p.buildTable.getColumnWidth(col) - 5
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
-	cell = p.buildTable.t.GetCell(dp.FileId+1, col)
+	cell := p.buildTable.t.GetCell(dp.FileId+1, col)
 	cell.SetExpansion(0)
 	cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
@@ -161,7 +160,7 @@ func (p *BuildPage) updateFileProgress(dp *dto.BuildFileProgress) {
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }
 
-func (p *BuildPage) updateTotalProgress(dp *dto.BuildProgress) {
+func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
 	if p.progressTable.GetRowCount() == 0 {
 		for i := 0; i < 2; i++ {
 			p.progressTable.appendRow("")
@@ -183,15 +182,14 @@ func (p *BuildPage) updateTotalProgress(dp *dto.BuildProgress) {
 }
 
 func (p *BuildPage) buildComplete(c *dto.BuildComplete) {
-	// if config.IsReEncodeFiles() {
-	// 	p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
-	// 	p.mq.SendMessage(mq.BuildPage, mq.BuildController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
-	// 	p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, false)
-	// } else {
-	// 	p.mq.SendMessage(mq.BuildPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
-	// 	p.mq.SendMessage(mq.BuildPage, mq.ChaptersController, &dto.ChaptersCreate{Audiobook: c.Audiobook}, true)
-	// 	p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
-	// }
+	if config.IsCopyToAudiobookshelf() {
+		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.BuildController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, false)
+	} else {
+		newMessageDialog(p.mq, "Build Complete", "Audiobook has been created", p.buildSection)
+		//p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	}
 }
 
 func (p *BuildPage) copyComplete(c *dto.CopyComplete) {
