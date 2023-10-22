@@ -25,7 +25,6 @@ import (
 type BuildController struct {
 	mq        *mq.Dispatcher
 	ab        *dto.Audiobook
-	outputDir string
 	startTime time.Time
 	stopFlag  bool
 
@@ -93,7 +92,6 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	logger.Info(mq.BuildController + " received " + cmd.String())
 
 	c.ab = cmd.Audiobook
-	c.outputDir = filepath.Join(config.OutputDir(), c.ab.IAItem.ID)
 
 	// calculate output file names
 	for i := range c.ab.Parts {
@@ -150,14 +148,14 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 func (c *BuildController) createFilesLists(ab *dto.Audiobook) {
 	for i := range ab.Parts {
 		part := &ab.Parts[i]
-		part.FListFile = filepath.Join(c.outputDir, fmt.Sprintf("Part %02d Files.txt", part.Number))
+		part.FListFile = filepath.Join(ab.OutputDir, fmt.Sprintf("Part %02d Files.txt", part.Number))
 		f, err := os.OpenFile(part.FListFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			logger.Error("Can't open FList file for writing: " + err.Error())
 		}
 		for _, chapter := range part.Chapters {
 			for _, file := range chapter.Files {
-				f.WriteString("file '" + strings.ReplaceAll(file.FileName, filepath.Join(config.OutputDir(), ab.IAItem.ID)+"/", "") + "'\n")
+				f.WriteString("file '" + strings.TrimPrefix(file.FileName, "/") + "'\n")
 			}
 		}
 		f.Close()
@@ -167,7 +165,7 @@ func (c *BuildController) createFilesLists(ab *dto.Audiobook) {
 func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 	for i := range ab.Parts {
 		part := &ab.Parts[i]
-		part.MetadataFile = filepath.Join(c.outputDir, fmt.Sprintf("Part %02d Metadata.txt", part.Number))
+		part.MetadataFile = filepath.Join(ab.OutputDir, fmt.Sprintf("Part %02d Metadata.txt", part.Number))
 		f, err := os.OpenFile(part.MetadataFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			logger.Error("Can't open Metadata file for writing: " + err.Error())
@@ -275,7 +273,7 @@ func (c *BuildController) copyAudiobookPart(ab *dto.Audiobook, partId int) {
 	fileReader := bufio.NewReader(file)
 	defer file.Close()
 
-	destPath := filepath.Clean(filepath.Join(config.AudiobookshelfDir(), ab.Author, ab.Author + "-" + ab.Title, ab.Series, filepath.Base(part.M4BFile)))
+	destPath := filepath.Clean(filepath.Join(config.AudiobookshelfDir(), ab.Author, ab.Title, ab.Series, filepath.Base(part.M4BFile)))
   destDir := filepath.Dir(destPath)
 
 	if err := os.MkdirAll(destDir, 0750); err != nil {
@@ -412,7 +410,7 @@ func (c *BuildController) updateTotalBuildProgress() {
 func (c *BuildController) updateFileCopyProgress(fileId int, fileName string, size int64, pos int64, percent int) {
 	if c.filesBuild[fileId].progress != percent {
 		// sent a message only if progress changed
-		c.mq.SendMessage(mq.BuildController, mq.BuildController, &dto.CopyFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
+		c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.CopyFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
 	}
 	c.filesCopy[fileId].fileId = fileId
 	c.filesCopy[fileId].fileSize = size
@@ -463,7 +461,7 @@ func (c *BuildController) updateTotalCopyProgress() {
 			speedH := utils.SpeedToHuman(speed)
 			etaH := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.BuildController, mq.BuildController, &dto.CopyProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
+			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.CopyProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
 		}
 		time.Sleep(mq.PullFrequency)
 	}
@@ -471,7 +469,7 @@ func (c *BuildController) updateTotalCopyProgress() {
 
 func (c *BuildController) cleanUp(ab *dto.Audiobook) {
 	if !(config.IsSaveMock() || config.IsUseMock()) {
-		os.RemoveAll(c.outputDir)
+		os.RemoveAll(ab.OutputDir)
 	}
 	for _, part := range ab.Parts {
 		os.Remove(part.AACFile)

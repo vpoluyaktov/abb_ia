@@ -86,7 +86,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	for i, file := range c.ab.Mp3Files {
 		filePath := filepath.Join(c.ab.OutputDir, file.FileName)
 		mp3, _ := ffmpeg.NewFFProbe(filePath)
-		chapterFiles = append(chapterFiles, dto.Mp3File{Number: fileNo, FileName: filePath, Size: mp3.Size(), Duration: mp3.Duration()})
+		chapterFiles = append(chapterFiles, dto.Mp3File{Number: fileNo, FileName: file.FileName, Size: mp3.Size(), Duration: mp3.Duration()})
 		fileNo++
 		partSize += mp3.Size()
 		partDuration += mp3.Duration()
