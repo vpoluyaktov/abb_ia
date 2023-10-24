@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -60,60 +61,88 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 		item.ID = doc.Identifier
 		item.Title = tview.Escape(doc.Title)
 
-		// collect mp3 files
-		// TODO: Implement filtering for mp3 files with multiple bitrates (see https://archive.org/details/voyage_moon_1512_librivox for ex.)
-		item.FilesCount = 0
-		item.Files = make([]dto.File, 0)
+		item.AudioFiles = make([]dto.AudioFile, 0)
 		var totalSize int64 = 0
 		var totalLength float64 = 0.0
 		d := ia.GetItemDetails(doc.Identifier)
 		if d != nil {
 			item.Server = d.Server
 			item.Dir = d.Dir
-			if len(d.Metadata.Creator) > 0 && d.Metadata.Creator[0] != "" {
+			if len(doc.Creator) > 0 && d.Metadata.Creator[0] != "" {
+				item.Creator = doc.Creator[0]
+			} else if len(d.Metadata.Creator) > 0 && d.Metadata.Creator[0] != "" {
 				item.Creator = d.Metadata.Creator[0]
 			} else if len(d.Metadata.Artist) > 0 && d.Metadata.Artist[0] != "" {
 				item.Creator = d.Metadata.Artist[0]
 			} else {
 				item.Creator = "Internet Archive"
 			}
+
 			if len(d.Metadata.Description) > 0 {
 				item.Description = tview.Escape(ia.Html2Text(d.Metadata.Description[0]))
 			}
-			if len(d.Misc.Image) > 0 {	
-				item.Cover = strings.ReplaceAll(d.Misc.Image, "_thumb", "") // ??? TODO Check if all images have _thumb suffix. 
-			}
+			// if len(d.Misc.Image) > 0 { // _thumb images are too small. Have to collect and sort my size all item images below
+			// 	item.Cover = d.Misc.Image
+			// }
 			for name, metadata := range d.Files {
 				format := metadata.Format
-				if utils.Contains(dto.FormatList, format) {
+				// collect mp3 files
+				// TODO: Implement filtering for mp3 files with multiple bitrates (see https://archive.org/details/voyage_moon_1512_librivox for ex.)
+				if utils.Contains(dto.Mp3Formats, format) {
 					size, sErr := strconv.ParseInt(metadata.Size, 10, 64)
 					length, lErr := utils.TimeToSeconds(metadata.Length)
 					if sErr == nil && lErr == nil {
-						file := dto.File{}
+						file := dto.AudioFile{}
 						file.Name = strings.TrimPrefix(name, "/")
 						file.Size = size
 						file.Length = length
 						file.Format = metadata.Format
 						totalSize += size
 						totalLength += length
-						item.Files = append(item.Files, file)
+						item.AudioFiles = append(item.AudioFiles, file)
+					}
+				}
+
+				// collect image files
+				if utils.Contains(dto.CoverFormats, format) {
+					size, err := strconv.ParseInt(metadata.Size, 10, 64)
+					if err == nil {
+						file := dto.ImageFile{}
+						file.Name = strings.TrimPrefix(name, "/")
+						file.Size = size
+						file.Format = metadata.Format
+						item.ImageFiles = append(item.ImageFiles, file)
 					}
 				}
 			}
-			// sort files by name TODO: Check if sort is needed
-			sort.Slice(item.Files, func(i, j int) bool { return item.Files[i].Name < item.Files[j].Name })
+
+			// sort mp3 files by name TODO: Check if sort is needed
+			sort.Slice(item.AudioFiles, func(i, j int) bool { return item.AudioFiles[i].Name < item.AudioFiles[j].Name })
 			item.TotalSize = totalSize
 			item.TotalLength = totalLength
-			item.FilesCount = len(item.Files)
+
+			// find biggest image by size
+			if len(item.ImageFiles) > 0 {
+				biggestImage := item.ImageFiles[0]
+				for i := 1; i < len(item.ImageFiles); i++ {
+					if item.ImageFiles[i].Size > biggestImage.Size {
+						biggestImage = item.ImageFiles[i]
+					}
+				}
+				item.CoverUrl = "https://" + filepath.Join(item.Server, item.Dir, biggestImage.Name)
+			} else {
+				item.CoverUrl = "No cover available!"
+			}
+
+			if len(item.AudioFiles) > 0 {
+				itemsFetched++
+				sp := &dto.SearchProgress{ItemsTotal: itemsTotal, ItemsFetched: itemsFetched}
+				c.mq.SendMessage(mq.SearchController, mq.SearchPage, sp, true)
+				c.mq.SendMessage(mq.SearchController, mq.SearchPage, item, true)
+			}
 		}
-		if item.FilesCount > 0 {
-			itemsFetched++
-			sp := &dto.SearchProgress{ItemsTotal: itemsTotal, ItemsFetched: itemsFetched}
-			c.mq.SendMessage(mq.SearchController, mq.SearchPage, sp, true)
-			c.mq.SendMessage(mq.SearchController, mq.SearchPage, item, true)
-		}
+		logger.Debug(mq.SearchController + " fetched first " + strconv.Itoa(itemsFetched) + " items from " + strconv.Itoa(itemsTotal) + " total")
+		c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
+		c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	}
-	logger.Info(mq.SearchController + " fetched first " + strconv.Itoa(itemsFetched) + " items from " + strconv.Itoa(itemsTotal) + " total" )
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 }

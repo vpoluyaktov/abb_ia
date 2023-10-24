@@ -34,6 +34,7 @@ type Config struct {
 	MaxFileSize          int64
 	CopyToAudiobookshelf bool
 	AudiobookshelfDir    string
+	ShortenTitles        bool
 }
 
 func Load() {
@@ -54,6 +55,7 @@ func Load() {
 	config.MaxFileSize = 1024 * 1024 * 10
 	config.CopyToAudiobookshelf = true
 	config.AudiobookshelfDir = "audiobookshelf"
+	config.ShortenTitles = true
 
 	fmt.Printf("Using config: %s\n", configFile)
 	if ReadConfig(config) != nil {
@@ -198,6 +200,14 @@ func AudiobookshelfDir() string {
 
 func SetAudiobookshelfDir(d string) {
 	configInstance.AudiobookshelfDir = d
+}
+
+func SetShortenTitles(b bool) {
+	configInstance.ShortenTitles = b
+}
+
+func IsShortenTitle() bool {
+	return configInstance.ShortenTitles
 }
 
 func AppVersion() string {

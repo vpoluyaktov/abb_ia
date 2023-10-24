@@ -19,4 +19,5 @@ const (
 	EncodingController = "EncodingController"
 	ChaptersController = "ChaptersController"
 	BuildController    = "BuildController"
+	CopyController     = "CopyController"
 )

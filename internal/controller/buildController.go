@@ -127,7 +127,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// }
 	jd.Start()
 
-	// copy book to Audiobookshelf 
+	// copy book to Audiobookshelf
 	if config.IsCopyToAudiobookshelf() {
 		c.filesCopy = make([]fileCopy, len(c.ab.Parts))
 		jd := utils.NewJobDispatcher(1)
@@ -237,7 +237,7 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 	// concatenate mp3 files into single .aac file
 	_, err := ffmpeg.NewFFmpeg().
 		Input(part.FListFile, "-safe 0 -f concat").
-		Output(part.AACFile, fmt.Sprintf("-acodec aac -ab %s -ar %s -vn", config.BitRate(), config.SampleRate())).
+		Output(part.AACFile, "-acodec aac -vn").
 		Overwrite(true).
 		Params("-hide_banner -nostdin -nostats").
 		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).
@@ -274,7 +274,7 @@ func (c *BuildController) copyAudiobookPart(ab *dto.Audiobook, partId int) {
 	defer file.Close()
 
 	destPath := filepath.Clean(filepath.Join(config.AudiobookshelfDir(), ab.Author, ab.Title, ab.Series, filepath.Base(part.M4BFile)))
-  destDir := filepath.Dir(destPath)
+	destDir := filepath.Dir(destPath)
 
 	if err := os.MkdirAll(destDir, 0750); err != nil {
 		logger.Error("Can't create output directory: " + err.Error())
@@ -388,6 +388,9 @@ func (c *BuildController) updateTotalBuildProgress() {
 		if percent != p {
 			// sent a message only if progress changed
 			percent = p
+			if percent > 100 {
+				percent = 100
+			}
 
 			elapsed := time.Since(c.startTime).Seconds()
 			speed := int64(float64(percent) / elapsed)
@@ -409,6 +412,9 @@ func (c *BuildController) updateTotalBuildProgress() {
 
 func (c *BuildController) updateFileCopyProgress(fileId int, fileName string, size int64, pos int64, percent int) {
 	if c.filesBuild[fileId].progress != percent {
+		if percent > 100 {
+			percent = 100
+		}
 		// sent a message only if progress changed
 		c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.CopyFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
 	}
@@ -457,7 +463,7 @@ func (c *BuildController) updateTotalCopyProgress() {
 
 			elapsedH := utils.SecondsToTime(elapsed)
 			bytesH := utils.BytesToHuman(totalBytesDownloaded)
-			filesH := fmt.Sprintf("%d/%d", filesDownloaded, len(item.Files))
+			filesH := fmt.Sprintf("%d/%d", filesDownloaded, len(item.AudioFiles))
 			speedH := utils.SpeedToHuman(speed)
 			etaH := utils.SecondsToTime(eta)
 

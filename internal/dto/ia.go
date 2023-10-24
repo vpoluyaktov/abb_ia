@@ -3,30 +3,40 @@ package dto
 import "fmt"
 
 type IAItem struct {
-	ID           string
-	Title        string
-	Creator      string
-	Description  string
-	Cover        string
-	Server       string
-	Dir          string
-	FilesCount   int
-	TotalLength  float64
-	TotalSize    int64
-	Files        []File
+	ID          string
+	Title       string
+	Creator     string
+	Description string
+	CoverUrl    string
+	Server      string
+	Dir         string
+	TotalLength float64
+	TotalSize   int64
+	AudioFiles  []AudioFile
+	ImageFiles  []ImageFile
 }
 
 func (i *IAItem) String() string {
 	return fmt.Sprintf("%T: %s", i, i.Title)
 }
 
-type File struct {
-	Name    string
-	Format  string
-	Length  float64
-	Size    int64
+type AudioFile struct {
+	Name   string
+	Format string
+	Length float64
+	Size   int64
 }
 
-func (f *File) String() string {
+func (f *AudioFile) String() string {
+	return fmt.Sprintf("%T: %s", f, f.Name)
+}
+
+type ImageFile struct {
+	Name   string
+	Format string
+	Size   int64
+}
+
+func (f *ImageFile) String() string {
 	return fmt.Sprintf("%T: %s", f, f.Name)
 }

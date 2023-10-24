@@ -150,7 +150,7 @@ func (p *SearchPage) clearEverything() {
 func (p *SearchPage) updateResult(i *dto.IAItem) {
 	logger.Debug(mq.SearchPage + ": Got AI Item: " + i.Title)
 	p.searchResult = append(p.searchResult, i)
-	p.resultTable.appendRow(i.Creator, i.Title, strconv.Itoa(i.FilesCount), utils.SecondsToTime(i.TotalLength), utils.BytesToHuman(i.TotalSize))
+	p.resultTable.appendRow(i.Creator, i.Title, strconv.Itoa(len(i.AudioFiles)), utils.SecondsToTime(i.TotalLength), utils.BytesToHuman(i.TotalSize))
 	p.resultTable.ScrollToBeginning()
 	// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.resultTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
 	p.updateDetails(1, 0)
@@ -170,7 +170,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 
 		p.filesTable.clear()
 		p.filesTable.showHeader()
-		files := p.searchResult[row-1].Files
+		files := p.searchResult[row-1].AudioFiles
 		for _, f := range files {
 			p.filesTable.appendRow(f.Name, f.Format, utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size))
 		}

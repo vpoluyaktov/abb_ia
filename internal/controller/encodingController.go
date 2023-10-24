@@ -200,6 +200,9 @@ func (c *EncodingController) updateTotalProgress() {
 		if percent != p {
 			// sent a message only if progress changed
 			percent = p
+			if percent > 100 {
+				percent = 100
+			}
 
 			elapsed := time.Since(c.startTime).Seconds()
 			speed := int64(float64(percent) / elapsed)

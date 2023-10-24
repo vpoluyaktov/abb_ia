@@ -104,11 +104,11 @@ func (p *DownloadPage) displayBookInfo(ab *dto.Audiobook) {
 	p.infoPanel.appendRow("Author:", ab.Author)
 	p.infoPanel.appendRow("Duration:", utils.SecondsToTime(ab.IAItem.TotalLength))
 	p.infoPanel.appendRow("Size:", utils.BytesToHuman(ab.IAItem.TotalSize))
-	p.infoPanel.appendRow("Files", strconv.Itoa(ab.IAItem.FilesCount))
+	p.infoPanel.appendRow("Files", strconv.Itoa(len(ab.IAItem.AudioFiles)))
 
 	p.filesTable.clear()
 	p.filesTable.showHeader()
-	for i, f := range ab.IAItem.Files {
+	for i, f := range ab.IAItem.AudioFiles {
 		p.filesTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, f.Format, utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size), "")
 	}
 	p.filesTable.ScrollToBeginning()

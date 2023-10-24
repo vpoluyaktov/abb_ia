@@ -2,6 +2,7 @@ package controller
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
@@ -67,6 +68,12 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	logger.Debug(mq.ChaptersController + " received " + cmd.String())
 
 	c.ab = cmd.Audiobook
+
+	if config.IsShortenTitle() {
+		c.ab.Title = strings.ReplaceAll(c.ab.Title, " - Single Episodes", "")
+		c.ab.Author = strings.ReplaceAll(c.ab.Author, "Old Time Radio Researchers Group", "OTRR")
+	}
+
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: "Calculating book parts and chapters..."}, false)
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)

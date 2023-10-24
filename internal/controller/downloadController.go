@@ -69,7 +69,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.ab.Author = item.Creator
 	c.ab.Title = item.Title
 	c.ab.Description = item.Description
-	c.ab.CoverURL = item.Cover
+	c.ab.CoverURL = item.CoverUrl
 	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(config.OutputDir(), item.ID))
 	c.ab.TotalSize = item.TotalSize
 	c.ab.TotalDuration = item.TotalLength
@@ -80,9 +80,9 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	// download files
 	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
-	c.files = make([]fileDownload, len(item.Files))
+	c.files = make([]fileDownload, len(item.AudioFiles))
 	jd := utils.NewJobDispatcher(config.ParallelDownloads())
-	for i, iaFile := range item.Files {
+	for i, iaFile := range item.AudioFiles {
 		localFileName := utils.SanitizeFilePath(filepath.Join(item.Dir, iaFile.Name))
 		c.ab.Mp3Files = append(c.ab.Mp3Files, dto.Mp3File{Number: i, FileName: localFileName, Size: iaFile.Size, Duration: iaFile.Length})
 		jd.AddJob(i, ia.DownloadFile, c.ab.OutputDir, localFileName, item.Server, item.Dir, iaFile.Name, i, iaFile.Size, c.updateFileProgress)
@@ -101,6 +101,9 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 
 func (c *DownloadController) updateFileProgress(fileId int, fileName string, size int64, pos int64, percent int) {
 	if c.files[fileId].progress != percent {
+		if percent > 100 {
+			percent = 100
+		}
 		// sent a message only if progress changed
 		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
 	}
@@ -139,6 +142,9 @@ func (c *DownloadController) updateTotalProgress() {
 		if percent != p {
 			// sent a message only if progress changed
 			percent = p
+			if percent > 100 {
+				percent = 100
+			}
 
 			elapsed := time.Since(c.startTime).Seconds()
 			speed := int64(float64(totalBytesDownloaded) / elapsed)
@@ -149,7 +155,7 @@ func (c *DownloadController) updateTotalProgress() {
 
 			elapsedH := utils.SecondsToTime(elapsed)
 			bytesH := utils.BytesToHuman(totalBytesDownloaded)
-			filesH := fmt.Sprintf("%d/%d", filesDownloaded, len(item.Files))
+			filesH := fmt.Sprintf("%d/%d", filesDownloaded, len(item.AudioFiles))
 			speedH := utils.SpeedToHuman(speed)
 			etaH := utils.SecondsToTime(eta)
 
