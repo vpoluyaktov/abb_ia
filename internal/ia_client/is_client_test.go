@@ -24,11 +24,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestSearch(t *testing.T) {
-	ia := ia_client.New(false, false)
+	ia := ia_client.New(5, false, false)
 
 	res := ia.Search("Single Episodes", "audio") // search by title
 	assert.NotNil(t, res)
-	assert.Equal(t, 25, len(res.Response.Docs))
+	assert.Equal(t, 5, len(res.Response.Docs))
 
 	res = ia.Search("https://archive.org/details/OTRR_Frank_Race_Singles", "audio") // search by item ID
 	assert.NotNil(t, res)
@@ -36,7 +36,7 @@ func TestSearch(t *testing.T) {
 }
 
 func TestGetItemById(t *testing.T) {
-	ia := ia_client.New(false, false)
+	ia := ia_client.New(5, false, false)
 	item := ia.GetItemDetails("OTRR_Frank_Race_Singles")
 	assert.NotNil(t, item)
 	if logLevel == logger.DEBUG {
@@ -62,7 +62,7 @@ func TestDownloadItem(t *testing.T) {
 	file := "/Frank_Race_49-xx-xx_ep13_The_Adventure_Of_The_Garrulous_Bartender_spectrogram.png"
 	outputDir := "/tmp/abb_ia"
 
-	ia := ia_client.New(false, false)
+	ia := ia_client.New(5, false, false)
 	ia.DownloadFile(outputDir, filepath.Join(outputDir, dir, file), server, dir, file, 1, 1024, UpdateProgress)
 }
 

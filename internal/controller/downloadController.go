@@ -78,7 +78,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 
 	// download files
-	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
+	ia := ia_client.New(config.MaxSearchRows(), config.IsUseMock(), config.IsSaveMock())
 	c.stopFlag = false
 	c.files = make([]fileDownload, len(item.AudioFiles))
 	jd := utils.NewJobDispatcher(config.ParallelDownloads())
@@ -101,9 +101,14 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 
 func (c *DownloadController) updateFileProgress(fileId int, fileName string, size int64, pos int64, percent int) {
 	if c.files[fileId].progress != percent {
-		if percent > 100 {
+
+		// wrong calculation protection
+		if percent < 0 {
+			percent = 0
+		} else if percent > 100 {
 			percent = 100
 		}
+
 		// sent a message only if progress changed
 		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
 	}
@@ -142,7 +147,11 @@ func (c *DownloadController) updateTotalProgress() {
 		if percent != p {
 			// sent a message only if progress changed
 			percent = p
-			if percent > 100 {
+
+			// wrong calculation protection
+			if percent < 0 {
+				percent = 0
+			} else if percent > 100 {
 				percent = 100
 			}
 

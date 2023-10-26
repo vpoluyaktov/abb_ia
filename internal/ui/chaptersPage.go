@@ -197,7 +197,7 @@ func (p *ChaptersPage) updateChapterEntry(row int, col int) {
 		cell := p.chaptersTable.t.GetCell(row, col)
 		cell.Text = nameF.GetText()
 		chapter.Name = nameF.GetText()
-		p.ab.SetChapter(chapterNo, chapter)
+		p.ab.SetChapter(chapterNo, *chapter)
 		d.Close()
 	})
 	f.AddButton("Cancel", func() {

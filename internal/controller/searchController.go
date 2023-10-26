@@ -46,7 +46,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 	logger.Info(mq.SearchController + " received " + cmd.String())
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
-	ia := ia_client.New(config.IsUseMock(), config.IsSaveMock())
+	ia := ia_client.New(config.MaxSearchRows(), config.IsUseMock(), config.IsSaveMock())
 	resp := ia.Search(cmd.SearchCondition, "audio")
 	if resp == nil {
 		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.SearchCondition)

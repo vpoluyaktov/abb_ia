@@ -23,6 +23,7 @@ type Config struct {
 	LogFileName          string
 	OutputDir            string
 	LogLevel             string
+	MaxSearchRows        int
 	UseMock              bool
 	SaveMock             bool
 	SearchCondition      string
@@ -44,17 +45,18 @@ func Load() {
 	config.LogFileName = "abb_ia.log"
 	config.OutputDir = "output"
 	config.LogLevel = "INFO"
+	config.MaxSearchRows = 100
 	config.UseMock = false
 	config.SaveMock = false
 	config.SearchCondition = ""
 	config.ParrallelDownloads = 5
 	config.ParrallelEncoders = 5
-	config.ReEncodeFiles = false
+	config.ReEncodeFiles = true
 	config.BitRate = "128k"
 	config.SampleRate = "44100"
 	config.MaxFileSize = 1024 * 1024 * 10
 	config.CopyToAudiobookshelf = true
-	config.AudiobookshelfDir = "audiobookshelf"
+	config.AudiobookshelfDir = "/mnt/NAS/Audiobooks/Internet Archive"
 	config.ShortenTitles = true
 
 	fmt.Printf("Using config: %s\n", configFile)
@@ -116,6 +118,14 @@ func SetLogLevel(logLevel string) {
 
 func LogLevel() string {
 	return configInstance.LogLevel
+}
+
+func SetMaxSearchRows(r int) {
+	configInstance.MaxSearchRows = r
+}
+
+func MaxSearchRows() int {
+	return configInstance.MaxSearchRows
 }
 
 func UseMock(b bool) {

@@ -18,18 +18,19 @@ import (
 
 const (
 	IA_BASE_URL     = "https://archive.org"
-	MAX_RESULT_ROWS = 25
 	MOCK_DIR        = "mock"
 )
 
 type IAClient struct {
 	restyClient    *resty.Client
+	maxSearchRows int
 	loadMockResult bool
 	saveMockResult bool
 }
 
-func New(useMock bool, saveMock bool) *IAClient {
+func New(maxSearchRows int, useMock bool, saveMock bool) *IAClient {
 	client := &IAClient{}
+	client.maxSearchRows = maxSearchRows
 	client.loadMockResult = useMock
 	client.saveMockResult = saveMock
 
@@ -60,7 +61,7 @@ func (client *IAClient) searchByTitle(title string, mediaType string) *SearchRes
 		}
 	} else {
 		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1",
-			url.QueryEscape(title), mediaType, MAX_RESULT_ROWS)
+			url.QueryEscape(title), mediaType, client.maxSearchRows)
 		logger.Debug("IA request: " + searchURL)
 		_, err := client.restyClient.R().SetResult(result).Get(searchURL)
 		if err != nil {
@@ -85,7 +86,7 @@ func (client *IAClient) searchByID(itemId string, mediaType string) *SearchRespo
 		}
 	} else {
 		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=identifier:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1",
-			itemId, mediaType, MAX_RESULT_ROWS)
+			itemId, mediaType, client.maxSearchRows)
 		logger.Debug("IA request: " + searchURL)
 		_, err := client.restyClient.R().SetResult(result).Get(searchURL)
 		if err != nil {

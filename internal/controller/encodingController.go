@@ -172,9 +172,14 @@ func (c *EncodingController) updateFileProgress(fileId int, fileName string, tot
 
 		if p != percent {
 			percent = p
-			if percent > 100 {
+
+			// wrong calculation protection 
+			if percent < 0 {
+				percent	=	0
+			} else if percent > 100 {
 				percent = 100
 			}
+
 			// sent a message only if progress changed
 			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
 		}
@@ -200,7 +205,11 @@ func (c *EncodingController) updateTotalProgress() {
 		if percent != p {
 			// sent a message only if progress changed
 			percent = p
-			if percent > 100 {
+
+			// wrong calculation protection 
+			if percent < 0 {
+				percent	=	0
+			} else if percent > 100 {
 				percent = 100
 			}
 

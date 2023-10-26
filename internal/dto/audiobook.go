@@ -64,11 +64,13 @@ func (ab *Audiobook) GetChapter(chapterNumber int) (*Chapter, error) {
 	return nil, fmt.Errorf("no chapter found")
 }
 
-func (ab *Audiobook) SetChapter(chapterNumber int, ch *Chapter) error {
-	for _, part := range ab.Parts {
-		for _, chapter := range part.Chapters {
+func (ab *Audiobook) SetChapter(chapterNumber int, ch Chapter) error {
+	for partNo := range ab.Parts {
+		part := &ab.Parts[partNo]
+		for chapterNo := range part.Chapters {
+			chapter := &part.Chapters[chapterNo]
 			if chapter.Number == chapterNumber {
-				chapter = *ch
+				ab.Parts[partNo].Chapters[chapterNo] = ch
 				return nil
 			}
 		}
