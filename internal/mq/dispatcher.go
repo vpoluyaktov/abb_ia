@@ -62,7 +62,6 @@ func NewDispatcher() *Dispatcher {
 }
 
 
-
 /**
  * Sends a message to a recipient.
  * @param from The sender of the message.

@@ -1,26 +1,36 @@
 package ui
 
 import (
+	"container/list"
 	"strconv"
 	"strings"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
 	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type ChaptersPage struct {
-	mq                *mq.Dispatcher
-	grid              *tview.Grid
-	author            *tview.InputField
-	title             *tview.InputField
-	cover             *tview.InputField
-	descriptionEditor *tview.TextArea
-	chaptersSection   *tview.Grid
-	chaptersTable     *table
-	ab                *dto.Audiobook
+	mq                 *mq.Dispatcher
+	grid               *tview.Grid
+	author             *tview.InputField
+	title              *tview.InputField
+	series             *tview.InputField
+	seriesNo           *tview.InputField
+	genre              *tview.DropDown
+	narator            *tview.InputField
+	cover              *tview.InputField
+	descriptionEditor  *tview.TextArea
+	chaptersSection    *tview.Grid
+	chaptersTable      *table
+	ab                 *dto.Audiobook
+	searchDescription  string
+	replaceDescription string
+	searchChapters     string
+	replaceChapters    string
+	chaptersUndoQueue  *list.List
 }
 
 func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
@@ -32,37 +42,75 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.grid.SetRows(9, -1, -1)
 	p.grid.SetColumns(0)
 
-	// Ignore mouse events when has no focus
-	p.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-		if p.grid.HasFocus() {
-			return action, event
-		} else {
-			return action, nil
-		}
-	})
+	// Ignore mouse events when the grid has no focus
+	// p.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+	// 	if p.grid.HasFocus() {
+	// 		return action, event
+	// 	} else {
+	// 		return action, nil
+	// 	}
+	// })
 
 	// book info section
 	infoSection := tview.NewGrid()
-	infoSection.SetColumns(50, -1, 30)
-	infoSection.SetRows(5, 3)
+	infoSection.SetColumns(50, 50, -1, 30)
+	infoSection.SetRows(5, 2)
 	infoSection.SetBorder(true)
 	infoSection.SetTitle(" Audiobook information: ")
 	infoSection.SetTitleAlign(tview.AlignLeft)
 	f0 := newForm()
-	f0.SetBorderPadding(1, 0, 1, 1)
-	p.author = f0.AddInputField("Author:", "", 40, nil, func(s string) { p.ab.Author = s })
-	p.title = f0.AddInputField("Title:", "", 40, nil, func(s string) { p.ab.Title = s })
+	f0.SetBorderPadding(1, 0, 1, 2)
+	p.author = f0.AddInputField("Author:", "", 40, nil, func(s string) {
+		if p.ab != nil {
+			p.ab.Author = s
+		}
+	})
+	p.title = f0.AddInputField("Title:", "", 40, nil, func(s string) {
+		if p.ab != nil {
+			p.ab.Title = s
+		}
+	})
 	infoSection.AddItem(f0.f, 0, 0, 1, 1, 0, 0, true)
 	f1 := newForm()
-	f1.SetBorderPadding(0, 1, 1, 1)
-	p.cover = f1.AddInputField("Book cover:", "", 0, nil, func(s string) { p.ab.CoverURL = s })
-	infoSection.AddItem(f1.f, 1, 0, 1, 2, 0, 0, true)
+	f1.SetBorderPadding(1, 0, 2, 2)
+	p.series = f1.AddInputField("Series:", "", 40, nil, func(s string) {
+		if p.ab != nil {
+			p.ab.Series = s
+		}
+	})
+	p.seriesNo = f1.AddInputField("Series No:", "", 5, acceptInt, func(s string) {
+		if p.ab != nil {
+			p.ab.SeriesNo = s
+		}
+	})
+	infoSection.AddItem(f1.f, 0, 1, 1, 1, 0, 0, true)
+	f2 := newForm()
+	f2.SetBorderPadding(1, 0, 2, 2)
+	p.genre = f2.AddDropdown("Genre:", config.Genres(), 0, func(s string, i int) {
+		if p.ab != nil {
+			p.ab.Genre = s
+		}
+	})
+	p.narator = f2.AddInputField("Narator:", "", 40, nil, func(s string) {
+		if p.ab != nil {
+			p.ab.Narator = s
+		}
+	})
+	infoSection.AddItem(f2.f, 0, 2, 1, 1, 0, 0, true)
 	f3 := newForm()
-	f3.SetHorizontal(false)
-	f3.SetButtonsAlign(tview.AlignRight)
-	f3.AddButton("Create Book", p.buildBook)
-	f3.AddButton("Cancel", p.stopConfirmation)
-	infoSection.AddItem(f3.f, 0, 2, 1, 1, 0, 0, false)
+	f3.SetBorderPadding(0, 1, 1, 1)
+	p.cover = f3.AddInputField("Book cover:", "", 0, nil, func(s string) {
+		if p.ab != nil {
+			p.ab.CoverURL = s
+		}
+	})
+	infoSection.AddItem(f3.f, 1, 0, 1, 4, 0, 0, true)
+	f4 := newForm()
+	f4.SetHorizontal(false)
+	f4.SetButtonsAlign(tview.AlignRight)
+	f4.AddButton("Create Book", p.buildBook)
+	f4.AddButton("Cancel", p.stopConfirmation)
+	infoSection.AddItem(f4.f, 0, 3, 1, 1, 0, 0, false)
 	p.grid.AddItem(infoSection, 0, 0, 1, 1, 0, 0, false)
 
 	// description section
@@ -74,16 +122,16 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.descriptionEditor.SetTitle(" Book description: ")
 	p.descriptionEditor.SetTitleAlign(tview.AlignLeft)
 	descriptionSection.AddItem(p.descriptionEditor, 0, 0, 1, 1, 0, 0, true)
-	f4 := newForm()
-	f4.SetBorder(true)
-	f4.SetHorizontal(true)
+	f5 := newForm()
+	f5.SetBorder(true)
+	f5.SetHorizontal(true)
 
-	f4.AddInputField("Search: ", "", 30, nil, func(s string) { p.ab.Author = s })
-	f4.AddInputField("Replace:", "", 30, nil, func(s string) { p.ab.Author = s })
-	f4.AddButton("Replace", p.buildBook)
-	f4.AddButton(" Undo  ", p.stopConfirmation)
-	f4.SetButtonsAlign(tview.AlignRight)
-	descriptionSection.AddItem(f4.f, 0, 1, 1, 1, 0, 0, true)
+	f5.AddInputField("Search: ", "", 30, nil, func(s string) { p.searchDescription = s })
+	f5.AddInputField("Replace:", "", 30, nil, func(s string) { p.replaceDescription = s })
+	f5.AddButton("Replace", p.buildBook)
+	f5.AddButton(" Undo  ", p.stopConfirmation)
+	f5.SetButtonsAlign(tview.AlignRight)
+	descriptionSection.AddItem(f5.f, 0, 1, 1, 1, 0, 0, true)
 	p.grid.AddItem(descriptionSection, 1, 0, 1, 1, 0, 0, true)
 
 	// chapters section
@@ -99,17 +147,20 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.chaptersTable.SetSelectedFunc(p.updateChapterEntry)
 	p.chaptersTable.SetMouseDblClickFunc(p.updateChapterEntry)
 	p.chaptersSection.AddItem(p.chaptersTable.t, 0, 0, 1, 1, 0, 0, true)
-	f5 := newForm()
-	f5.SetBorder(true)
-	f5.SetHorizontal(true)
-	f5.AddInputField("Search: ", "", 30, nil, func(s string) { p.ab.Author = s })
-	f5.AddInputField("Replace:", "", 30, nil, func(s string) { p.ab.Author = s })
-	f5.AddButton("Replace", p.buildBook)
-	f5.AddButton(" Undo  ", p.stopConfirmation)
-	f5.SetButtonsAlign(tview.AlignRight)
-	f5.SetMouseDblClickFunc(func() {})
-	p.chaptersSection.AddItem(f5.f, 0, 1, 1, 1, 0, 0, false)
+	f6 := newForm()
+	f6.SetBorder(true)
+	f6.SetHorizontal(true)
+	f6.AddInputField("Search: ", "", 30, nil, func(s string) { p.searchChapters = s })
+	f6.AddInputField("Replace:", "", 30, nil, func(s string) { p.replaceChapters = s })
+	f6.AddButton("Replace", p.searchReplaceChapters)
+	f6.AddButton(" Undo  ", p.undoChapters)
+	f6.AddButton(" Join Chapters  ", p.stopConfirmation)
+	f6.SetButtonsAlign(tview.AlignRight)
+	f6.SetMouseDblClickFunc(func() {})
+	p.chaptersSection.AddItem(f6.f, 0, 1, 1, 1, 0, 0, false)
 	p.grid.AddItem(p.chaptersSection, 2, 0, 1, 1, 0, 0, true)
+
+	p.chaptersUndoQueue = list.New()
 
 	return p
 }
@@ -131,6 +182,8 @@ func (p *ChaptersPage) dispatchMessage(m *mq.Message) {
 		p.addPart(dto.Part)
 	case *dto.ChaptersReady:
 		p.displayParts(dto.Audiobook)
+	case *dto.RefreshChaptersCommand:
+		p.refreshChapters(dto.Audiobook)	
 	default:
 		m.UnsupportedTypeError(mq.ChaptersPage)
 	}
@@ -207,9 +260,33 @@ func (p *ChaptersPage) updateChapterEntry(row int, col int) {
 	d.Show()
 }
 
+func (p *ChaptersPage) searchReplaceChapters() {
+	if p.searchChapters != "" && p.replaceChapters != "" {
+		abCopy := *p.ab
+		p.chaptersUndoQueue.PushBack(abCopy)
+		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceChaptersCommand{Audiobook: p.ab, SearchStr: p.searchChapters, ReplaceStr: p.replaceChapters}, false)
+	}
+}
+
+func (p *ChaptersPage) undoChapters() {
+	e := p.chaptersUndoQueue.Front()
+	if e != nil {
+		p.chaptersUndoQueue.Remove(e)
+		// ab := e.Value.(dto.Audiobook)
+		// p.ab.Parts = ab.Parts
+		// p.refreshChapters(p.ab)
+	}
+}
+
+func (c *ChaptersPage) refreshChapters(ab *dto.Audiobook) {
+	c.displayParts(ab)
+}
+	
+
 func (p *ChaptersPage) stopConfirmation() {
 	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop editing chapters?", p.chaptersSection, p.stopChapters, func() {})
 }
+
 
 func (p *ChaptersPage) stopChapters() {
 	// Stop the chapters here

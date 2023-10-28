@@ -137,8 +137,8 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			if len(item.AudioFiles) > 0 {
 				itemsFetched++
 				sp := &dto.SearchProgress{ItemsTotal: itemsTotal, ItemsFetched: itemsFetched}
-				c.mq.SendMessage(mq.SearchController, mq.SearchPage, sp, true)
-				c.mq.SendMessage(mq.SearchController, mq.SearchPage, item, true)
+				c.mq.SendMessage(mq.SearchController, mq.SearchPage, sp, false)
+				c.mq.SendMessage(mq.SearchController, mq.SearchPage, item, false)
 			}
 		}
 		logger.Debug(mq.SearchController + " fetched first " + strconv.Itoa(itemsFetched) + " items from " + strconv.Itoa(itemsTotal) + " total")

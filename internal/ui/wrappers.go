@@ -2,6 +2,7 @@ package ui
 
 import (
 	"math"
+	"strconv"
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
@@ -247,6 +248,14 @@ func (f *form) AddInputField(label, value string, fieldWidth int, accept func(te
 	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.InputField)
 	f.mu.Unlock()
 	return obj
+}
+
+func acceptInt(textToCheck string, lastChar rune) bool {
+	_, err := strconv.Atoi(textToCheck)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func (f *form) AddButton(label string, selected func()) *tview.Button {

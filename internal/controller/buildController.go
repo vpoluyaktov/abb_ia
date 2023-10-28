@@ -144,7 +144,7 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 		f.WriteString("title=" + ab.Title + "\n")
 		f.WriteString("artist=" + ab.Author + "\n")
 		f.WriteString("album=" + ab.Title + "\n")
-		f.WriteString("genre=Audiobook" + ab.Genre + "\n") //TODO: remove default genre
+		f.WriteString("genre=" + ab.Genre + "\n")
 		f.WriteString("description=" + strings.ReplaceAll(ab.Description, "\n", "\\\n") + "\n")
 		f.WriteString("copyright=" + ab.Copyright + "\n")
 		f.WriteString("comment=Downloaded from Internet Archive: " + ab.IaURL + "\n")

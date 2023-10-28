@@ -33,3 +33,21 @@ type ChaptersReady struct {
 func (c *ChaptersReady) String() string {
 	return fmt.Sprintf("ChaptersReady: %s", c.Audiobook.String())
 }
+
+type SearchReplaceChaptersCommand struct {
+	Audiobook  *Audiobook
+	SearchStr  string
+	ReplaceStr string
+}
+
+func (c *SearchReplaceChaptersCommand) String() string {
+	return fmt.Sprintf("SearchReplaceChaptersCommand: %s/%s", c.SearchStr, c.SearchStr)
+}
+
+type RefreshChaptersCommand struct {
+	Audiobook *Audiobook
+}
+
+func (c *RefreshChaptersCommand) String() string {
+	return fmt.Sprintf("RefreshChaptersCommand: %s", c.Audiobook.String())
+}

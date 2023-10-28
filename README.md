@@ -14,3 +14,12 @@ To make this process easier, I developed Audiobook Builder. With this app, all y
 ## Disclaimer
 
 Since the copyrights for the majority of old-time radio shows have expired and many of them are now in the Public Domain, you have the ability to freely download and listen to them. However, it's important to note that there is also copyrighted content available on the Internet Archive site. It is crucial that you respect the legal rights of others and refrain from engaging in any unlawful activities. This script serves as a tool solely for the purpose of creating an audiobook. The author holds no responsibility for how you choose to utilize this tool. It is your responsibility to adhere to the terms outlined in the copyright license of each item.
+
+
+## TODO:
+- Implement Search/Replace for Chapter name on Chapters page
+- Implement Search/Replace for Description on Chapters page
+- Implement bytes to human conversion in the config
+- Finish Default Settings screen
+- Create an audiobook Settings screen
+

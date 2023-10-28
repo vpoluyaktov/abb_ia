@@ -36,6 +36,7 @@ type Config struct {
 	CopyToAudiobookshelf bool
 	AudiobookshelfDir    string
 	ShortenTitles        bool
+	Genres               []string
 }
 
 func Load() {
@@ -58,6 +59,15 @@ func Load() {
 	config.CopyToAudiobookshelf = true
 	config.AudiobookshelfDir = "/mnt/NAS/Audiobooks/Internet Archive"
 	config.ShortenTitles = true
+	config.Genres = []string{
+		"Audiobook",
+		"Fiction",
+		"Radiodrama",
+		"History",
+		"Podcast",
+		"Nonfiction",
+		"Speech",
+	}
 
 	fmt.Printf("Using config: %s\n", configFile)
 	if ReadConfig(config) != nil {
@@ -218,6 +228,10 @@ func SetShortenTitles(b bool) {
 
 func IsShortenTitle() bool {
 	return configInstance.ShortenTitles
+}
+
+func Genres() []string {
+	return configInstance.Genres
 }
 
 func AppVersion() string {

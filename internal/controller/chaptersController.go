@@ -2,6 +2,7 @@ package controller
 
 import (
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/vpoluyaktov/abb_ia/internal/config"
@@ -42,6 +43,8 @@ func (c *ChaptersController) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.ChaptersCreate:
 		go c.createChapters(dto)
+	case *dto.SearchReplaceChaptersCommand:
+		go c.searchReplaceChapters(dto)	
 	case *dto.StopCommand:
 		go c.stopChapters(dto)
 	default:
@@ -97,7 +100,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		fileNo++
 		partSize += mp3.Size()
 		partDuration += mp3.Duration()
-		chapter := dto.Chapter{Number: chapterNo, Name: c.getMp3Title(mp3.Title()), Size: mp3.Size(), Duration: mp3.Duration(), Start: offset, End: offset + mp3.Duration(), Files: chapterFiles}
+		chapter := dto.Chapter{Number: chapterNo, Name: mp3.Title(), Size: mp3.Size(), Duration: mp3.Duration(), Start: offset, End: offset + mp3.Duration(), Files: chapterFiles}
 		partChapters = append(partChapters, chapter)
 		c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.AddChapterCommand{Chapter: &chapter}, true)
 		offset += mp3.Duration()
@@ -120,7 +123,20 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.ChaptersReady{Audiobook: cmd.Audiobook}, true)
 }
 
-func (c *ChaptersController) getMp3Title(title string) string {
-	// TODO: Concatenate Chapter names here
-	return title
+func (c *ChaptersController) searchReplaceChapters(cmd *dto.SearchReplaceChaptersCommand) {
+	ab := cmd.Audiobook
+	searchStr := cmd.SearchStr
+	replaseStr := cmd.ReplaceStr
+	re := regexp.MustCompile(searchStr) 
+
+	for partNo, p := range ab.Parts {
+		for chapterNo, _ := range p.Chapters {
+			chapter := &ab.Parts[partNo].Chapters[chapterNo]
+			title := chapter.Name
+			title = re.ReplaceAllString(title, replaseStr)
+			chapter.Name = title
+		}
+	} 
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
 }
+

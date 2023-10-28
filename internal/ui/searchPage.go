@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
@@ -41,6 +42,15 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.grid = tview.NewGrid()
 	p.grid.SetRows(5, -1, -1)
 	p.grid.SetColumns(0)
+
+	// Ignore mouse events when the grid has no focus
+	p.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		if p.grid.HasFocus() {
+			return action, event
+		} else {
+			return action, nil
+		}
+	})
 
 	// search section
 	p.searchSection = tview.NewGrid()

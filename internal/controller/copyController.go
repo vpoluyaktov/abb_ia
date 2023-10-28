@@ -138,7 +138,21 @@ func (c *CopyController) copyAudiobookPart(ab *dto.Audiobook, partId int) {
 	fileReader := bufio.NewReader(file)
 	defer file.Close()
 
-	destPath := filepath.Clean(filepath.Join(config.AudiobookshelfDir(), ab.Author, ab.Title, ab.Series, filepath.Base(part.M4BFile)))
+	// Calculate Audiobookshelf directory structure (see: https://www.audiobookshelf.org/docs#book-directory-structure)
+	destPath := filepath.Join(config.AudiobookshelfDir(), ab.Author)
+	if ab.Series != "" {
+		destPath = filepath.Join(destPath, ab.Author + " - " + ab.Series)
+	}
+	abTitle := ""
+	if ab.Series != "" && ab.SeriesNo != "" {
+		abTitle = ab.SeriesNo + ". "
+	}
+	abTitle += ab.Title
+	if ab.Narator != "" {
+		abTitle += " {" + ab.Narator + "}"
+	}
+		
+	destPath = filepath.Clean(filepath.Join(destPath, abTitle, filepath.Base(part.M4BFile)))
 	destDir := filepath.Dir(destPath)
 
 	if err := os.MkdirAll(destDir, 0750); err != nil {

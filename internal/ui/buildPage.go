@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
@@ -33,6 +34,15 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.grid = tview.NewGrid()
 	p.grid.SetRows(7, -1, -1, 4)
 	p.grid.SetColumns(0)
+
+	// Ignore mouse events when the grid has no focus
+	p.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		if p.grid.HasFocus() {
+			return action, event
+		} else {
+			return action, nil
+		}
+	})
 
 	// book info section
 	infoSection := tview.NewGrid()

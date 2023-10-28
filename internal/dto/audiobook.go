@@ -7,11 +7,12 @@ type Audiobook struct {
 	Title         string
 	Description   string
 	Genre         string
+	Series        string
+	SeriesNo      string
+	Narator       string
 	CoverURL      string
 	CoverFile     string
 	IaURL         string
-	Series        string
-	SeriesNo      int
 	Copyright     string
 	OutputDir     string
 	Mp3Files      []Mp3File
