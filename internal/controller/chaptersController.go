@@ -44,7 +44,9 @@ func (c *ChaptersController) dispatchMessage(m *mq.Message) {
 	case *dto.ChaptersCreate:
 		go c.createChapters(dto)
 	case *dto.SearchReplaceChaptersCommand:
-		go c.searchReplaceChapters(dto)	
+		go c.searchReplaceChapters(dto)
+	case *dto.JoinChaptersCommand:
+		go c.joinChapters(dto)
 	case *dto.StopCommand:
 		go c.stopChapters(dto)
 	default:
@@ -80,7 +82,6 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: "Calculating book parts and chapters..."}, false)
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
-
 
 	// Split the book into parts
 	c.ab.Parts = []dto.Part{}
@@ -126,17 +127,60 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 func (c *ChaptersController) searchReplaceChapters(cmd *dto.SearchReplaceChaptersCommand) {
 	ab := cmd.Audiobook
 	searchStr := cmd.SearchStr
-	replaseStr := cmd.ReplaceStr
-	re := regexp.MustCompile(searchStr) 
+	replaceStr := cmd.ReplaceStr
+	re := regexp.MustCompile(searchStr)
 
 	for partNo, p := range ab.Parts {
 		for chapterNo, _ := range p.Chapters {
 			chapter := &ab.Parts[partNo].Chapters[chapterNo]
 			title := chapter.Name
-			title = re.ReplaceAllString(title, replaseStr)
-			chapter.Name = title
+			title = re.ReplaceAllString(title, replaceStr)
+			chapter.Name = strings.TrimSpace(title)
 		}
-	} 
+	}
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
 }
 
+// Join Chapters having the same name
+func (c *ChaptersController) joinChapters(cmd *dto.JoinChaptersCommand) {
+	ab := cmd.Audiobook
+	chapterNo := 1
+	for partNo := range ab.Parts {
+		part := &ab.Parts[partNo]
+		chapters := []dto.Chapter{}
+		var chapter *dto.Chapter = nil
+		previousChapterName := ""
+		for chNo := range part.Chapters {
+			ch := &part.Chapters[chNo]
+			// always add first chapter in a part
+			if chNo == 0 {
+				chapter = ch
+				chapter.Number = chapterNo
+				previousChapterName = chapter.Name
+			} else {
+				if ch.Name == previousChapterName {
+					// the same name - extend current chapter
+					chapter.Duration += ch.Duration
+					chapter.Size += ch.Size
+					chapter.End = ch.End
+					chapter.Files = append(chapter.Files, ch.Files...)
+				} else {
+					// new chapter
+					chapters = append(chapters, *chapter)
+					chapterNo++
+					chapter = ch
+					chapter.Number = chapterNo
+					previousChapterName = chapter.Name
+
+				}
+				// add last chapter in a part
+				if chNo == len(part.Chapters)-1 {
+					chapters = append(chapters, *chapter)
+					chapterNo++
+				}
+			}
+		}
+		part.Chapters = chapters
+	}
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
+}

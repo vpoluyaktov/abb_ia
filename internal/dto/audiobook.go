@@ -1,6 +1,9 @@
 package dto
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Audiobook struct {
 	Author        string
@@ -77,4 +80,23 @@ func (ab *Audiobook) SetChapter(chapterNumber int, ch Chapter) error {
 		}
 	}
 	return fmt.Errorf("no chapter found")
+}
+
+func (ab *Audiobook) GetCopy() (*Audiobook, error) {
+		// Convert the source struct to JSON
+		jsonBytes, err := json.Marshal(ab)
+		if err != nil {
+			return nil, err
+		}
+	
+		// Create a new destination struct
+		destination := &Audiobook{}
+	
+		// Convert the JSON back to the destination struct
+		err = json.Unmarshal(jsonBytes, destination)
+		if err != nil {
+			return nil, err
+		}
+	
+		return destination, nil
 }

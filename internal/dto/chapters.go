@@ -44,6 +44,14 @@ func (c *SearchReplaceChaptersCommand) String() string {
 	return fmt.Sprintf("SearchReplaceChaptersCommand: %s/%s", c.SearchStr, c.SearchStr)
 }
 
+type JoinChaptersCommand struct {
+	Audiobook *Audiobook
+}
+
+func (c *JoinChaptersCommand) String() string {
+	return fmt.Sprintf("JoinChaptersCommand: %s", c.Audiobook.String())
+}
+
 type RefreshChaptersCommand struct {
 	Audiobook *Audiobook
 }

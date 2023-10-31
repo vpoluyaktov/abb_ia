@@ -2,12 +2,15 @@ package ui
 
 import (
 	"container/list"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
 	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
@@ -30,7 +33,7 @@ type ChaptersPage struct {
 	replaceDescription string
 	searchChapters     string
 	replaceChapters    string
-	chaptersUndoQueue  *list.List
+	chaptersUndoStack  *UndoStack
 }
 
 func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
@@ -43,13 +46,13 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.grid.SetColumns(0)
 
 	// Ignore mouse events when the grid has no focus
-	// p.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-	// 	if p.grid.HasFocus() {
-	// 		return action, event
-	// 	} else {
-	// 		return action, nil
-	// 	}
-	// })
+	p.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		if p.grid.HasFocus() {
+			return action, event
+		} else {
+			return action, nil
+		}
+	})
 
 	// book info section
 	infoSection := tview.NewGrid()
@@ -154,13 +157,13 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	f6.AddInputField("Replace:", "", 30, nil, func(s string) { p.replaceChapters = s })
 	f6.AddButton("Replace", p.searchReplaceChapters)
 	f6.AddButton(" Undo  ", p.undoChapters)
-	f6.AddButton(" Join Chapters  ", p.stopConfirmation)
+	f6.AddButton(" Join Chapters  ", p.joinChapters)
 	f6.SetButtonsAlign(tview.AlignRight)
 	f6.SetMouseDblClickFunc(func() {})
 	p.chaptersSection.AddItem(f6.f, 0, 1, 1, 1, 0, 0, false)
 	p.grid.AddItem(p.chaptersSection, 2, 0, 1, 1, 0, 0, true)
 
-	p.chaptersUndoQueue = list.New()
+	p.chaptersUndoStack = NewUndoStack()
 
 	return p
 }
@@ -183,7 +186,7 @@ func (p *ChaptersPage) dispatchMessage(m *mq.Message) {
 	case *dto.ChaptersReady:
 		p.displayParts(dto.Audiobook)
 	case *dto.RefreshChaptersCommand:
-		p.refreshChapters(dto.Audiobook)	
+		p.refreshChapters(dto.Audiobook)
 	default:
 		m.UnsupportedTypeError(mq.ChaptersPage)
 	}
@@ -261,32 +264,42 @@ func (p *ChaptersPage) updateChapterEntry(row int, col int) {
 }
 
 func (p *ChaptersPage) searchReplaceChapters() {
-	if p.searchChapters != "" && p.replaceChapters != "" {
-		abCopy := *p.ab
-		p.chaptersUndoQueue.PushBack(abCopy)
-		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceChaptersCommand{Audiobook: p.ab, SearchStr: p.searchChapters, ReplaceStr: p.replaceChapters}, false)
+	if p.searchChapters != "" {
+		abCopy, err := p.ab.GetCopy()
+		if err != nil {
+			logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
+		} else {
+			p.chaptersUndoStack.Push(abCopy)
+			p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceChaptersCommand{Audiobook: p.ab, SearchStr: p.searchChapters, ReplaceStr: p.replaceChapters}, false)
+		}
+	}
+}
+
+func (p *ChaptersPage) joinChapters() {
+	abCopy, err := p.ab.GetCopy()
+	if err != nil {
+		logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
+	} else {
+		p.chaptersUndoStack.Push(abCopy)
+		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.JoinChaptersCommand{Audiobook: p.ab}, false)
 	}
 }
 
 func (p *ChaptersPage) undoChapters() {
-	e := p.chaptersUndoQueue.Front()
-	if e != nil {
-		p.chaptersUndoQueue.Remove(e)
-		// ab := e.Value.(dto.Audiobook)
-		// p.ab.Parts = ab.Parts
-		// p.refreshChapters(p.ab)
+	ab, err := p.chaptersUndoStack.Pop()
+	if err == nil {
+		p.ab.Parts = ab.Parts
+		p.refreshChapters(p.ab)
 	}
 }
 
 func (c *ChaptersPage) refreshChapters(ab *dto.Audiobook) {
-	c.displayParts(ab)
+	go c.displayParts(ab)
 }
-	
 
 func (p *ChaptersPage) stopConfirmation() {
 	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop editing chapters?", p.chaptersSection, p.stopChapters, func() {})
 }
-
 
 func (p *ChaptersPage) stopChapters() {
 	// Stop the chapters here
@@ -297,4 +310,28 @@ func (p *ChaptersPage) stopChapters() {
 func (p *ChaptersPage) buildBook() {
 	p.mq.SendMessage(mq.ChaptersPage, mq.BuildController, &dto.BuildCommand{Audiobook: p.ab}, true)
 	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, false)
+}
+
+// Simple Undo stack implementation
+type UndoStack struct {
+	stack *list.List
+}
+
+func NewUndoStack() *UndoStack {
+	return &UndoStack{
+		stack: list.New(),
+	}
+}
+
+func (u *UndoStack) Push(obj *dto.Audiobook) {
+	u.stack.PushBack(obj)
+}
+
+func (u *UndoStack) Pop() (*dto.Audiobook, error) {
+	if u.stack.Len() == 0 {
+		return nil, fmt.Errorf("stack is empty")
+	}
+	e := u.stack.Back()
+	u.stack.Remove(e)
+	return e.Value.(*dto.Audiobook), nil
 }
