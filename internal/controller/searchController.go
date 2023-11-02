@@ -81,9 +81,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			if len(d.Metadata.Description) > 0 {
 				item.Description = tview.Escape(ia.Html2Text(d.Metadata.Description[0]))
 			}
-			// if len(d.Misc.Image) > 0 { // _thumb images are too small. Have to collect and sort my size all item images below
-			// 	item.Cover = d.Misc.Image
-			// }
+
 			for name, metadata := range d.Files {
 				format := metadata.Format
 				// collect mp3 files
@@ -121,7 +119,10 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			item.TotalSize = totalSize
 			item.TotalLength = totalLength
 
-			// find biggest image by size
+			// if len(d.Misc.Image) > 0 { // _thumb images are too small. Have to collect and sort my size all item images below
+			// 	item.CoverUrl = d.Misc.Image
+			// }
+			// find biggest image by size (TODO: Need to find better solution. Maybe analyze if the image is colorful?)
 			if len(item.ImageFiles) > 0 {
 				biggestImage := item.ImageFiles[0]
 				for i := 1; i < len(item.ImageFiles); i++ {

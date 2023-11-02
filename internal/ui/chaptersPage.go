@@ -16,24 +16,25 @@ import (
 )
 
 type ChaptersPage struct {
-	mq                 *mq.Dispatcher
-	grid               *tview.Grid
-	author             *tview.InputField
-	title              *tview.InputField
-	series             *tview.InputField
-	seriesNo           *tview.InputField
-	genre              *tview.DropDown
-	narator            *tview.InputField
-	cover              *tview.InputField
-	descriptionEditor  *tview.TextArea
-	chaptersSection    *tview.Grid
-	chaptersTable      *table
-	ab                 *dto.Audiobook
-	searchDescription  string
-	replaceDescription string
-	searchChapters     string
-	replaceChapters    string
-	chaptersUndoStack  *UndoStack
+	mq                   *mq.Dispatcher
+	grid                 *tview.Grid
+	author               *tview.InputField
+	title                *tview.InputField
+	series               *tview.InputField
+	seriesNo             *tview.InputField
+	genre                *tview.DropDown
+	narator              *tview.InputField
+	cover                *tview.InputField
+	descriptionEditor    *tview.TextArea
+	chaptersSection      *tview.Grid
+	chaptersTable        *table
+	ab                   *dto.Audiobook
+	searchDescription    string
+	replaceDescription   string
+	searchChapters       string
+	replaceChapters      string
+	chaptersUndoStack    *UndoStack
+	descriptionUndoStack *UndoStack
 }
 
 func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
@@ -131,8 +132,8 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 
 	f5.AddInputField("Search: ", "", 30, nil, func(s string) { p.searchDescription = s })
 	f5.AddInputField("Replace:", "", 30, nil, func(s string) { p.replaceDescription = s })
-	f5.AddButton("Replace", p.buildBook)
-	f5.AddButton(" Undo  ", p.stopConfirmation)
+	f5.AddButton("Replace", p.searchReplaceDescription)
+	f5.AddButton(" Undo  ", p.undoDescription)
 	f5.SetButtonsAlign(tview.AlignRight)
 	descriptionSection.AddItem(f5.f, 0, 1, 1, 1, 0, 0, true)
 	p.grid.AddItem(descriptionSection, 1, 0, 1, 1, 0, 0, true)
@@ -164,6 +165,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.grid.AddItem(p.chaptersSection, 2, 0, 1, 1, 0, 0, true)
 
 	p.chaptersUndoStack = NewUndoStack()
+	p.descriptionUndoStack = NewUndoStack()
 
 	return p
 }
@@ -185,6 +187,8 @@ func (p *ChaptersPage) dispatchMessage(m *mq.Message) {
 		p.addPart(dto.Part)
 	case *dto.ChaptersReady:
 		p.displayParts(dto.Audiobook)
+	case *dto.RefreshDescriptionCommand:
+		p.refreshDescription(dto.Audiobook)
 	case *dto.RefreshChaptersCommand:
 		p.refreshChapters(dto.Audiobook)
 	default:
@@ -197,7 +201,7 @@ func (p *ChaptersPage) displayBookInfo(ab *dto.Audiobook) {
 	p.author.SetText(ab.Author)
 	p.title.SetText(ab.Title)
 	p.cover.SetText(ab.CoverURL)
-	p.descriptionEditor.SetText(ab.IAItem.Description, false)
+	p.descriptionEditor.SetText(ab.Description, false)
 
 	p.chaptersTable.clear()
 	p.chaptersTable.showHeader()
@@ -263,6 +267,32 @@ func (p *ChaptersPage) updateChapterEntry(row int, col int) {
 	d.Show()
 }
 
+func (p *ChaptersPage) searchReplaceDescription() {
+	if p.searchDescription != "" {
+		abCopy, err := p.ab.GetCopy()
+		if err != nil {
+			logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
+		} else {
+			p.descriptionUndoStack.Push(abCopy)
+			p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceDescriptionCommand{Audiobook: p.ab, SearchStr: p.searchDescription, ReplaceStr: p.replaceDescription}, true)
+		}
+	}
+}
+
+func (p *ChaptersPage) undoDescription() {
+	ab, err := p.descriptionUndoStack.Pop()
+	if err == nil {
+		p.ab.Description = ab.Description
+		p.descriptionEditor.SetText(p.ab.Description, false)
+	}
+	p.mq.SendMessage(mq.ChaptersPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+}
+
+func (p *ChaptersPage) refreshDescription(ab *dto.Audiobook) {
+	p.descriptionEditor.SetText(ab.Description, false)
+	p.mq.SendMessage(mq.ChaptersPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+}
+
 func (p *ChaptersPage) searchReplaceChapters() {
 	if p.searchChapters != "" {
 		abCopy, err := p.ab.GetCopy()
@@ -270,7 +300,7 @@ func (p *ChaptersPage) searchReplaceChapters() {
 			logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
 		} else {
 			p.chaptersUndoStack.Push(abCopy)
-			p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceChaptersCommand{Audiobook: p.ab, SearchStr: p.searchChapters, ReplaceStr: p.replaceChapters}, false)
+			p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceChaptersCommand{Audiobook: p.ab, SearchStr: p.searchChapters, ReplaceStr: p.replaceChapters}, true)
 		}
 	}
 }
@@ -281,7 +311,7 @@ func (p *ChaptersPage) joinChapters() {
 		logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
 	} else {
 		p.chaptersUndoStack.Push(abCopy)
-		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.JoinChaptersCommand{Audiobook: p.ab}, false)
+		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.JoinChaptersCommand{Audiobook: p.ab}, true)
 	}
 }
 
@@ -293,8 +323,8 @@ func (p *ChaptersPage) undoChapters() {
 	}
 }
 
-func (c *ChaptersPage) refreshChapters(ab *dto.Audiobook) {
-	go c.displayParts(ab)
+func (p *ChaptersPage) refreshChapters(ab *dto.Audiobook) {
+	go p.displayParts(ab)
 }
 
 func (p *ChaptersPage) stopConfirmation() {
@@ -303,13 +333,13 @@ func (p *ChaptersPage) stopConfirmation() {
 
 func (p *ChaptersPage) stopChapters() {
 	// Stop the chapters here
-	p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.StopCommand{Process: "Chapters", Reason: "User request"}, false)
-	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.StopCommand{Process: "Chapters", Reason: "User request"}, true)
+	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, true)
 }
 
 func (p *ChaptersPage) buildBook() {
 	p.mq.SendMessage(mq.ChaptersPage, mq.BuildController, &dto.BuildCommand{Audiobook: p.ab}, true)
-	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, false)
+	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, true)
 }
 
 // Simple Undo stack implementation

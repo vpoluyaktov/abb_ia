@@ -34,6 +34,24 @@ func (c *ChaptersReady) String() string {
 	return fmt.Sprintf("ChaptersReady: %s", c.Audiobook.String())
 }
 
+type SearchReplaceDescriptionCommand struct {
+	Audiobook  *Audiobook
+	SearchStr  string
+	ReplaceStr string
+}
+
+func (c *SearchReplaceDescriptionCommand) String() string {
+	return fmt.Sprintf("SearchReplaceDescriptionCommand: %s/%s", c.SearchStr, c.SearchStr)
+}
+
+type RefreshDescriptionCommand struct {
+	Audiobook *Audiobook
+}
+
+func (c *RefreshDescriptionCommand) String() string {
+	return fmt.Sprintf("RefreshDescriptionCommand: %s", c.Audiobook.String())
+}
+
 type SearchReplaceChaptersCommand struct {
 	Audiobook  *Audiobook
 	SearchStr  string

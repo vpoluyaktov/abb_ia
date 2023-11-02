@@ -43,6 +43,8 @@ func (c *ChaptersController) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.ChaptersCreate:
 		go c.createChapters(dto)
+	case *dto.SearchReplaceDescriptionCommand:
+		go c.searchReplaceDescription(dto)	
 	case *dto.SearchReplaceChaptersCommand:
 		go c.searchReplaceChapters(dto)
 	case *dto.JoinChaptersCommand:
@@ -122,6 +124,16 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.ChaptersReady{Audiobook: cmd.Audiobook}, true)
+}
+
+func (c *ChaptersController) searchReplaceDescription(cmd *dto.SearchReplaceDescriptionCommand) {
+	ab := cmd.Audiobook
+	searchStr := cmd.SearchStr
+	replaceStr := cmd.ReplaceStr
+	re := regexp.MustCompile(searchStr)
+	description := re.ReplaceAllString(ab.Description, replaceStr)
+	ab.Description = description
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshDescriptionCommand{Audiobook: cmd.Audiobook}, true)
 }
 
 func (c *ChaptersController) searchReplaceChapters(cmd *dto.SearchReplaceChaptersCommand) {

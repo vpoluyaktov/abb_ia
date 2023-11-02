@@ -3,7 +3,6 @@ package ui
 import (
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
@@ -52,10 +51,8 @@ func (f *frame) showPage(name string) {
 func (f *frame) switchToPage(name string) {
 	f.pages.SwitchToPage(name)
 	f.pages.SendToFront(name)
-	n, p := f.pages.GetFrontPage()
-	logger.Debug(n)
-	p = p.(*tview.Grid)
-	f.mq.SendMessage(mq.Frame, mq.TUI, &dto.SetFocusCommand{Primitive: p}, false)
+	_, p := f.pages.GetFrontPage()
+	f.mq.SendMessage(mq.Frame, mq.TUI, &dto.SetFocusCommand{Primitive: p}, true)
 }
 
 func (f *frame) checkMQ() {

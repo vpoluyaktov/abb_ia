@@ -69,7 +69,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	f.f.SetButtonsAlign(tview.AlignRight)
 	p.searchButton = f.AddButton("Create Audiobook", p.createBook)
 	p.clearButton = f.AddButton("Settings", p.updateConfig)
-	p.searchSection.AddItem(f.f, 0, 1, 1, 1, 0, 0, false)
+	p.searchSection.AddItem(f.f, 0, 1, 1, 1, 0, 0, true)
 
 	p.grid.AddItem(p.searchSection, 0, 0, 1, 1, 0, 0, true)
 
@@ -114,6 +114,10 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 
 	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
+
+	p.grid.Focus(func(pr tview.Primitive) {
+		p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
+	})
 
 	return p
 }

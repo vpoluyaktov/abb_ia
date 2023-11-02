@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"github.com/vpoluyaktov/abb_ia/internal/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,7 +34,7 @@ type Config struct {
 	ReEncodeFiles        bool
 	BitRate              string
 	SampleRate           string
-	MaxFileSize          int64
+	MaxFileSize          string
 	CopyToAudiobookshelf bool
 	AudiobookshelfDir    string
 	ShortenTitles        bool
@@ -55,7 +57,7 @@ func Load() {
 	config.ReEncodeFiles = true
 	config.BitRate = "128k"
 	config.SampleRate = "44100"
-	config.MaxFileSize = 1024 * 1024 * 10
+	config.MaxFileSize = "100 Mb"
 	config.CopyToAudiobookshelf = true
 	config.AudiobookshelfDir = "/mnt/NAS/Audiobooks/Internet Archive"
 	config.ShortenTitles = true
@@ -203,7 +205,12 @@ func SampleRate() string {
 }
 
 func MaxFileSize() int64 {
-	return configInstance.MaxFileSize
+	maxFileSize, err := utils.HumanToBytes(configInstance.MaxFileSize)
+	if err != nil {
+		logger.Error("Config Loader Can't parse MaxFileSize: " + err.Error() + ". Using default 100 Mb")
+		maxFileSize, _ = utils.HumanToBytes("100 Mb")
+	}
+	return maxFileSize
 }
 
 func SetCopyToAudiobookshelf(b bool) {
