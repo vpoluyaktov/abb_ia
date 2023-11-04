@@ -1,7 +1,6 @@
 package utils
 
-import (
-)
+import ()
 
 // Check if a map contains a given key
 func HasKey(m map[string]interface{}, key string) bool {
@@ -22,11 +21,17 @@ func Contains(s []string, str string) bool {
 // Find an index of elements in a string slice
 func GetIndex(s []string, str string) int {
 	for i, e := range s {
-		 if e == str {  // check the condition if its true return index
-				return i
-		 }
+		if e == str { // check the condition if its true return index
+			return i
+		}
 	}
 	return -1
 }
 
-
+func AddSpaces(list []string) []string {
+	var output []string
+	for _, v := range list {
+		output = append(output, " "+v+" ")
+	}
+	return output
+}

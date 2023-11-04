@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"strings"
+
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
@@ -44,7 +46,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	f := newForm()
 	f.SetHorizontal(false)
 	p.logFileNameField = f.AddInputField("Log file name:", "", 40, nil, func(t string) { p.configCopy.LogFileName = t })
-	p.logLevelField = f.AddDropdown("Log level:", logger.LogLeves(), 1, func(o string, i int) { p.configCopy.LogLevel = o })
+	p.logLevelField = f.AddDropdown("Log level:", utils.AddSpaces(logger.LogLeves()), 1, func(o string, i int) { p.configCopy.LogLevel = strings.TrimSpace(o) })
 	p.useMockField = f.AddCheckbox("Use mock:", false, func(t bool) { p.configCopy.UseMock = t })
 	p.saveMockField = f.AddCheckbox("Save mock:", false, func(t bool) { p.configCopy.SaveMock = t })
 
