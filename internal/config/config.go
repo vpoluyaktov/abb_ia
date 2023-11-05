@@ -63,6 +63,7 @@ func Load() {
 	config.SampleRate = "44100"
 	config.MaxFileSize = "100 Mb"
 	config.CopyToAudiobookshelf = true
+	config.AudiobookshelfUser = "admin"
 	config.AudiobookshelfDir = "/mnt/NAS/Audiobooks/Internet Archive"
 	config.ShortenTitles = true
 	config.Genres = []string{
@@ -250,11 +251,31 @@ func SetAudiobookshelfUser(u string) {
 }
 
 func AudiobookshelfPassword() string {
-	return configInstance.AudiobookshelfPassword
+	base64 := configInstance.AudiobookshelfPassword
+	if base64 == "" {
+		return ""
+	}
+	encrypted, err := utils.DecodeBase64(base64)
+	if err != nil {
+		logger.Error("Can't decode base64 password: " + err.Error())
+		return ""
+	}
+	decrypted, err := utils.DecryptString(encrypted)
+	if err != nil {
+		logger.Error("Can't decrypt password: " + err.Error())
+		return ""
+	}
+	return decrypted
 }
 
 func SetAudiobookshelfPassword(p string) {
-	configInstance.AudiobookshelfPassword = p
+
+	encrypted, err := utils.EncryptString(p)
+	if err != nil {
+		logger.Error("Can't encrypt password: " + err.Error())
+	}
+	base64 := utils.EncodeBase64(encrypted)
+	configInstance.AudiobookshelfPassword = base64
 }
 
 func AudiobookshelfLibrary() string {

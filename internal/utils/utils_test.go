@@ -80,3 +80,32 @@ func TestHumanToBytes(t *testing.T) {
 			assert.Equal(t, tc.expected, actual)
 	}
 }
+
+
+func TestGetMachineIdentifier(t *testing.T) {
+  machineID, err := utils.GetMachineIdentifier()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, machineID)
+}
+
+func TestGenerateEncryptionKey(t *testing.T) {
+	encryptionKey, err := utils.GenerateEncryptionKey()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, encryptionKey)
+}
+
+func TestEncryptString(t *testing.T) {
+	text := "Decrypted String"
+	encryptedString, err := utils.EncryptString(text)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, encryptedString)
+}
+
+func TestDecryptString(t *testing.T) {
+	text := "Decrypted String"
+	encryptedString, err := utils.EncryptString(text)
+	assert.NoError(t, err)
+	decryptedString, err := utils.DecryptString(encryptedString)
+	assert.NoError(t, err)
+	assert.Equal(t, text, decryptedString)
+}

@@ -19,10 +19,14 @@ type ConfigPage struct {
 	configCopy    config.Config
 	configSection *tview.Grid
 
-	logFileNameField *tview.InputField
-	logLevelField    *tview.DropDown
-	useMockField     *tview.Checkbox
-	saveMockField    *tview.Checkbox
+	logFileNameField       *tview.InputField
+	logLevelField          *tview.DropDown
+	useMockField           *tview.Checkbox
+	saveMockField          *tview.Checkbox
+	audiobookshelfUrl      *tview.InputField
+	audiobookshelfDir      *tview.InputField
+	audiobookshelfUser     *tview.InputField
+	audiobookshelfPassword *tview.InputField
 
 	saveConfigButton *tview.Button
 	cancelButton     *tview.Button
@@ -34,7 +38,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.mq.RegisterListener(mq.ConfigPage, p.dispatchMessage)
 
 	p.grid = tview.NewGrid()
-	p.grid.SetRows(-1, -1, -1)
+	p.grid.SetRows(-1)
 	p.grid.SetColumns(0)
 
 	// config section
@@ -49,6 +53,11 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.logLevelField = f.AddDropdown("Log level:", utils.AddSpaces(logger.LogLeves()), 1, func(o string, i int) { p.configCopy.LogLevel = strings.TrimSpace(o) })
 	p.useMockField = f.AddCheckbox("Use mock:", false, func(t bool) { p.configCopy.UseMock = t })
 	p.saveMockField = f.AddCheckbox("Save mock:", false, func(t bool) { p.configCopy.SaveMock = t })
+
+	p.audiobookshelfUrl = f.AddInputField("Audiobookshelf Server URL:", "", 40, nil, func(t string) { p.configCopy.AudiobookshelfUrl = t })
+	p.audiobookshelfDir = f.AddInputField("Audiobookshelf Server Directory:", "", 60, nil, func(t string) { p.configCopy.AudiobookshelfDir = t })
+	p.audiobookshelfUser = f.AddInputField("Audiobookshelf Server User:", "", 40, nil, func(t string) { p.configCopy.AudiobookshelfUser = t })
+	p.audiobookshelfPassword = f.AddInputField("Audiobookshelf Server Password:", "", 40, nil, func(t string) { p.configCopy.AudiobookshelfPassword = t })
 
 	p.configSection.AddItem(f.f, 0, 0, 1, 1, 0, 0, true)
 	f = newForm()
@@ -83,6 +92,10 @@ func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 	p.logLevelField.SetCurrentOption(utils.GetIndex(logger.LogLeves(), p.configCopy.LogLevel))
 	p.useMockField.SetChecked(p.configCopy.UseMock)
 	p.saveMockField.SetChecked(p.configCopy.SaveMock)
+	p.audiobookshelfUrl.SetText(p.configCopy.AudiobookshelfUrl)
+	p.audiobookshelfDir.SetText(p.configCopy.AudiobookshelfDir)
+	p.audiobookshelfUser.SetText(p.configCopy.AudiobookshelfUser)
+	p.audiobookshelfPassword.SetText(p.configCopy.AudiobookshelfPassword)
 
 	p.mq.SendMessage(mq.ConfigPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 	p.mq.SendMessage(mq.ConfigPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.configSection}, true)
