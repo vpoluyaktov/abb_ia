@@ -254,6 +254,7 @@ func (p *BuildPage) buildComplete(c *dto.BuildComplete) {
 		p.mq.SendMessage(mq.BuildPage, mq.CopyController, &dto.CopyCommand{Audiobook: c.Audiobook}, true)
 	} else {
 		p.mq.SendMessage(mq.BuildPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.AudiobookshelfController, &dto.AudiobookshelfScanCommand{Audiobook: c.Audiobook}, true)
 		newMessageDialog(p.mq, "Build Complete", "Audiobook has been created", p.buildSection)
 		//p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 	}
@@ -262,6 +263,7 @@ func (p *BuildPage) buildComplete(c *dto.BuildComplete) {
 
 func (p *BuildPage) copyComplete(c *dto.CopyComplete) {
 	p.mq.SendMessage(mq.BuildPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: c.Audiobook}, true)
+	p.mq.SendMessage(mq.BuildPage, mq.AudiobookshelfController, &dto.AudiobookshelfScanCommand{Audiobook: c.Audiobook}, true)
 	newMessageDialog(p.mq, "Build Complete", "Audiobook has been created", p.buildSection)
 	//p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }

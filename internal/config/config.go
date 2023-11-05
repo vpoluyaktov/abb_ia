@@ -22,23 +22,27 @@ var (
 )
 
 type Config struct {
-	LogFileName          string
-	OutputDir            string
-	LogLevel             string
-	MaxSearchRows        int
-	UseMock              bool
-	SaveMock             bool
-	SearchCondition      string
-	ParrallelDownloads   int
-	ParrallelEncoders    int
-	ReEncodeFiles        bool
-	BitRate              string
-	SampleRate           string
-	MaxFileSize          string
-	CopyToAudiobookshelf bool
-	AudiobookshelfDir    string
-	ShortenTitles        bool
-	Genres               []string
+	LogFileName            string
+	OutputDir              string
+	LogLevel               string
+	MaxSearchRows          int
+	UseMock                bool
+	SaveMock               bool
+	SearchCondition        string
+	ParrallelDownloads     int
+	ParrallelEncoders      int
+	ReEncodeFiles          bool
+	BitRate                string
+	SampleRate             string
+	MaxFileSize            string
+	CopyToAudiobookshelf   bool
+	AudiobookshelfUrl      string
+	AudiobookshelfUser     string
+	AudiobookshelfPassword string
+	AudiobookshelfLibrary  string
+	AudiobookshelfDir      string
+	ShortenTitles          bool
+	Genres                 []string
 }
 
 func Load() {
@@ -227,6 +231,38 @@ func AudiobookshelfDir() string {
 
 func SetAudiobookshelfDir(d string) {
 	configInstance.AudiobookshelfDir = d
+}
+
+func AudiobookshelfUrl() string {
+	return configInstance.AudiobookshelfUrl
+}
+
+func SetAudiobookshelfUrl(url string) {
+	configInstance.AudiobookshelfUrl = url
+}
+
+func AudiobookshelfUser() string {
+	return configInstance.AudiobookshelfUser
+}
+
+func SetAudiobookshelfUser(u string) {
+	configInstance.AudiobookshelfUser = u
+}
+
+func AudiobookshelfPassword() string {
+	return configInstance.AudiobookshelfPassword
+}
+
+func SetAudiobookshelfPassword(p string) {
+	configInstance.AudiobookshelfPassword = p
+}
+
+func AudiobookshelfLibrary() string {
+	return configInstance.AudiobookshelfLibrary
+}
+
+func SetAudiobookshelfLibrary(l string) {
+	configInstance.AudiobookshelfLibrary = l
 }
 
 func SetShortenTitles(b bool) {
