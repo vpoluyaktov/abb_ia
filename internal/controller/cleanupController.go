@@ -41,14 +41,14 @@ func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand) {
 	logger.Info(mq.CleanupController + " received " + cmd.String())
 	c.ab = cmd.Audiobook
 
-	if !(config.IsSaveMock() || config.IsUseMock()) {
+	if !(config.Instance().IsSaveMock() || config.Instance().IsUseMock()) {
 		os.RemoveAll(c.ab.OutputDir)
 	}
 	for _, part := range c.ab.Parts {
 		os.Remove(part.AACFile)
 		os.Remove(part.FListFile)
 		os.Remove(part.MetadataFile)
-		if config.IsCopyToAudiobookshelf() {
+		if config.Instance().IsCopyToAudiobookshelf() {
 			os.Remove(part.M4BFile)
 		}
 	}

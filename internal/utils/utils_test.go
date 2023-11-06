@@ -12,7 +12,7 @@ import (
 
 func TestMain(m *testing.M) {
 	config.Load()
-	logger.Init(config.LogFileName(), "DEBUG")
+	logger.Init(config.Instance().GetLogFileName(), "DEBUG")
 	os.Exit(m.Run())
 }
 
@@ -59,31 +59,30 @@ func TestBytesToHuman(t *testing.T) {
 func TestHumanToBytes(t *testing.T) {
 	// Test cases with valid inputs
 	validInputs := []struct {
-			input       string
-			expected    int64
+		input    string
+		expected int64
 	}{
-			{"100 b", 100},
-			{"150B", 150},
-			{"1 kb", 1024},
-			{"1 Kb", 1024},
-			{"2 mb", 2097152},
-			{"2Mb", 2097152},
-			{"155.5 Mb", 163053568},
-			{"155.5Mb", 163053568},		
-			{"3 gb", 3221225472},
-			{"3 Gb", 3221225472},
+		{"100 b", 100},
+		{"150B", 150},
+		{"1 kb", 1024},
+		{"1 Kb", 1024},
+		{"2 mb", 2097152},
+		{"2Mb", 2097152},
+		{"155.5 Mb", 163053568},
+		{"155.5Mb", 163053568},
+		{"3 gb", 3221225472},
+		{"3 Gb", 3221225472},
 	}
 
 	for _, tc := range validInputs {
-			actual, err := utils.HumanToBytes(tc.input)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expected, actual)
+		actual, err := utils.HumanToBytes(tc.input)
+		assert.NoError(t, err)
+		assert.Equal(t, tc.expected, actual)
 	}
 }
 
-
 func TestGetMachineIdentifier(t *testing.T) {
-  machineID, err := utils.GetMachineIdentifier()
+	machineID, err := utils.GetMachineIdentifier()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, machineID)
 }

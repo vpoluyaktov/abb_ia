@@ -44,7 +44,7 @@ func (c *ChaptersController) dispatchMessage(m *mq.Message) {
 	case *dto.ChaptersCreate:
 		go c.createChapters(dto)
 	case *dto.SearchReplaceDescriptionCommand:
-		go c.searchReplaceDescription(dto)	
+		go c.searchReplaceDescription(dto)
 	case *dto.SearchReplaceChaptersCommand:
 		go c.searchReplaceChapters(dto)
 	case *dto.JoinChaptersCommand:
@@ -76,7 +76,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 
 	c.ab = cmd.Audiobook
 
-	if config.IsShortenTitle() {
+	if config.Instance().IsShortenTitle() {
 		c.ab.Title = strings.ReplaceAll(c.ab.Title, " - Single Episodes", "")
 		c.ab.Author = strings.ReplaceAll(c.ab.Author, "Old Time Radio Researchers Group", "OTRR")
 	}
@@ -109,7 +109,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		offset += mp3.Duration()
 		chapterNo++
 		chapterFiles = []dto.Mp3File{}
-		if partSize >= config.MaxFileSize() || i == len(c.ab.Mp3Files)-1 {
+		if partSize >= config.Instance().GetMaxFileSize() || i == len(c.ab.Mp3Files)-1 {
 			part := dto.Part{Number: partNo, Size: partSize, Duration: partDuration, Chapters: partChapters}
 			c.ab.Parts = append(c.ab.Parts, part)
 			partNo++

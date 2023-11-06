@@ -10,9 +10,9 @@ import (
 
 func TestLogin(t *testing.T) {
 	config.Load()
-	url := config.AudiobookshelfUrl()
-	username := config.AudiobookshelfUser()
-	password := config.AudiobookshelfPassword()
+	url := config.Instance().GetAudiobookshelfUrl()
+	username := config.Instance().GetAudiobookshelfUser()
+	password := config.Instance().GetAudiobookshelfPassword()
 
 	if url != "" && username != "" && password != "" {
 		loginResp, err := audiobookshelf.Login(url+"/login", username, password)
@@ -25,15 +25,15 @@ func TestLogin(t *testing.T) {
 
 func TestLibraries(t *testing.T) {
 	config.Load()
-	url := config.AudiobookshelfUrl()
-	username := config.AudiobookshelfUser()
-	password := config.AudiobookshelfPassword()
+	url := config.Instance().GetAudiobookshelfUrl()
+	username := config.Instance().GetAudiobookshelfUser()
+	password := config.Instance().GetAudiobookshelfPassword()
 
 	if url != "" && username != "" && password != "" {
 		loginResp, err := audiobookshelf.Login(url+"/login", username, password)
 		assert.NoError(t, err)
 		if err == nil {
-			libraryResponse , err := audiobookshelf.Libraries(url, loginResp.User.Token)
+			libraryResponse, err := audiobookshelf.Libraries(url, loginResp.User.Token)
 			assert.NoError(t, err)
 			assert.NotNil(t, libraryResponse)
 			assert.NotEmpty(t, libraryResponse.Libraries)
@@ -43,16 +43,16 @@ func TestLibraries(t *testing.T) {
 
 func TestScan(t *testing.T) {
 	config.Load()
-	url := config.AudiobookshelfUrl()
-	username := config.AudiobookshelfUser()
-	password := config.AudiobookshelfPassword()
-	libraryName := config.AudiobookshelfLibrary()
+	url := config.Instance().GetAudiobookshelfUrl()
+	username := config.Instance().GetAudiobookshelfUser()
+	password := config.Instance().GetAudiobookshelfPassword()
+	libraryName := config.Instance().GetAudiobookshelfLibrary()
 
-	if url != "" && username != "" && password != ""  && libraryName != "" {
+	if url != "" && username != "" && password != "" && libraryName != "" {
 		loginResp, err := audiobookshelf.Login(url+"/login", username, password)
 		if err == nil {
 			assert.NoError(t, err)
-			libraryResponse , err := audiobookshelf.Libraries(url, loginResp.User.Token)
+			libraryResponse, err := audiobookshelf.Libraries(url, loginResp.User.Token)
 			if err == nil {
 				assert.NoError(t, err)
 				libraryID, err := audiobookshelf.GetLibraryByName(libraryResponse.Libraries, libraryName)

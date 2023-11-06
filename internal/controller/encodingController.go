@@ -74,7 +74,7 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	// re-encode files
 	c.stopFlag = false
 	c.files = make([]fileEncode, len(c.ab.Mp3Files))
-	jd := utils.NewJobDispatcher(config.ParallelEncoders())
+	jd := utils.NewJobDispatcher(config.Instance().GetParallelEncoders())
 	for i, f := range c.ab.Mp3Files {
 		jd.AddJob(i, c.encodeFile, i, c.ab.OutputDir, f.FileName)
 	}
@@ -105,7 +105,7 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 	// launch ffmpeg process
 	_, err := ffmpeg.NewFFmpeg().
 		Input(filePath, "-f mp3").
-		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %s -ar %s -vn", config.BitRate(), config.SampleRate())).
+		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %s -ar %s -vn", config.Instance().GetBitRate(), config.Instance().GetSampleRate())).
 		Overwrite(true).
 		Params("-hide_banner -nostdin -nostats -loglevel fatal").
 		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).
@@ -173,9 +173,9 @@ func (c *EncodingController) updateFileProgress(fileId int, fileName string, tot
 		if p != percent {
 			percent = p
 
-			// wrong calculation protection 
+			// wrong calculation protection
 			if percent < 0 {
-				percent	=	0
+				percent = 0
 			} else if percent > 100 {
 				percent = 100
 			}
@@ -206,9 +206,9 @@ func (c *EncodingController) updateTotalProgress() {
 			// sent a message only if progress changed
 			percent = p
 
-			// wrong calculation protection 
+			// wrong calculation protection
 			if percent < 0 {
-				percent	=	0
+				percent = 0
 			} else if percent > 100 {
 				percent = 100
 			}

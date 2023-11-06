@@ -10,6 +10,6 @@ import (
 
 func TestMain(m *testing.M) {
 	config.Load()
-	logger.Init(config.LogFileName(), "DEBUG")
+	logger.Init(config.Instance().GetLogFileName(), "DEBUG")
 	os.Exit(m.Run())
 }

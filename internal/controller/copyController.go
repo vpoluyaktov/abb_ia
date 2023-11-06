@@ -109,7 +109,7 @@ func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 
 	c.stopFlag = false
 	c.filesCopy = make([]fileCopy, len(c.ab.Parts))
-	jd := utils.NewJobDispatcher(config.ParallelDownloads())
+	jd := utils.NewJobDispatcher(config.Instance().GetParallelDownloads())
 	for i := range c.ab.Parts {
 		jd.AddJob(i, c.copyAudiobookPart, c.ab, i)
 	}
@@ -139,9 +139,9 @@ func (c *CopyController) copyAudiobookPart(ab *dto.Audiobook, partId int) {
 	defer file.Close()
 
 	// Calculate Audiobookshelf directory structure (see: https://www.audiobookshelf.org/docs#book-directory-structure)
-	destPath := filepath.Join(config.AudiobookshelfDir(), ab.Author)
+	destPath := filepath.Join(config.Instance().GetAudiobookshelfDir(), ab.Author)
 	if ab.Series != "" {
-		destPath = filepath.Join(destPath, ab.Author + " - " + ab.Series)
+		destPath = filepath.Join(destPath, ab.Author+" - "+ab.Series)
 	}
 	abTitle := ""
 	if ab.Series != "" && ab.SeriesNo != "" {
@@ -151,7 +151,7 @@ func (c *CopyController) copyAudiobookPart(ab *dto.Audiobook, partId int) {
 	if ab.Narator != "" {
 		abTitle += " {" + ab.Narator + "}"
 	}
-		
+
 	destPath = filepath.Clean(filepath.Join(destPath, abTitle, filepath.Base(part.M4BFile)))
 	destDir := filepath.Dir(destPath)
 

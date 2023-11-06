@@ -179,7 +179,7 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
 }
 
 func (p *DownloadPage) downloadComplete(c *dto.DownloadComplete) {
-	if config.IsReEncodeFiles() {
+	if config.Instance().IsReEncodeFiles() {
 		p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
 		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
 	} else {

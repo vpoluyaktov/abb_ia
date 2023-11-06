@@ -37,10 +37,10 @@ func (c *AudiobookshelfController) dispatchMessage(m *mq.Message) {
 
 func (c *AudiobookshelfController) audiobookshelfScan(cmd *dto.AudiobookshelfScanCommand) {
 	logger.Info(mq.AudiobookshelfController + " received " + cmd.String())
-	url := config.AudiobookshelfUrl()
-	username := config.AudiobookshelfUser()
-	password := config.AudiobookshelfPassword()
-	libraryName := config.AudiobookshelfLibrary()
+	url := config.Instance().GetAudiobookshelfUrl()
+	username := config.Instance().GetAudiobookshelfUser()
+	password := config.Instance().GetAudiobookshelfPassword()
+	libraryName := config.Instance().GetAudiobookshelfLibrary()
 
 	if url != "" && username != "" && password != "" && libraryName != "" {
 		loginResp, err := audiobookshelf.Login(url+"/login", username, password)

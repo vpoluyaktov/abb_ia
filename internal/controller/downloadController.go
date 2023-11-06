@@ -70,7 +70,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.ab.Title = item.Title
 	c.ab.Description = item.Description
 	c.ab.CoverURL = item.CoverUrl
-	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(config.OutputDir(), item.ID))
+	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(config.Instance().GetOutputDir(), item.ID))
 	c.ab.TotalSize = item.TotalSize
 	c.ab.TotalDuration = item.TotalLength
 
@@ -78,10 +78,10 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 
 	// download files
-	ia := ia_client.New(config.MaxSearchRows(), config.IsUseMock(), config.IsSaveMock())
+	ia := ia_client.New(config.Instance().GetMaxSearchRows(), config.Instance().IsUseMock(), config.Instance().IsSaveMock())
 	c.stopFlag = false
 	c.files = make([]fileDownload, len(item.AudioFiles))
-	jd := utils.NewJobDispatcher(config.ParallelDownloads())
+	jd := utils.NewJobDispatcher(config.Instance().GetParallelDownloads())
 	for i, iaFile := range item.AudioFiles {
 		localFileName := utils.SanitizeFilePath(filepath.Join(item.Dir, iaFile.Name))
 		c.ab.Mp3Files = append(c.ab.Mp3Files, dto.Mp3File{Number: i, FileName: localFileName, Size: iaFile.Size, Duration: iaFile.Length})

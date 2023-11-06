@@ -150,7 +150,7 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	}
 	p.buildTable.ScrollToBeginning()
 
-	if config.IsCopyToAudiobookshelf() {
+	if config.Instance().IsCopyToAudiobookshelf() {
 		p.copyTable.clear()
 		p.copyTable.showHeader()
 		for i, part := range ab.Parts {
@@ -250,7 +250,7 @@ func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
 
 func (p *BuildPage) buildComplete(c *dto.BuildComplete) {
 	// copy book to Audiobookshelf if needed
-	if config.IsCopyToAudiobookshelf() {
+	if config.Instance().IsCopyToAudiobookshelf() {
 		p.mq.SendMessage(mq.BuildPage, mq.CopyController, &dto.CopyCommand{Audiobook: c.Audiobook}, true)
 	} else {
 		p.mq.SendMessage(mq.BuildPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: c.Audiobook}, true)

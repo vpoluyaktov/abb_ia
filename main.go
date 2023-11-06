@@ -31,18 +31,18 @@ func main() {
 
 	// save runtime configuration
 	if searchCondition != "" {
-		config.SetSearchCondition(searchCondition)
+		config.Instance().SetSearchCondition(searchCondition)
 	}
 	if utils.IsFlagPassed("log-level") {
-		config.SetLogLevel(*logLevel)
+		config.Instance().SetLogLevel(*logLevel)
 	}
-	if utils.IsFlagPassed("mock-load")  {
-		config.UseMock(*useMock)
+	if utils.IsFlagPassed("mock-load") {
+		config.Instance().SetUseMock(*useMock)
 	}
 	if utils.IsFlagPassed("mock-save") {
-		config.SaveMock(*saveMock)
+		config.Instance().SetSaveMock(*saveMock)
 	}
 
-	logger.Init(config.LogFileName(), config.LogLevel())
+	logger.Init(config.Instance().GetLogFileName(), config.Instance().GetLogLevel())
 	cmd.Execute()
 }

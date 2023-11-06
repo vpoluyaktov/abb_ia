@@ -21,28 +21,36 @@ var (
 	appVersion, buildDate string
 )
 
+// Fields of this stuct should to be private but I have to make them public because yaml.Marshal/Unmarshal can't work with private fields
 type Config struct {
-	LogFileName            string
-	OutputDir              string
-	LogLevel               string
-	MaxSearchRows          int
-	UseMock                bool
-	SaveMock               bool
-	SearchCondition        string
-	ParrallelDownloads     int
-	ParrallelEncoders      int
-	ReEncodeFiles          bool
-	BitRate                string
-	SampleRate             string
-	MaxFileSize            string
-	CopyToAudiobookshelf   bool
-	AudiobookshelfUrl      string
-	AudiobookshelfUser     string
-	AudiobookshelfPassword string
-	AudiobookshelfLibrary  string
-	AudiobookshelfDir      string
-	ShortenTitles          bool
-	Genres                 []string
+	LogFileName            string   `yaml:"LogFileName"`
+	OutputDir              string   `yaml:"OutputDir"`
+	LogLevel               string   `yaml:"LogLevel"`
+	MaxSearchRows          int      `yaml:"MaxSearchRows"`
+	UseMock                bool     `yaml:"UseMock"`
+	SaveMock               bool     `yaml:"SaveMock"`
+	SearchCondition        string   `yaml:"SearchCondition"`
+	ParrallelDownloads     int      `yaml:"ParrallelDownloads"`
+	ParrallelEncoders      int      `yaml:"ParrallelEncoders"`
+	ReEncodeFiles          bool     `yaml:"ReEncodeFiles"`
+	BitRate                string   `yaml:"BitRate"`
+	SampleRate             string   `yaml:"SampleRate"`
+	MaxFileSize            string   `yaml:"MaxFileSize"`
+	CopyToAudiobookshelf   bool     `yaml:"CopyToAudiobookshelf"`
+	AudiobookshelfUrl      string   `yaml:"AudiobookshelfUrl"`
+	AudiobookshelfUser     string   `yaml:"AudiobookshelfUser"`
+	AudiobookshelfPassword string   `yaml:"AudiobookshelfPassword"`
+	AudiobookshelfLibrary  string   `yaml:"AudiobookshelfLibrary"`
+	AudiobookshelfDir      string   `yaml:"AudiobookshelfDir"`
+	ShortenTitles          bool     `yaml:"ShortenTitles"`
+	Genres                 []string `yaml:"Genres"`
+}
+
+func Instance() *Config {
+	if configInstance == nil {
+		configInstance = &Config{}
+	}
+	return configInstance
 }
 
 func Load() {
@@ -52,7 +60,7 @@ func Load() {
 	config.LogFileName = "abb_ia.log"
 	config.OutputDir = "output"
 	config.LogLevel = "INFO"
-	config.MaxSearchRows = 100
+	config.MaxSearchRows = 25
 	config.UseMock = false
 	config.SaveMock = false
 	config.SearchCondition = ""
@@ -113,104 +121,104 @@ func SaveConfig(c *Config) error {
 	}
 }
 
-func SetLogfileName(fileName string) {
-	configInstance.LogFileName = fileName
+func (c *Config) SetLogfileName(fileName string) {
+	c.LogFileName = fileName
 }
 
-func LogFileName() string {
-	return configInstance.LogFileName
+func (c *Config) GetLogFileName() string {
+	return c.LogFileName
 }
 
-func SetOutputDir(outputDir string) {
-	configInstance.OutputDir = outputDir
+func (c *Config) SetOutputDir(outputDir string) {
+	c.OutputDir = outputDir
 }
 
-func OutputDir() string {
-	return configInstance.OutputDir
+func (c *Config) GetOutputDir() string {
+	return c.OutputDir
 }
 
-func SetLogLevel(logLevel string) {
-	configInstance.LogLevel = logLevel
+func (c *Config) SetLogLevel(logLevel string) {
+	c.LogLevel = logLevel
 }
 
-func LogLevel() string {
-	return configInstance.LogLevel
+func (c *Config) GetLogLevel() string {
+	return c.LogLevel
 }
 
-func SetMaxSearchRows(r int) {
-	configInstance.MaxSearchRows = r
+func (c *Config) SetMaxSearchRows(r int) {
+	c.MaxSearchRows = r
 }
 
-func MaxSearchRows() int {
-	return configInstance.MaxSearchRows
+func (c *Config) GetMaxSearchRows() int {
+	return c.MaxSearchRows
 }
 
-func UseMock(b bool) {
-	configInstance.UseMock = b
+func (c *Config) SetUseMock(b bool) {
+	c.UseMock = b
 }
 
-func IsUseMock() bool {
-	return configInstance.UseMock
+func (c *Config) IsUseMock() bool {
+	return c.UseMock
 }
 
-func SaveMock(b bool) {
-	configInstance.SaveMock = b
+func (c *Config) SetSaveMock(b bool) {
+	c.SaveMock = b
 }
 
-func IsSaveMock() bool {
-	return configInstance.SaveMock
+func (c *Config) IsSaveMock() bool {
+	return c.SaveMock
 }
 
-func SetSearchCondition(c string) {
-	configInstance.SearchCondition = c
+func (c *Config) SetSearchCondition(s string) {
+	c.SearchCondition = s
 }
 
-func SearchCondition() string {
-	return configInstance.SearchCondition
+func (c *Config) GetSearchCondition() string {
+	return c.SearchCondition
 }
 
-func SetParallelDownloads(n int) {
-	configInstance.ParrallelDownloads = n
+func (c *Config) SetParallelDownloads(n int) {
+	c.ParrallelDownloads = n
 }
 
-func ParallelDownloads() int {
-	return configInstance.ParrallelDownloads
+func (c *Config) GetParallelDownloads() int {
+	return c.ParrallelDownloads
 }
 
-func SetParallelEncoders(n int) {
-	configInstance.ParrallelEncoders = n
+func (c *Config) SetParallelEncoders(n int) {
+	c.ParrallelEncoders = n
 }
 
-func ParallelEncoders() int {
-	return configInstance.ParrallelEncoders
+func (c *Config) GetParallelEncoders() int {
+	return c.ParrallelEncoders
 }
 
-func SetReEncodeFiles(b bool) {
-	configInstance.ReEncodeFiles = b
+func (c *Config) SetReEncodeFiles(b bool) {
+	c.ReEncodeFiles = b
 }
 
-func IsReEncodeFiles() bool {
-	return configInstance.ReEncodeFiles
+func (c *Config) IsReEncodeFiles() bool {
+	return c.ReEncodeFiles
 }
 
-func SetBitRate(b string) {
-	configInstance.BitRate = b
+func (c *Config) SetBitRate(b string) {
+	c.BitRate = b
 }
 
-func BitRate() string {
-	return configInstance.BitRate
+func (c *Config) GetBitRate() string {
+	return c.BitRate
 }
 
-func SetSampleRate(b string) {
-	configInstance.SampleRate = b
+func (c *Config) SetSampleRate(b string) {
+	c.SampleRate = b
 }
 
-func SampleRate() string {
-	return configInstance.SampleRate
+func (c *Config) GetSampleRate() string {
+	return c.SampleRate
 }
 
-func MaxFileSize() int64 {
-	maxFileSize, err := utils.HumanToBytes(configInstance.MaxFileSize)
+func (c *Config) GetMaxFileSize() int64 {
+	maxFileSize, err := utils.HumanToBytes(c.MaxFileSize)
 	if err != nil {
 		logger.Error("Config Loader Can't parse MaxFileSize: " + err.Error() + ". Using default 100 Mb")
 		maxFileSize, _ = utils.HumanToBytes("100 Mb")
@@ -218,40 +226,40 @@ func MaxFileSize() int64 {
 	return maxFileSize
 }
 
-func SetCopyToAudiobookshelf(b bool) {
-	configInstance.CopyToAudiobookshelf = b
+func (c *Config) SetCopyToAudiobookshelf(b bool) {
+	c.CopyToAudiobookshelf = b
 }
 
-func IsCopyToAudiobookshelf() bool {
-	return configInstance.CopyToAudiobookshelf
+func (c *Config) IsCopyToAudiobookshelf() bool {
+	return c.CopyToAudiobookshelf
 }
 
-func AudiobookshelfDir() string {
-	return configInstance.AudiobookshelfDir
+func (c *Config) GetAudiobookshelfDir() string {
+	return c.AudiobookshelfDir
 }
 
-func SetAudiobookshelfDir(d string) {
-	configInstance.AudiobookshelfDir = d
+func (c *Config) SetAudiobookshelfDir(d string) {
+	c.AudiobookshelfDir = d
 }
 
-func AudiobookshelfUrl() string {
-	return configInstance.AudiobookshelfUrl
+func (c *Config) GetAudiobookshelfUrl() string {
+	return c.AudiobookshelfUrl
 }
 
-func SetAudiobookshelfUrl(url string) {
-	configInstance.AudiobookshelfUrl = url
+func (c *Config) SetAudiobookshelfUrl(url string) {
+	c.AudiobookshelfUrl = url
 }
 
-func AudiobookshelfUser() string {
-	return configInstance.AudiobookshelfUser
+func (c *Config) GetAudiobookshelfUser() string {
+	return c.AudiobookshelfUser
 }
 
-func SetAudiobookshelfUser(u string) {
-	configInstance.AudiobookshelfUser = u
+func (c *Config) SetAudiobookshelfUser(u string) {
+	c.AudiobookshelfUser = u
 }
 
-func AudiobookshelfPassword() string {
-	base64 := configInstance.AudiobookshelfPassword
+func (c *Config) GetAudiobookshelfPassword() string {
+	base64 := c.AudiobookshelfPassword
 	if base64 == "" {
 		return ""
 	}
@@ -268,44 +276,44 @@ func AudiobookshelfPassword() string {
 	return decrypted
 }
 
-func SetAudiobookshelfPassword(p string) {
+func (c *Config) SetAudiobookshelfPassword(p string) {
 
 	encrypted, err := utils.EncryptString(p)
 	if err != nil {
 		logger.Error("Can't encrypt password: " + err.Error())
 	}
 	base64 := utils.EncodeBase64(encrypted)
-	configInstance.AudiobookshelfPassword = base64
+	c.AudiobookshelfPassword = base64
 }
 
-func AudiobookshelfLibrary() string {
-	return configInstance.AudiobookshelfLibrary
+func (c *Config) GetAudiobookshelfLibrary() string {
+	return c.AudiobookshelfLibrary
 }
 
-func SetAudiobookshelfLibrary(l string) {
-	configInstance.AudiobookshelfLibrary = l
+func (c *Config) SetAudiobookshelfLibrary(l string) {
+	c.AudiobookshelfLibrary = l
 }
 
-func SetShortenTitles(b bool) {
-	configInstance.ShortenTitles = b
+func (c *Config) SetShortenTitles(b bool) {
+	c.ShortenTitles = b
 }
 
-func IsShortenTitle() bool {
-	return configInstance.ShortenTitles
+func (c *Config) IsShortenTitle() bool {
+	return c.ShortenTitles
 }
 
-func Genres() []string {
-	return configInstance.Genres
+func (c *Config) GetGenres() []string {
+	return c.Genres
 }
 
-func AppVersion() string {
+func (c *Config) AppVersion() string {
 	if appVersion == "" {
 		appVersion = "0.0.0"
 	}
 	return appVersion
 }
 
-func BuildDate() string {
+func (c *Config) GetBuildDate() string {
 	// 2023-07-20T14:45:12Z
 	fmt := "01/02/2006"
 	bd, err := time.Parse(time.RFC3339, buildDate)
@@ -316,6 +324,6 @@ func BuildDate() string {
 	}
 }
 
-func GetCopy() Config {
+func (c *Config) GetCopy() Config {
 	return *configInstance
 }

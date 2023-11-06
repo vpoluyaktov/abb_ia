@@ -90,7 +90,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	infoSection.AddItem(f1.f, 0, 1, 1, 1, 0, 0, true)
 	f2 := newForm()
 	f2.SetBorderPadding(1, 0, 2, 2)
-	p.genre = f2.AddDropdown("Genre:", utils.AddSpaces(config.Genres()), 0, func(s string, i int) {
+	p.genre = f2.AddDropdown("Genre:", utils.AddSpaces(config.Instance().GetGenres()), 0, func(s string, i int) {
 		if p.ab != nil {
 			p.ab.Genre = strings.TrimSpace(s)
 		}

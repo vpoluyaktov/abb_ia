@@ -38,7 +38,7 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f.statusMessage.SetBackgroundColor(footerBgColor)
 
 	f.version = tview.NewTextView()
-	f.version.SetText("v" + config.AppVersion() + " (" + config.BuildDate() + ") ")
+	f.version.SetText("v" + config.Instance().AppVersion() + " (" + config.Instance().GetBuildDate() + ") ")
 	f.version.SetTextAlign(tview.AlignRight)
 	f.version.SetBorder(false)
 	f.version.SetTextColor(footerFgColor)
@@ -92,18 +92,18 @@ func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
 }
 
 func (f *footer) updateBusyIndicator() {
-	busyChars := []string{"[>    ]", "[ >   ]", "[  >  ]", "[   > ]", "[    >]", "[    <]", "[   < ]", "[  <  ]", "[ <   ]", "[<    ]"}
+	// busyChars := []string{"[>    ]", "[ >   ]", "[  >  ]", "[   > ]", "[    >]", "[    <]", "[   < ]", "[  <  ]", "[ <   ]", "[<    ]"}
 	// busyChars := []string{"[O-----]", "[-O----]", "[--O---]", "[---O--]", "[----O-]", "[-----O]", "[----O-]", "[---O--]", "[--O---]", "[-O----]"}
 	// busyChars := []string{"█▒▒▒▒▒", "▒█▒▒▒▒", "▒▒█▒▒▒", "▒▒▒█▒▒", "▒▒▒▒█▒", "▒▒▒▒▒█", "▒▒▒▒█▒", "▒▒▒█▒▒", "▒▒█▒▒▒", "▒█▒▒▒▒"}
 	// busyChars := []string{"█     ", " █    ", "  █   ", "   █  ", "    █ ", "     █", "    █ ", "   █  ", "  █   ", " █    "}
-	for f.busyFlag {
-		for i := 0; i < len(busyChars); i++ {
-			f.busyIndicator.SetText(busyChars[i])
-			f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
-			time.Sleep(200 * time.Millisecond)
-			if !f.busyFlag {
-				break
-			}
-		}
-	}
+	// for f.busyFlag {
+	// 	for i := 0; i < len(busyChars); i++ {
+	// 		f.busyIndicator.SetText(busyChars[i])
+	// 		f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	// 		time.Sleep(200 * time.Millisecond)
+	// 		if !f.busyFlag {
+	// 			break
+	// 		}
+	// 	}
+	// }
 }

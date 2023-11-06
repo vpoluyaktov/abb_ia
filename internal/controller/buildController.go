@@ -36,7 +36,6 @@ type fileBuild struct {
 	progress int
 }
 
-
 func NewBuildController(dispatcher *mq.Dispatcher) *BuildController {
 	dc := &BuildController{}
 	dc.mq = dispatcher
@@ -76,7 +75,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// calculate output file names
 	for i := range c.ab.Parts {
 		part := &c.ab.Parts[i]
-		filePath := filepath.Join(config.OutputDir(), c.ab.Author+" - "+c.ab.Title)
+		filePath := filepath.Join(config.Instance().GetOutputDir(), c.ab.Author+" - "+c.ab.Title)
 		if len(c.ab.Parts) > 1 {
 			filePath = filePath + fmt.Sprintf(", Part %02d", i+1)
 		}
@@ -97,7 +96,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// build audiobook parts
 	c.stopFlag = false
 	c.filesBuild = make([]fileBuild, len(c.ab.Parts))
-	jd := utils.NewJobDispatcher(config.ParallelEncoders())
+	jd := utils.NewJobDispatcher(config.Instance().GetParallelEncoders())
 	for i := range c.ab.Parts {
 		jd.AddJob(i, c.buildAudiobookPart, c.ab, i)
 	}
@@ -162,7 +161,7 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 }
 
 func (c *BuildController) downloadCoverImage(ab *dto.Audiobook) error {
-	filePath := filepath.Join(config.OutputDir(), ab.Author+" - "+ab.Title)
+	filePath := filepath.Join(config.Instance().GetOutputDir(), ab.Author+" - "+ab.Title)
 	if strings.HasSuffix(ab.CoverURL, ".jpg") {
 		ab.CoverFile = filePath + ".jpg"
 	} else if strings.HasSuffix(ab.CoverURL, ".png") {
@@ -227,7 +226,6 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 		}
 	}
 }
-
 
 func (c *BuildController) startProgressListener(fileId int) (net.Listener, int) {
 
@@ -337,4 +335,3 @@ func (c *BuildController) updateTotalBuildProgress() {
 		time.Sleep(mq.PullFrequency)
 	}
 }
-

@@ -37,7 +37,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.mq = dispatcher
 	p.mq.RegisterListener(mq.SearchPage, p.dispatchMessage)
 
-	p.searchCriteria = config.SearchCondition()
+	p.searchCriteria = config.Instance().GetSearchCondition()
 
 	p.grid = tview.NewGrid()
 	p.grid.SetRows(5, -1, -1)
@@ -60,7 +60,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.searchSection.SetTitleAlign(tview.AlignLeft)
 	f := newForm()
 	f.SetHorizontal(true)
-	p.inputField = f.AddInputField("Search criteria", config.SearchCondition(), 40, nil, func(t string) { p.searchCriteria = t })
+	p.inputField = f.AddInputField("Search criteria", config.Instance().GetSearchCondition(), 40, nil, func(t string) { p.searchCriteria = t })
 	p.searchButton = f.AddButton("Search", p.runSearch)
 	p.clearButton = f.AddButton("Clear", p.clearEverything)
 	p.searchSection.AddItem(f.f, 0, 0, 1, 1, 0, 0, true)
@@ -227,6 +227,6 @@ func (p *SearchPage) startDownload(ab *dto.Audiobook) {
 }
 
 func (p *SearchPage) updateConfig() {
-	p.mq.SendMessage(mq.SearchPage, mq.ConfigPage, &dto.DisplayConfigCommand{Config: config.GetCopy()}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.ConfigPage, &dto.DisplayConfigCommand{Config: config.Instance().GetCopy()}, true)
 	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ConfigPage"}, false)
 }
