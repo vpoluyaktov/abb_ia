@@ -74,7 +74,7 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	// re-encode files
 	c.stopFlag = false
 	c.files = make([]fileEncode, len(c.ab.Mp3Files))
-	jd := utils.NewJobDispatcher(config.Instance().GetParallelEncoders())
+	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentEncoders())
 	for i, f := range c.ab.Mp3Files {
 		jd.AddJob(i, c.encodeFile, i, c.ab.OutputDir, f.FileName)
 	}
@@ -85,6 +85,7 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 
 	jd.Start()
 
+	c.stopFlag = true
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingComplete{Audiobook: cmd.Audiobook}, true)
@@ -105,7 +106,7 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 	// launch ffmpeg process
 	_, err := ffmpeg.NewFFmpeg().
 		Input(filePath, "-f mp3").
-		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %s -ar %s -vn", config.Instance().GetBitRate(), config.Instance().GetSampleRate())).
+		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %dk -ar %d -vn", config.Instance().GetBitRate(), config.Instance().GetSampleRate())).
 		Overwrite(true).
 		Params("-hide_banner -nostdin -nostats -loglevel fatal").
 		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).

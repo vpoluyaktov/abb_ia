@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"time"
-
 	"github.com/rivo/tview"
 	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
@@ -81,6 +79,7 @@ func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
 		f.busyFlag = true
 		f.busyIndicator.SetTextColor(busyIndicatorFgColor)
 		f.busyIndicator.SetBackgroundColor(busyIndicatorBgColor)
+		f.busyIndicator.SetText(" Busy > ")
 		go f.updateBusyIndicator()
 	} else {
 		f.busyFlag = false

@@ -138,8 +138,8 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	p.infoPanel.appendRow("Title:", ab.Title)
 	p.infoPanel.appendRow("Author:", ab.Author)
 	p.infoPanel.appendRow("Duration:", utils.SecondsToTime(ab.TotalDuration))
-	p.infoPanel.appendRow("Size:", utils.BytesToHuman(ab.IAItem.TotalSize))
-	p.infoPanel.appendRow("Files", strconv.Itoa(len(ab.IAItem.AudioFiles)))
+	p.infoPanel.appendRow("Size:", utils.BytesToHuman(ab.TotalSize))
+	p.infoPanel.appendRow("Parts:", strconv.Itoa(len(ab.Parts)))
 
 	p.buildTable.clear()
 	p.buildTable.showHeader()
@@ -178,7 +178,7 @@ func (p *BuildPage) stopBuild() {
 func (p *BuildPage) updateFileBuildProgress(dp *dto.BuildFileProgress) {
 	// update file progress
 	col := 4
-	w := p.buildTable.getColumnWidth(col) - 10
+	w := p.buildTable.getColumnWidth(col) - 5
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
@@ -201,7 +201,7 @@ func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
-	w := p.progressTable.getColumnWidth(col) - 10
+	w := p.progressTable.getColumnWidth(col) - 5
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)

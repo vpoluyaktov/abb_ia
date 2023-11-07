@@ -78,10 +78,10 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 
 	// download files
-	ia := ia_client.New(config.Instance().GetMaxSearchRows(), config.Instance().IsUseMock(), config.Instance().IsSaveMock())
+	ia := ia_client.New(config.Instance().GetSearchRowsMax(), config.Instance().IsUseMock(), config.Instance().IsSaveMock())
 	c.stopFlag = false
 	c.files = make([]fileDownload, len(item.AudioFiles))
-	jd := utils.NewJobDispatcher(config.Instance().GetParallelDownloads())
+	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentDownloaders())
 	for i, iaFile := range item.AudioFiles {
 		localFileName := utils.SanitizeFilePath(filepath.Join(item.Dir, iaFile.Name))
 		c.ab.Mp3Files = append(c.ab.Mp3Files, dto.Mp3File{Number: i, FileName: localFileName, Size: iaFile.Size, Duration: iaFile.Length})
@@ -94,6 +94,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 
 	jd.Start()
 
+	c.stopFlag = true
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)

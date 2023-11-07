@@ -243,6 +243,11 @@ func (f *form) SetMouseDblClickFunc(fn func()) {
 
 func (f *form) AddInputField(label, value string, fieldWidth int, accept func(textToCheck string, lastChar rune) bool, changed func(text string)) *tview.InputField {
 	f.mu.Lock()
+	// right aligment for numberic values
+	// if utils.IsNumber(value) {
+	// 	value = fmt.Sprintf("%*s", fieldWidth, value)
+	// }
+
 	f.f.AddInputField(label, value, fieldWidth, accept, changed)
 	// return just created input field
 	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.InputField)
@@ -252,10 +257,7 @@ func (f *form) AddInputField(label, value string, fieldWidth int, accept func(te
 
 func acceptInt(textToCheck string, lastChar rune) bool {
 	_, err := strconv.Atoi(textToCheck)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func (f *form) AddButton(label string, selected func()) *tview.Button {

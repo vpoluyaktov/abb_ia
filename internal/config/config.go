@@ -26,16 +26,16 @@ type Config struct {
 	LogFileName            string   `yaml:"LogFileName"`
 	OutputDir              string   `yaml:"OutputDir"`
 	LogLevel               string   `yaml:"LogLevel"`
-	MaxSearchRows          int      `yaml:"MaxSearchRows"`
+	SearchRowsMax          int      `yaml:"SearchRowsMax"`
 	UseMock                bool     `yaml:"UseMock"`
 	SaveMock               bool     `yaml:"SaveMock"`
 	SearchCondition        string   `yaml:"SearchCondition"`
-	ParrallelDownloads     int      `yaml:"ParrallelDownloads"`
-	ParrallelEncoders      int      `yaml:"ParrallelEncoders"`
+	ConcurrentDownloaders  int      `yaml:"ConcurrentDownloaders"`
+	ConcurrentEncoders     int      `yaml:"ConcurrentEncoders"`
 	ReEncodeFiles          bool     `yaml:"ReEncodeFiles"`
-	BitRate                string   `yaml:"BitRate"`
-	SampleRate             string   `yaml:"SampleRate"`
-	MaxFileSize            string   `yaml:"MaxFileSize"`
+	BitRateKbs             int      `yaml:"BitRateKbs"`
+	SampleRateHz           int      `yaml:"SampleRateHz"`
+	MaxFileSizeMb          int      `yaml:"MaxFileSizeMb"`
 	CopyToAudiobookshelf   bool     `yaml:"CopyToAudiobookshelf"`
 	AudiobookshelfUrl      string   `yaml:"AudiobookshelfUrl"`
 	AudiobookshelfUser     string   `yaml:"AudiobookshelfUser"`
@@ -60,18 +60,20 @@ func Load() {
 	config.LogFileName = "abb_ia.log"
 	config.OutputDir = "output"
 	config.LogLevel = "INFO"
-	config.MaxSearchRows = 25
+	config.SearchRowsMax = 25
 	config.UseMock = false
 	config.SaveMock = false
 	config.SearchCondition = ""
-	config.ParrallelDownloads = 5
-	config.ParrallelEncoders = 5
+	config.ConcurrentDownloaders = 5
+	config.ConcurrentEncoders = 5
 	config.ReEncodeFiles = true
-	config.BitRate = "128k"
-	config.SampleRate = "44100"
-	config.MaxFileSize = "100 Mb"
+	config.BitRateKbs = 96
+	config.SampleRateHz = 44100
+	config.MaxFileSizeMb = 250
 	config.CopyToAudiobookshelf = true
 	config.AudiobookshelfUser = "admin"
+	config.AudiobookshelfPassword = ""
+	config.AudiobookshelfLibrary = "Internet Archive"
 	config.AudiobookshelfDir = "/mnt/NAS/Audiobooks/Internet Archive"
 	config.ShortenTitles = true
 	config.Genres = []string{
@@ -145,12 +147,12 @@ func (c *Config) GetLogLevel() string {
 	return c.LogLevel
 }
 
-func (c *Config) SetMaxSearchRows(r int) {
-	c.MaxSearchRows = r
+func (c *Config) SetSearchRowsMax(r int) {
+	c.SearchRowsMax = r
 }
 
-func (c *Config) GetMaxSearchRows() int {
-	return c.MaxSearchRows
+func (c *Config) GetSearchRowsMax() int {
+	return c.SearchRowsMax
 }
 
 func (c *Config) SetUseMock(b bool) {
@@ -177,20 +179,20 @@ func (c *Config) GetSearchCondition() string {
 	return c.SearchCondition
 }
 
-func (c *Config) SetParallelDownloads(n int) {
-	c.ParrallelDownloads = n
+func (c *Config) SetConcurrentDownloaders(n int) {
+	c.ConcurrentDownloaders = n
 }
 
-func (c *Config) GetParallelDownloads() int {
-	return c.ParrallelDownloads
+func (c *Config) GetConcurrentDownloaders() int {
+	return c.ConcurrentDownloaders
 }
 
-func (c *Config) SetParallelEncoders(n int) {
-	c.ParrallelEncoders = n
+func (c *Config) SetConcurrentEncoders(n int) {
+	c.ConcurrentEncoders = n
 }
 
-func (c *Config) GetParallelEncoders() int {
-	return c.ParrallelEncoders
+func (c *Config) GetConcurrentEncoders() int {
+	return c.ConcurrentEncoders
 }
 
 func (c *Config) SetReEncodeFiles(b bool) {
@@ -201,29 +203,28 @@ func (c *Config) IsReEncodeFiles() bool {
 	return c.ReEncodeFiles
 }
 
-func (c *Config) SetBitRate(b string) {
-	c.BitRate = b
+func (c *Config) SetBitRate(b int) {
+	c.BitRateKbs = b
 }
 
-func (c *Config) GetBitRate() string {
-	return c.BitRate
+func (c *Config) GetBitRate() int {
+	return c.BitRateKbs
 }
 
-func (c *Config) SetSampleRate(b string) {
-	c.SampleRate = b
+func (c *Config) SetSampleRate(b int) {
+	c.SampleRateHz = b
 }
 
-func (c *Config) GetSampleRate() string {
-	return c.SampleRate
+func (c *Config) GetSampleRate() int {
+	return c.SampleRateHz
 }
 
-func (c *Config) GetMaxFileSize() int64 {
-	maxFileSize, err := utils.HumanToBytes(c.MaxFileSize)
-	if err != nil {
-		logger.Error("Config Loader Can't parse MaxFileSize: " + err.Error() + ". Using default 100 Mb")
-		maxFileSize, _ = utils.HumanToBytes("100 Mb")
-	}
-	return maxFileSize
+func (c *Config) SetMaxFileSizeMb(s int) {
+	c.MaxFileSizeMb = s
+}
+
+func (c *Config) GetMaxFileSizeMb() int {
+	return c.MaxFileSizeMb
 }
 
 func (c *Config) SetCopyToAudiobookshelf(b bool) {

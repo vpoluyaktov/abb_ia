@@ -109,7 +109,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		offset += mp3.Duration()
 		chapterNo++
 		chapterFiles = []dto.Mp3File{}
-		if partSize >= config.Instance().GetMaxFileSize() || i == len(c.ab.Mp3Files)-1 {
+		if partSize >= int64(config.Instance().GetMaxFileSizeMb())*1024*1024 || i == len(c.ab.Mp3Files)-1 {
 			part := dto.Part{Number: partNo, Size: partSize, Duration: partDuration, Chapters: partChapters}
 			c.ab.Parts = append(c.ab.Parts, part)
 			partNo++
@@ -130,7 +130,11 @@ func (c *ChaptersController) searchReplaceDescription(cmd *dto.SearchReplaceDesc
 	ab := cmd.Audiobook
 	searchStr := cmd.SearchStr
 	replaceStr := cmd.ReplaceStr
-	re := regexp.MustCompile(searchStr)
+	re, err := regexp.Compile(searchStr)
+	if err != nil {
+		return
+	}
+	
 	description := re.ReplaceAllString(ab.Description, replaceStr)
 	ab.Description = description
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshDescriptionCommand{Audiobook: cmd.Audiobook}, true)
@@ -140,7 +144,10 @@ func (c *ChaptersController) searchReplaceChapters(cmd *dto.SearchReplaceChapter
 	ab := cmd.Audiobook
 	searchStr := cmd.SearchStr
 	replaceStr := cmd.ReplaceStr
-	re := regexp.MustCompile(searchStr)
+	re, err := regexp.Compile(searchStr)
+	if err != nil {
+		return
+	}
 
 	for partNo, p := range ab.Parts {
 		for chapterNo, _ := range p.Chapters {

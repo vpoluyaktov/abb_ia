@@ -96,7 +96,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// build audiobook parts
 	c.stopFlag = false
 	c.filesBuild = make([]fileBuild, len(c.ab.Parts))
-	jd := utils.NewJobDispatcher(config.Instance().GetParallelEncoders())
+	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentEncoders())
 	for i := range c.ab.Parts {
 		jd.AddJob(i, c.buildAudiobookPart, c.ab, i)
 	}
@@ -106,6 +106,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// }
 	jd.Start()
 
+	c.stopFlag = true
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildComplete{Audiobook: cmd.Audiobook}, true)

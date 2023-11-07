@@ -210,19 +210,19 @@ func (p *ChaptersPage) displayBookInfo(ab *dto.Audiobook) {
 }
 
 func (p *ChaptersPage) displayParts(ab *dto.Audiobook) {
-	if len(ab.Parts) > 1 {
-		p.chaptersTable.clear()
-		p.chaptersTable.showHeader()
-		for _, part := range ab.Parts {
-			p.addPart(&part)
-		}
+	p.chaptersTable.clear()
+	p.chaptersTable.showHeader()
+	for _, part := range ab.Parts {
+		p.addPart(&part)
 	}
 	p.mq.SendMessage(mq.ChaptersPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
 }
 
 func (p *ChaptersPage) addPart(part *dto.Part) {
-	number := strconv.Itoa(part.Number)
-	p.chaptersTable.appendSeparator("", "", "", "", "Part Number "+number)
+	if len(p.ab.Parts) > 1 {
+		number := strconv.Itoa(part.Number)
+		p.chaptersTable.appendSeparator("", "", "", "", "Part Number "+number)
+	}
 	for _, chapter := range part.Chapters {
 		p.addChapter(&chapter)
 	}

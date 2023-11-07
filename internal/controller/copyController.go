@@ -109,13 +109,14 @@ func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 
 	c.stopFlag = false
 	c.filesCopy = make([]fileCopy, len(c.ab.Parts))
-	jd := utils.NewJobDispatcher(config.Instance().GetParallelDownloads())
+	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentDownloaders())
 	for i := range c.ab.Parts {
 		jd.AddJob(i, c.copyAudiobookPart, c.ab, i)
 	}
 	go c.updateTotalCopyProgress()
 	jd.Start()
 
+	c.stopFlag = true
 	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyComplete{Audiobook: cmd.Audiobook}, true)
