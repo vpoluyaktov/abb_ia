@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/ffmpeg"
 	"github.com/vpoluyaktov/abb_ia/internal/utils"
@@ -37,10 +36,10 @@ type fileBuild struct {
 }
 
 func NewBuildController(dispatcher *mq.Dispatcher) *BuildController {
-	dc := &BuildController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.BuildController, dc.dispatchMessage)
-	return dc
+	c := &BuildController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.BuildController, c.dispatchMessage)
+	return c
 }
 
 func (c *BuildController) checkMQ() {
@@ -75,7 +74,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// calculate output file names
 	for i := range c.ab.Parts {
 		part := &c.ab.Parts[i]
-		filePath := filepath.Join(config.Instance().GetOutputDir(), c.ab.Author+" - "+c.ab.Title)
+		filePath := filepath.Join(c.ab.Config.GetOutputDir(), c.ab.Author+" - "+c.ab.Title)
 		if len(c.ab.Parts) > 1 {
 			filePath = filePath + fmt.Sprintf(", Part %02d", i+1)
 		}
@@ -96,7 +95,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// build audiobook parts
 	c.stopFlag = false
 	c.filesBuild = make([]fileBuild, len(c.ab.Parts))
-	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentEncoders())
+	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentEncoders())
 	for i := range c.ab.Parts {
 		jd.AddJob(i, c.buildAudiobookPart, c.ab, i)
 	}
@@ -162,7 +161,7 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 }
 
 func (c *BuildController) downloadCoverImage(ab *dto.Audiobook) error {
-	filePath := filepath.Join(config.Instance().GetOutputDir(), ab.Author+" - "+ab.Title)
+	filePath := filepath.Join(ab.Config.GetOutputDir(), ab.Author+" - "+ab.Title)
 	if strings.HasSuffix(ab.CoverURL, ".jpg") {
 		ab.CoverFile = filePath + ".jpg"
 	} else if strings.HasSuffix(ab.CoverURL, ".png") {

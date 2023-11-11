@@ -3,7 +3,6 @@ package controller
 import (
 	"os"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/logger"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
@@ -15,10 +14,10 @@ type CleanupController struct {
 }
 
 func NewCleanupController(dispatcher *mq.Dispatcher) *CleanupController {
-	dc := &CleanupController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.CleanupController, dc.dispatchMessage)
-	return dc
+	c := &CleanupController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.CleanupController, c.dispatchMessage)
+	return c
 }
 
 func (c *CleanupController) checkMQ() {
@@ -41,14 +40,14 @@ func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand) {
 	logger.Info(mq.CleanupController + " received " + cmd.String())
 	c.ab = cmd.Audiobook
 
-	if !(config.Instance().IsSaveMock() || config.Instance().IsUseMock()) {
+	if !(c.ab.Config.IsSaveMock() || c.ab.Config.IsUseMock()) {
 		os.RemoveAll(c.ab.OutputDir)
 	}
 	for _, part := range c.ab.Parts {
 		os.Remove(part.AACFile)
 		os.Remove(part.FListFile)
 		os.Remove(part.MetadataFile)
-		if config.Instance().IsCopyToAudiobookshelf() {
+		if c.ab.Config.IsCopyToAudiobookshelf() {
 			os.Remove(part.M4BFile)
 		}
 	}

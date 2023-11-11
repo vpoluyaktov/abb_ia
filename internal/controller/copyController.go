@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/utils"
 
@@ -60,10 +59,10 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 }
 
 func NewCopyController(dispatcher *mq.Dispatcher) *CopyController {
-	dc := &CopyController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.CopyController, dc.dispatchMessage)
-	return dc
+	c := &CopyController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.CopyController, c.dispatchMessage)
+	return c
 }
 
 func (c *CopyController) checkMQ() {
@@ -109,7 +108,7 @@ func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 
 	c.stopFlag = false
 	c.filesCopy = make([]fileCopy, len(c.ab.Parts))
-	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentDownloaders())
+	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentDownloaders())
 	for i := range c.ab.Parts {
 		jd.AddJob(i, c.copyAudiobookPart, c.ab, i)
 	}
@@ -140,7 +139,7 @@ func (c *CopyController) copyAudiobookPart(ab *dto.Audiobook, partId int) {
 	defer file.Close()
 
 	// Calculate Audiobookshelf directory structure (see: https://www.audiobookshelf.org/docs#book-directory-structure)
-	destPath := filepath.Join(config.Instance().GetAudiobookshelfDir(), ab.Author)
+	destPath := filepath.Join(ab.Config.GetAudiobookshelfDir(), ab.Author)
 	if ab.Series != "" {
 		destPath = filepath.Join(destPath, ab.Author+" - "+ab.Series)
 	}

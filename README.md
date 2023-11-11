@@ -17,7 +17,5 @@ Since the copyrights for the majority of old-time radio shows have expired and m
 
 
 ## TODO:
-- Implement Search/Replace for Description on Chapters page
-- Finish Default Settings screen
-- Create an audiobook Settings screen
+
 

@@ -1,6 +1,6 @@
 package utils
 
-import ()
+import "os/exec"
 
 // Check if a map contains a given key
 func HasKey(m map[string]interface{}, key string) bool {
@@ -34,4 +34,9 @@ func AddSpaces(list []string) []string {
 		output = append(output, " "+v+" ")
 	}
 	return output
+}
+
+func CommandExists(cmd string) bool {
+	_, err := exec.LookPath(cmd)
+	return err == nil
 }

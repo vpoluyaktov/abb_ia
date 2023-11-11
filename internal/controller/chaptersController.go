@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/ffmpeg"
 	"github.com/vpoluyaktov/abb_ia/internal/logger"
@@ -26,10 +25,10 @@ type ChaptersController struct {
  * This code is useful for creating a new ChaptersController instance and registering it with the message queue dispatcher. This allows the ChaptersController to receive messages from the message queue and dispatch them to the appropriate handler.
  **/
 func NewChaptersController(dispatcher *mq.Dispatcher) *ChaptersController {
-	dc := &ChaptersController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.ChaptersController, dc.dispatchMessage)
-	return dc
+	c := &ChaptersController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.ChaptersController, c.dispatchMessage)
+	return c
 }
 
 func (c *ChaptersController) checkMQ() {
@@ -76,7 +75,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 
 	c.ab = cmd.Audiobook
 
-	if config.Instance().IsShortenTitle() {
+	if c.ab.Config.IsShortenTitle() {
 		c.ab.Title = strings.ReplaceAll(c.ab.Title, " - Single Episodes", "")
 		c.ab.Author = strings.ReplaceAll(c.ab.Author, "Old Time Radio Researchers Group", "OTRR")
 	}
@@ -109,7 +108,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		offset += mp3.Duration()
 		chapterNo++
 		chapterFiles = []dto.Mp3File{}
-		if partSize >= int64(config.Instance().GetMaxFileSizeMb())*1024*1024 || i == len(c.ab.Mp3Files)-1 {
+		if partSize >= int64(c.ab.Config.GetMaxFileSizeMb())*1024*1024 || i == len(c.ab.Mp3Files)-1 {
 			part := dto.Part{Number: partNo, Size: partSize, Duration: partDuration, Chapters: partChapters}
 			c.ab.Parts = append(c.ab.Parts, part)
 			partNo++
@@ -134,7 +133,7 @@ func (c *ChaptersController) searchReplaceDescription(cmd *dto.SearchReplaceDesc
 	if err != nil {
 		return
 	}
-	
+
 	description := re.ReplaceAllString(ab.Description, replaceStr)
 	ab.Description = description
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshDescriptionCommand{Audiobook: cmd.Audiobook}, true)

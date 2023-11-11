@@ -8,7 +8,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
 	"github.com/vpoluyaktov/abb_ia/internal/utils"
@@ -150,7 +149,7 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	}
 	p.buildTable.ScrollToBeginning()
 
-	if config.Instance().IsCopyToAudiobookshelf() {
+	if ab.Config.IsCopyToAudiobookshelf() {
 		p.copyTable.clear()
 		p.copyTable.showHeader()
 		for i, part := range ab.Parts {
@@ -250,7 +249,8 @@ func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
 
 func (p *BuildPage) buildComplete(c *dto.BuildComplete) {
 	// copy book to Audiobookshelf if needed
-	if config.Instance().IsCopyToAudiobookshelf() {
+  ab := c.Audiobook
+	if ab.Config.IsCopyToAudiobookshelf() {
 		p.mq.SendMessage(mq.BuildPage, mq.CopyController, &dto.CopyCommand{Audiobook: c.Audiobook}, true)
 	} else {
 		p.mq.SendMessage(mq.BuildPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: c.Audiobook}, true)

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"github.com/vpoluyaktov/abb_ia/internal/audiobookshelf"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/logger"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
@@ -13,10 +12,10 @@ type AudiobookshelfController struct {
 }
 
 func NewAudiobookshelfController(dispatcher *mq.Dispatcher) *AudiobookshelfController {
-	dc := &AudiobookshelfController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.AudiobookshelfController, dc.dispatchMessage)
-	return dc
+	c := &AudiobookshelfController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.AudiobookshelfController, c.dispatchMessage)
+	return c
 }
 
 func (c *AudiobookshelfController) checkMQ() {
@@ -37,10 +36,11 @@ func (c *AudiobookshelfController) dispatchMessage(m *mq.Message) {
 
 func (c *AudiobookshelfController) audiobookshelfScan(cmd *dto.AudiobookshelfScanCommand) {
 	logger.Info(mq.AudiobookshelfController + " received " + cmd.String())
-	url := config.Instance().GetAudiobookshelfUrl()
-	username := config.Instance().GetAudiobookshelfUser()
-	password := config.Instance().GetAudiobookshelfPassword()
-	libraryName := config.Instance().GetAudiobookshelfLibrary()
+	ab := cmd.Audiobook
+	url := ab.Config.GetAudiobookshelfUrl()
+	username := ab.Config.GetAudiobookshelfUser()
+	password := ab.Config.GetAudiobookshelfPassword()
+	libraryName := ab.Config.GetAudiobookshelfLibrary()
 
 	if url != "" && username != "" && password != "" && libraryName != "" {
 		loginResp, err := audiobookshelf.Login(url+"/login", username, password)

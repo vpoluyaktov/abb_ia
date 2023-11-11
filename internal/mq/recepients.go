@@ -13,6 +13,7 @@ const (
 	EncodingPage             = "EncodingPage"
 	ChaptersPage             = "ChaptersPage"
 	BuildPage                = "BuildPage"
+	BootController           = "BootController"
 	SearchController         = "SearchController"
 	ConfigController         = "ConfigController"
 	DownloadController       = "DownloadController"

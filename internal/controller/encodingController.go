@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/ffmpeg"
 	"github.com/vpoluyaktov/abb_ia/internal/logger"
@@ -32,10 +31,10 @@ type fileEncode struct {
 }
 
 func NewEncodingController(dispatcher *mq.Dispatcher) *EncodingController {
-	dc := &EncodingController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.EncodingController, dc.dispatchMessage)
-	return dc
+	c := &EncodingController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.EncodingController, c.dispatchMessage)
+	return c
 }
 
 func (c *EncodingController) checkMQ() {
@@ -74,7 +73,7 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	// re-encode files
 	c.stopFlag = false
 	c.files = make([]fileEncode, len(c.ab.Mp3Files))
-	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentEncoders())
+	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentEncoders())
 	for i, f := range c.ab.Mp3Files {
 		jd.AddJob(i, c.encodeFile, i, c.ab.OutputDir, f.FileName)
 	}
@@ -106,7 +105,7 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 	// launch ffmpeg process
 	_, err := ffmpeg.NewFFmpeg().
 		Input(filePath, "-f mp3").
-		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %dk -ar %d -vn", config.Instance().GetBitRate(), config.Instance().GetSampleRate())).
+		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %dk -ar %d -vn", c.ab.Config.GetBitRate(), c.ab.Config.GetSampleRate())).
 		Overwrite(true).
 		Params("-hide_banner -nostdin -nostats -loglevel fatal").
 		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).

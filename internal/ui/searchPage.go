@@ -135,6 +135,12 @@ func (p *SearchPage) dispatchMessage(m *mq.Message) {
 		go p.updateResult(dto)
 	case *dto.SearchProgress:
 		p.updateTitle(dto)
+	case *dto.NothingFoundError:
+		p.showNothingFoundError(dto)
+	case *dto.NewAppVersionFound:
+		p.showNewVersionMessage(dto)
+	case *dto.FFMPEGNotFoundError:
+		p.showFFMPEGNotFoundError(dto)
 	default:
 		m.UnsupportedTypeError(mq.SearchPage)
 	}
@@ -200,16 +206,23 @@ func (p *SearchPage) createBook() {
 		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection)
 	} else {
 		item := p.searchResult[row-1]
-		d := newDialogWindow(p.mq, 12, 80, p.resultSection)
+		// create new audiobook object
+		ab := &dto.Audiobook{}
+		ab.IAItem = item
+		c := config.Instance().GetCopy()
+		ab.Config = &c
+
+		d := newDialogWindow(p.mq, 17, 55, p.resultSection)
 		f := newForm()
 		f.SetTitle("Create Audiobook")
-		// author := f.AddInputField("Book Author", item.Creator, 60, nil, nil)
-		// title := f.AddInputField("Book Title", item.Title, 60, nil, nil)
+		f.AddInputField("Concurrent Downloaders:", utils.ToString(ab.Config.GetConcurrentDownloaders()), 4, acceptInt, func(t string) { ab.Config.SetConcurrentDownloaders(utils.ToInt(t)) })
+		f.AddInputField("Concurrent Encoders:", utils.ToString(ab.Config.GetConcurrentEncoders()), 4, acceptInt, func(t string) { ab.Config.SetConcurrentEncoders(utils.ToInt(t)) })
+		f.AddCheckbox("Re-encode .mp3 files to the same Bit Rate?", ab.Config.IsReEncodeFiles(), func(t bool) { ab.Config.SetReEncodeFiles(t) })
+		f.AddInputField("Bit Rate (Kbps):", utils.ToString(ab.Config.GetBitRate()), 4, acceptInt, func(t string) { ab.Config.SetBitRate(utils.ToInt(t)) })
+		f.AddInputField("Sample Rate (Hz):", utils.ToString(ab.Config.GetSampleRate()), 6, acceptInt, func(t string) { ab.Config.SetSampleRate(utils.ToInt(t)) })
+		f.AddInputField("Audiobook part max file size (Mb):", utils.ToString(ab.Config.GetMaxFileSizeMb()), 6, acceptInt, func(t string) { ab.Config.SetMaxFileSizeMb(utils.ToInt(t)) })
+
 		f.AddButton("Create Audiobook", func() {
-			ab := &dto.Audiobook{}
-			ab.IAItem = item
-			// ab.Title = title.GetText()
-			// ab.Author = author.GetText()
 			p.startDownload(ab)
 			d.Close()
 		})
@@ -229,4 +242,27 @@ func (p *SearchPage) startDownload(ab *dto.Audiobook) {
 func (p *SearchPage) updateConfig() {
 	p.mq.SendMessage(mq.SearchPage, mq.ConfigPage, &dto.DisplayConfigCommand{Config: config.Instance().GetCopy()}, true)
 	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ConfigPage"}, false)
+}
+
+func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
+	newMessageDialog(p.mq, "Error",
+		"No results were found for your search term: [darkblue]'"+dto.SearchCondition+"'[black].\n"+
+			"Please revise your search criteria.",
+		p.searchSection)
+}
+
+func (p *SearchPage) showFFMPEGNotFoundError(dto *dto.FFMPEGNotFoundError) {
+	newMessageDialog(p.mq, "Error",
+		"This application requires the utilities [darkblue]ffmpeg[black] and [darkblue]ffprobe[black].\n"+
+			"Please install both [darkblue]ffmpeg[black] and [darkblue]ffprobe[black] by following the instructions provided on FFMPEG website\n"+
+			"[darkblue]https://ffmpeg.org/download.html",
+		p.searchSection)
+}
+
+func (p *SearchPage) showNewVersionMessage(dto *dto.NewAppVersionFound) {
+	newMessageDialog(p.mq, "Notification",
+		"New version of the application has been released: [darkblue]"+dto.NewVersion+"[black]\n"+
+			"Your current version is [darkblue]"+dto.CurrentVersion+"[black]\n"+
+			"You can download the new version of the application from:\n[darkblue]https://github.com/vpoluyaktov/abb_ia/releases",
+		p.searchSection)
 }
