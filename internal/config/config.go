@@ -19,6 +19,8 @@ var (
 var (
 	configFile            = "config.yaml"
 	appVersion, buildDate string
+	repoOwner             string = "vpoluyaktov"
+	repoName              string = "abb_ia"
 )
 
 // Fields of this stuct should to be private but I have to make them public because yaml.Marshal/Unmarshal can't work with private fields
@@ -312,6 +314,14 @@ func (c *Config) AppVersion() string {
 		appVersion = "0.0.0"
 	}
 	return appVersion
+}
+
+func (c *Config) GetRepoOwner() string {
+	return repoOwner
+}
+
+func (c *Config) GetRepoName() string {
+	return repoName
 }
 
 func (c *Config) GetBuildDate() string {

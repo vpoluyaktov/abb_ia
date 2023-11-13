@@ -57,7 +57,7 @@ func (c *BootController) checkFFmpeg() bool {
 
 func (c *BootController) checkNewVersion() {
 
-	latestVersion, err := utils.GetLatestVersion("vpoluyaktov", "abb_ia")
+	latestVersion, err := utils.GetLatestVersion(config.Instance().GetRepoOwner(), config.Instance().GetRepoName())
 	if err != nil {
 		logger.Error("Can't check new version: " + err.Error())
 		return
