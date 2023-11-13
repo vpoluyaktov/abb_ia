@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"path/filepath"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -130,7 +130,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 						biggestImage = item.ImageFiles[i]
 					}
 				}
-				item.CoverUrl = "https://" + filepath.Join(item.Server, item.Dir, biggestImage.Name)
+				item.CoverUrl = (&url.URL{Scheme: "https", Host: item.Server, Path: item.Dir + "/" + biggestImage.Name}).String()
 			} else {
 				item.CoverUrl = "No cover available!"
 			}
