@@ -67,19 +67,20 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.configSection.SetTitle(" Audiobook Builder Configuration: ")
 	p.configSection.SetTitleAlign(tview.AlignLeft)
 
+
 	configFormLeft := newForm()
 	configFormLeft.SetHorizontal(false)
-	p.outputDir = configFormLeft.AddInputField("Output (working) directory:", "", 40, nil, func(t string) { p.configCopy.SetOutputDir(t) })
-	p.logFileNameField = configFormLeft.AddInputField("Log file name:", "", 40, nil, func(t string) { p.configCopy.SetLogfileName(t) })
-	p.logLevelField = configFormLeft.AddDropdown("Log level:", utils.AddSpaces(logger.LogLeves()), 1, func(o string, i int) { p.configCopy.SetLogLevel(strings.TrimSpace(o)) })
-	p.useMockField = configFormLeft.AddCheckbox("Use mock:", false, func(t bool) { p.configCopy.SetUseMock(t) })
-	p.saveMockField = configFormLeft.AddCheckbox("Save mock:", false, func(t bool) { p.configCopy.SetSaveMock(t) })
+	p.searchCondition = configFormLeft.AddInputField("Default Search condition:", "", 40, nil, func(t string) { p.configCopy.SetSearchCondition(t) })
+	p.maxSearchRows = configFormLeft.AddInputField("Maximum rows in the search result:", "", 4, acceptInt, func(t string) { p.configCopy.SetSearchRowsMax(utils.ToInt(t)) })
 	p.configSection.AddItem(configFormLeft.f, 0, 0, 1, 1, 0, 0, true)
 
 	configFormRight := newForm()
 	configFormRight.SetHorizontal(false)
-	p.searchCondition = configFormRight.AddInputField("Default Search condition", "", 40, nil, func(t string) { p.configCopy.SetSearchCondition(t) })
-	p.maxSearchRows = configFormRight.AddInputField("Maximum rows in the search result:", "", 4, acceptInt, func(t string) { p.configCopy.SetSearchRowsMax(utils.ToInt(t)) })
+	p.outputDir = configFormRight.AddInputField("Output (working) directory:", "", 40, nil, func(t string) { p.configCopy.SetOutputDir(t) })
+	p.logFileNameField = configFormRight.AddInputField("Log file name:", "", 40, nil, func(t string) { p.configCopy.SetLogfileName(t) })
+	p.logLevelField = configFormRight.AddDropdown("Log level:", utils.AddSpaces(logger.LogLeves()), 1, func(o string, i int) { p.configCopy.SetLogLevel(strings.TrimSpace(o)) })
+	p.useMockField = configFormRight.AddCheckbox("Use mock:", false, func(t bool) { p.configCopy.SetUseMock(t) })
+	p.saveMockField = configFormRight.AddCheckbox("Save mock:", false, func(t bool) { p.configCopy.SetSaveMock(t) })
 	p.configSection.AddItem(configFormRight.f, 0, 1, 1, 1, 0, 0, true)
 
 	buttonsForm := newForm()

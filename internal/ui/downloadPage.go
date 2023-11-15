@@ -7,7 +7,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 	"github.com/vpoluyaktov/abb_ia/internal/dto"
 	"github.com/vpoluyaktov/abb_ia/internal/mq"
 	"github.com/vpoluyaktov/abb_ia/internal/utils"
@@ -179,7 +178,8 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
 }
 
 func (p *DownloadPage) downloadComplete(c *dto.DownloadComplete) {
-	if config.Instance().IsReEncodeFiles() {
+	ab := c.Audiobook
+	if ab.Config.IsReEncodeFiles() {
 		p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
 		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
 	} else {

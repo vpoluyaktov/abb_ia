@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"path/filepath"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -20,10 +20,10 @@ type SearchController struct {
 }
 
 func NewSearchController(dispatcher *mq.Dispatcher) *SearchController {
-	sc := &SearchController{}
-	sc.mq = dispatcher
-	sc.mq.RegisterListener(mq.SearchController, sc.dispatchMessage)
-	return sc
+	c := &SearchController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.SearchController, c.dispatchMessage)
+	return c
 }
 
 func (c *SearchController) checkMQ() {
@@ -130,7 +130,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 						biggestImage = item.ImageFiles[i]
 					}
 				}
-				item.CoverUrl = "https://" + filepath.Join(item.Server, item.Dir, biggestImage.Name)
+				item.CoverUrl = (&url.URL{Scheme: "https", Host: item.Server, Path: item.Dir + "/" + biggestImage.Name}).String()
 			} else {
 				item.CoverUrl = "No cover available!"
 			}
@@ -143,7 +143,11 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			}
 		}
 		logger.Debug(mq.SearchController + " fetched first " + strconv.Itoa(itemsFetched) + " items from " + strconv.Itoa(itemsTotal) + " total")
-		c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-		c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	}
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+
+	if itemsFetched == 0 {
+		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.NothingFoundError{SearchCondition: cmd.SearchCondition}, false)
 	}
 }

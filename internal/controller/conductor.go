@@ -27,6 +27,7 @@ func NewConductor(dispatcher *mq.Dispatcher) *Conductor {
 	c.controllers = append(c.controllers, NewCopyController(c.dispatcher))
 	c.controllers = append(c.controllers, NewAudiobookshelfController(c.dispatcher))
 	c.controllers = append(c.controllers, NewCleanupController(c.dispatcher))
+	c.controllers = append(c.controllers, NewBootController(c.dispatcher))
 	return c
 }
 

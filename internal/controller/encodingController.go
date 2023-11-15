@@ -5,9 +5,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/vpoluyaktov/abb_ia/internal/config"
@@ -26,16 +24,24 @@ type EncodingController struct {
 	stopFlag  bool
 }
 
+// progress tracking arrays
 type fileEncode struct {
-	fileId   int
-	progress int
+	fileId           int
+	fileName         string
+	filePath         string
+	totalDuration    float64
+	bytesProcessed   int64
+	secondsProcessed float64
+	encodingSpeed    float64
+	progress         int
+	complete         bool
 }
 
 func NewEncodingController(dispatcher *mq.Dispatcher) *EncodingController {
-	dc := &EncodingController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.EncodingController, dc.dispatchMessage)
-	return dc
+	c := &EncodingController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.EncodingController, c.dispatchMessage)
+	return c
 }
 
 func (c *EncodingController) checkMQ() {
@@ -66,23 +72,25 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	logger.Info(mq.EncodingController + " received " + cmd.String())
 
 	c.ab = cmd.Audiobook
+	c.stopFlag = false
+	c.files = make([]fileEncode, len(c.ab.Mp3Files))
 
 	c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: "Re-encoding mp3 files..."}, false)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 
 	// re-encode files
-	c.stopFlag = false
-	c.files = make([]fileEncode, len(c.ab.Mp3Files))
-	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentEncoders())
+	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentEncoders())
 	for i, f := range c.ab.Mp3Files {
-		jd.AddJob(i, c.encodeFile, i, c.ab.OutputDir, f.FileName)
+		c.files[i].fileId = i
+		c.files[i].fileName = f.FileName
+		c.files[i].filePath = filepath.Join(c.ab.OutputDir, f.FileName)
+		mp3, _ := ffmpeg.NewFFProbe(c.files[i].filePath)
+		c.files[i].totalDuration = mp3.Duration()
+
+		jd.AddJob(i, c.encodeFile, i, c.ab.OutputDir)
 	}
 	go c.updateTotalProgress()
-	// if c.stopFlag {
-	// 	break
-	// }
-
 	jd.Start()
 
 	c.stopFlag = true
@@ -91,22 +99,23 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingComplete{Audiobook: cmd.Audiobook}, true)
 }
 
-func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName string) {
+func (c *EncodingController) encodeFile(fileId int, outputDir string) {
+	if c.stopFlag {
+		return
+	}
 
-	filePath := filepath.Join(outputDir, fileName)
+	filePath := c.files[fileId].filePath
 	tmpFile := filePath + ".tmp"
-	mp3, _ := ffmpeg.NewFFProbe(filePath)
-	duration := mp3.Duration()
 
 	// launch progress listener
 	l, port := c.startProgressListener(fileId)
 	defer l.Close()
-	go c.updateFileProgress(fileId, fileName, duration, l)
+	go c.updateFileProgress(fileId, l)
 
 	// launch ffmpeg process
 	_, err := ffmpeg.NewFFmpeg().
 		Input(filePath, "-f mp3").
-		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %dk -ar %d -vn", config.Instance().GetBitRate(), config.Instance().GetSampleRate())).
+		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %dk -ar %d -vn", c.ab.Config.GetBitRate(), c.ab.Config.GetSampleRate())).
 		Overwrite(true).
 		Params("-hide_banner -nostdin -nostats -loglevel fatal").
 		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).
@@ -124,10 +133,7 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string, fileName s
 }
 
 func (c *EncodingController) startProgressListener(fileId int) (net.Listener, int) {
-
-	basePortNumber := 31000
-	portNumber := basePortNumber + fileId
-
+	portNumber := config.Instance().GetBasePortNumber() + fileId
 	l, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(portNumber))
 	if err != nil {
 		logger.Error("Encoding progress: Start listener error: " + err.Error())
@@ -135,95 +141,88 @@ func (c *EncodingController) startProgressListener(fileId int) (net.Listener, in
 	return l, portNumber
 }
 
-func (c *EncodingController) updateFileProgress(fileId int, fileName string, totalDuration float64, l net.Listener) {
-
-	re := regexp.MustCompile(`out_time_ms=(\d+)`)
+func (c *EncodingController) updateFileProgress(fileId int, l net.Listener) {
 	fd, err := l.Accept()
 	if err != nil {
-		return // listener is closed
+		return // listener may be closed already
 	}
 	buf := make([]byte, 16)
 	data := ""
 	percent := 0
-	for {
+
+	for !c.stopFlag {
 		_, err := fd.Read(buf)
 		if err != nil {
 			return // listener is closed
 		}
 		data += string(buf)
-		a := re.FindAllStringSubmatch(data, -1)
-		p := 0
-		pstr := ""
-		if len(a) > 0 && len(a[len(a)-1]) > 0 {
-			c, _ := strconv.Atoi(a[len(a)-1][len(a[len(a)-1])-1])
-			pstr = fmt.Sprintf("%.2f", float64(c)/totalDuration/1000000)
-		}
-		if strings.Contains(data, "progress=end") {
-			p = 100
-		}
-		if pstr == "" {
-			p = 0
-		}
-		pflt, err := strconv.ParseFloat(pstr, 64)
-		if err != nil {
-			p = 0
-		} else {
-			p = int(pflt * 100)
+		bytesProcessed, secondsProcessed, encodingSpeed, complete := ffmpeg.ParseFFMPEGProgress(data)
+		percent = int(secondsProcessed / c.files[fileId].totalDuration * 100)
+		// wrong calculation protection
+		if percent < 0 {
+			percent = 0
+		} else if percent > 100 {
+			percent = 100
+		} else if percent < c.files[fileId].progress {
+			percent = c.files[fileId].progress
+		} else if complete {
+			percent = 100
 		}
 
-		if p != percent {
-			percent = p
-
-			// wrong calculation protection
-			if percent < 0 {
-				percent = 0
-			} else if percent > 100 {
-				percent = 100
-			}
-
-			// sent a message only if progress changed
-			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
+		// sent a message only if progress changed
+		if percent != c.files[fileId].progress {
+			c.files[fileId].bytesProcessed = bytesProcessed
+			c.files[fileId].secondsProcessed = secondsProcessed
+			c.files[fileId].encodingSpeed = encodingSpeed
+			c.files[fileId].progress = percent
+			c.files[fileId].complete = complete
+			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingFileProgress{FileId: fileId, FileName: c.files[fileId].fileName, Percent: percent}, true)
 		}
-		c.files[fileId].fileId = fileId
-		c.files[fileId].progress = percent
 	}
 }
 
 func (c *EncodingController) updateTotalProgress() {
-	var percent int = -1
+	var p int = -1
 
-	for !c.stopFlag && percent <= 100 {
-		var totalPercent int = 0
-		files := 0
+	for !c.stopFlag {
+		var totalDuration float64 = 0
+		var secondsProcessed float64 = 0
+		var totalSpeed float64 = 0
+		filesProcessed := 0
+		filesComplete := 0
 		for _, f := range c.files {
-			totalPercent += f.progress
-			if f.progress == 100 {
-				files++
+			totalDuration += f.totalDuration
+			secondsProcessed += f.secondsProcessed
+			totalSpeed += f.encodingSpeed
+			if f.complete {
+				filesComplete++
+			}
+			if f.encodingSpeed > 0 {
+				filesProcessed++
 			}
 		}
-		p := int(totalPercent / len(c.files))
+		percent := int(secondsProcessed / totalDuration * 100)
+		// wrong calculation protection
+		if percent < 0 {
+			percent = 0
+		} else if percent > 100 {
+			percent = 100
+		}
 
 		if percent != p {
 			// sent a message only if progress changed
-			percent = p
-
-			// wrong calculation protection
-			if percent < 0 {
-				percent = 0
-			} else if percent > 100 {
-				percent = 100
-			}
+			p = percent
 
 			elapsed := time.Since(c.startTime).Seconds()
-			speed := int64(float64(percent) / elapsed)
+			speed := totalSpeed / float64(filesProcessed)
 			eta := (100 / (float64(percent) / elapsed)) - elapsed
 			if eta < 0 || eta > (60*60*24*365) {
 				eta = 0
 			}
 
 			elapsedH := utils.SecondsToTime(elapsed)
-			filesH := fmt.Sprintf("%d/%d", files, len(c.ab.Mp3Files))
-			speedH := utils.SpeedToHuman(speed)
+			filesH := fmt.Sprintf("%d/%d", filesComplete, len(c.ab.Mp3Files))
+			speedH := fmt.Sprintf("%.0fx", speed)
 			etaH := utils.SecondsToTime(eta)
 
 			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, true)

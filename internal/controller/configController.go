@@ -12,10 +12,10 @@ type ConfigController struct {
 }
 
 func NewConfigController(dispatcher *mq.Dispatcher) *ConfigController {
-	sc := &ConfigController{}
-	sc.mq = dispatcher
-	sc.mq.RegisterListener(mq.ConfigController, sc.dispatchMessage)
-	return sc
+	c := &ConfigController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.ConfigController, c.dispatchMessage)
+	return c
 }
 
 func (c *ConfigController) checkMQ() {

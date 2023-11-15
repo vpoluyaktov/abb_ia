@@ -19,6 +19,8 @@ var (
 var (
 	configFile            = "config.yaml"
 	appVersion, buildDate string
+	repoOwner             string = "vpoluyaktov"
+	repoName              string = "abb_ia"
 )
 
 // Fields of this stuct should to be private but I have to make them public because yaml.Marshal/Unmarshal can't work with private fields
@@ -33,6 +35,7 @@ type Config struct {
 	ConcurrentDownloaders  int      `yaml:"ConcurrentDownloaders"`
 	ConcurrentEncoders     int      `yaml:"ConcurrentEncoders"`
 	ReEncodeFiles          bool     `yaml:"ReEncodeFiles"`
+	BasePortNumber         int      `yaml:"BasePortNumber"`
 	BitRateKbs             int      `yaml:"BitRateKbs"`
 	SampleRateHz           int      `yaml:"SampleRateHz"`
 	MaxFileSizeMb          int      `yaml:"MaxFileSizeMb"`
@@ -67,6 +70,7 @@ func Load() {
 	config.ConcurrentDownloaders = 5
 	config.ConcurrentEncoders = 5
 	config.ReEncodeFiles = true
+	config.BasePortNumber = 31000
 	config.BitRateKbs = 96
 	config.SampleRateHz = 44100
 	config.MaxFileSizeMb = 250
@@ -203,6 +207,14 @@ func (c *Config) IsReEncodeFiles() bool {
 	return c.ReEncodeFiles
 }
 
+func (c *Config) SetBasePortNumber(port int) {
+	c.BasePortNumber = port
+}
+
+func (c *Config) GetBasePortNumber() int {
+	return c.BasePortNumber
+}
+
 func (c *Config) SetBitRate(b int) {
 	c.BitRateKbs = b
 }
@@ -312,6 +324,14 @@ func (c *Config) AppVersion() string {
 		appVersion = "0.0.0"
 	}
 	return appVersion
+}
+
+func (c *Config) GetRepoOwner() string {
+	return repoOwner
+}
+
+func (c *Config) GetRepoName() string {
+	return repoName
 }
 
 func (c *Config) GetBuildDate() string {

@@ -25,6 +25,7 @@ require (
 )
 
 require (
+	github.com/hashicorp/go-version v1.6.0
 	github.com/rivo/tview v0.0.0-20230406072732-e22ce9588bb4
 	github.com/stretchr/testify v1.8.3
 	golang.org/x/net v0.17.0 // indirect
