@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -25,14 +24,18 @@ type BuildController struct {
 	ab        *dto.Audiobook
 	startTime time.Time
 	stopFlag  bool
-
-	// progress tracking arrays
-	filesBuild []fileBuild
+	files     []fileBuild
 }
 
+// progress tracking arrays
 type fileBuild struct {
-	fileId   int
-	progress int
+	fileName         string
+	totalDuration    float64
+	bytesProcessed   int64
+	secondsProcessed float64
+	encodingSpeed    float64
+	progress         int
+	complete         bool
 }
 
 func NewBuildController(dispatcher *mq.Dispatcher) *BuildController {
@@ -70,6 +73,8 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	logger.Info(mq.BuildController + " received " + cmd.String())
 
 	c.ab = cmd.Audiobook
+	c.stopFlag = false
+	c.files = make([]fileBuild, len(c.ab.Parts))
 
 	// calculate output file names
 	for i := range c.ab.Parts {
@@ -80,6 +85,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 		}
 		part.AACFile = filePath + ".aac"
 		part.M4BFile = filePath + ".m4b"
+		c.files[i].totalDuration = part.Duration
 	}
 
 	c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
@@ -93,16 +99,12 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	c.downloadCoverImage(c.ab)
 
 	// build audiobook parts
-	c.stopFlag = false
-	c.filesBuild = make([]fileBuild, len(c.ab.Parts))
+
 	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentEncoders())
 	for i := range c.ab.Parts {
 		jd.AddJob(i, c.buildAudiobookPart, c.ab, i)
 	}
-	go c.updateTotalBuildProgress()
-	// if c.stopFlag {
-	// 	break
-	// }
+	go c.updateTotalProgress()
 	jd.Start()
 
 	c.stopFlag = true
@@ -193,12 +195,16 @@ func (c *BuildController) downloadCoverImage(ab *dto.Audiobook) error {
 }
 
 func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
+	if c.stopFlag {
+		return
+	}
+
 	part := &ab.Parts[partId]
 
 	// launch progress listener
 	l, port := c.startProgressListener(partId)
 	defer l.Close()
-	go c.updateFileBuildProgress(partId, part.M4BFile, part.Duration, l)
+	go c.updateFileProgress(partId, l)
 
 	// concatenate mp3 files into single .aac file
 	_, err := ffmpeg.NewFFmpeg().
@@ -239,95 +245,88 @@ func (c *BuildController) startProgressListener(fileId int) (net.Listener, int) 
 	return l, portNumber
 }
 
-func (c *BuildController) updateFileBuildProgress(fileId int, fileName string, totalDuration float64, l net.Listener) {
-
-	re := regexp.MustCompile(`out_time_ms=(\d+)`)
+func (c *BuildController) updateFileProgress(fileId int, l net.Listener) {
 	fd, err := l.Accept()
 	if err != nil {
-		return // listener is closed
+		return // listener may be closed already
 	}
 	buf := make([]byte, 16)
 	data := ""
 	percent := 0
-	for {
+
+	for !c.stopFlag {
 		_, err := fd.Read(buf)
 		if err != nil {
 			return // listener is closed
 		}
 		data += string(buf)
-		a := re.FindAllStringSubmatch(data, -1)
-		p := 0
-		pstr := ""
-		if len(a) > 0 && len(a[len(a)-1]) > 0 {
-			c, _ := strconv.Atoi(a[len(a)-1][len(a[len(a)-1])-1])
-			pstr = fmt.Sprintf("%.2f", float64(c)/totalDuration/1000000)
-		}
-		if strings.Contains(data, "progress=end") {
-			p = 100
-		}
-		if pstr == "" {
-			p = 0
-		}
-		pflt, err := strconv.ParseFloat(pstr, 64)
-		if err != nil {
-			p = 0
-		} else {
-			p = int(pflt * 100)
+		bytesProcessed, secondsProcessed, encodingSpeed, complete := ffmpeg.ParseFFMPEGProgress(data)
+		percent = int(secondsProcessed / c.files[fileId].totalDuration * 100)
+		// wrong calculation protection
+		if percent < 0 {
+			percent = 0
+		} else if percent > 100 {
+			percent = 100
+		} else if percent < c.files[fileId].progress {
+			percent = c.files[fileId].progress
+		} else if complete {
+			percent = 100
 		}
 
-		if p != percent {
-			percent = p
-
-			// wrong calculation protection
-			if percent < 0 {
-				percent = 0
-			} else if percent > 100 {
-				percent = 100
-			}
-
-			// sent a message only if progress changed
-			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
+		// sent a message only if progress changed
+		if percent != c.files[fileId].progress {
+			c.files[fileId].bytesProcessed = bytesProcessed
+			c.files[fileId].secondsProcessed = secondsProcessed
+			c.files[fileId].encodingSpeed = encodingSpeed
+			c.files[fileId].progress = percent
+			c.files[fileId].complete = complete
+			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildFileProgress{FileId: fileId, FileName: c.files[fileId].fileName, Percent: percent}, true)
 		}
-		c.filesBuild[fileId].fileId = fileId
-		c.filesBuild[fileId].progress = percent
 	}
 }
 
-func (c *BuildController) updateTotalBuildProgress() {
-	var percent int = -1
+func (c *BuildController) updateTotalProgress() {
+	var p int = -1
 
-	for !c.stopFlag && percent <= 100 {
-		var totalPercent int = 0
-		files := 0
-		for _, f := range c.filesBuild {
-			totalPercent += f.progress
-			if f.progress == 100 {
-				files++
+	for !c.stopFlag && p <= 100 {
+		var totalDuration float64 = 0
+		var secondsProcessed float64 = 0
+		var totalSpeed float64 = 0
+		filesProcessed := 0
+		filesComplete := 0
+		for _, f := range c.files {
+			totalDuration += f.totalDuration
+			secondsProcessed += f.secondsProcessed
+			totalSpeed += f.encodingSpeed
+			if f.complete {
+				filesComplete++
+			}
+			if f.encodingSpeed > 0 {
+				filesProcessed++
 			}
 		}
-		p := int(totalPercent / len(c.filesBuild))
+		percent := int(secondsProcessed / totalDuration * 100)
+		// wrong calculation protection
+		if percent < 0 {
+			percent = 0
+		} else if percent > 100 {
+			percent = 100
+		}
 
 		if percent != p {
 			// sent a message only if progress changed
-			percent = p
-
-			// wrong calculation protection
-			if percent < 0 {
-				percent = 0
-			} else if percent > 100 {
-				percent = 100
-			}
+			p = percent
 
 			elapsed := time.Since(c.startTime).Seconds()
-			speed := int64(float64(percent) / elapsed)
+			speed := totalSpeed / float64(filesProcessed)
 			eta := (100 / (float64(percent) / elapsed)) - elapsed
 			if eta < 0 || eta > (60*60*24*365) {
 				eta = 0
 			}
 
 			elapsedH := utils.SecondsToTime(elapsed)
-			filesH := fmt.Sprintf("%d/%d", files, len(c.ab.Parts))
-			speedH := utils.SpeedToHuman(speed)
+			filesH := fmt.Sprintf("%d/%d", filesComplete, len(c.ab.Parts))
+			speedH := fmt.Sprintf("%.0fx", speed)
 			etaH := utils.SecondsToTime(eta)
 
 			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, true)

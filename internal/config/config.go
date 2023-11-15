@@ -35,6 +35,7 @@ type Config struct {
 	ConcurrentDownloaders  int      `yaml:"ConcurrentDownloaders"`
 	ConcurrentEncoders     int      `yaml:"ConcurrentEncoders"`
 	ReEncodeFiles          bool     `yaml:"ReEncodeFiles"`
+	BasePortNumber         int      `yaml:"BasePortNumber"`
 	BitRateKbs             int      `yaml:"BitRateKbs"`
 	SampleRateHz           int      `yaml:"SampleRateHz"`
 	MaxFileSizeMb          int      `yaml:"MaxFileSizeMb"`
@@ -69,6 +70,7 @@ func Load() {
 	config.ConcurrentDownloaders = 5
 	config.ConcurrentEncoders = 5
 	config.ReEncodeFiles = true
+	config.BasePortNumber = 31000
 	config.BitRateKbs = 96
 	config.SampleRateHz = 44100
 	config.MaxFileSizeMb = 250
@@ -203,6 +205,14 @@ func (c *Config) SetReEncodeFiles(b bool) {
 
 func (c *Config) IsReEncodeFiles() bool {
 	return c.ReEncodeFiles
+}
+
+func (c *Config) SetBasePortNumber(port int) {
+	c.BasePortNumber = port
+}
+
+func (c *Config) GetBasePortNumber() int {
+	return c.BasePortNumber
 }
 
 func (c *Config) SetBitRate(b int) {
