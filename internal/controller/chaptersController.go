@@ -76,8 +76,10 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	c.ab = cmd.Audiobook
 
 	if c.ab.Config.IsShortenTitle() {
-		c.ab.Title = strings.ReplaceAll(c.ab.Title, " - Single Episodes", "")
-		c.ab.Author = strings.ReplaceAll(c.ab.Author, "Old Time Radio Researchers Group", "OTRR")
+		for _, pair := range c.ab.Config.ShortenPairs {
+			c.ab.Title = strings.ReplaceAll(c.ab.Title, pair.Search, pair.Replace)
+			c.ab.Author = strings.ReplaceAll(c.ab.Author, pair.Search, pair.Replace)
+		}
 	}
 
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
@@ -109,7 +111,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		chapterNo++
 		chapterFiles = []dto.Mp3File{}
 		if partSize >= int64(c.ab.Config.GetMaxFileSizeMb())*1024*1024 || i == len(c.ab.Mp3Files)-1 {
-			part := dto.Part{Number: partNo, Size: partSize, Duration: partDuration, Chapters: partChapters}
+			part := dto.Part{Number: partNo, Format: "VBR MP3", Size: partSize, Duration: partDuration, Chapters: partChapters}
 			c.ab.Parts = append(c.ab.Parts, part)
 			partNo++
 			fileNo = 1

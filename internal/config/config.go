@@ -25,28 +25,34 @@ var (
 
 // Fields of this stuct should to be private but I have to make them public because yaml.Marshal/Unmarshal can't work with private fields
 type Config struct {
-	LogFileName            string   `yaml:"LogFileName"`
-	OutputDir              string   `yaml:"OutputDir"`
-	LogLevel               string   `yaml:"LogLevel"`
-	SearchRowsMax          int      `yaml:"SearchRowsMax"`
-	UseMock                bool     `yaml:"UseMock"`
-	SaveMock               bool     `yaml:"SaveMock"`
-	SearchCondition        string   `yaml:"SearchCondition"`
-	ConcurrentDownloaders  int      `yaml:"ConcurrentDownloaders"`
-	ConcurrentEncoders     int      `yaml:"ConcurrentEncoders"`
-	ReEncodeFiles          bool     `yaml:"ReEncodeFiles"`
-	BasePortNumber         int      `yaml:"BasePortNumber"`
-	BitRateKbs             int      `yaml:"BitRateKbs"`
-	SampleRateHz           int      `yaml:"SampleRateHz"`
-	MaxFileSizeMb          int      `yaml:"MaxFileSizeMb"`
-	CopyToAudiobookshelf   bool     `yaml:"CopyToAudiobookshelf"`
-	AudiobookshelfUrl      string   `yaml:"AudiobookshelfUrl"`
-	AudiobookshelfUser     string   `yaml:"AudiobookshelfUser"`
-	AudiobookshelfPassword string   `yaml:"AudiobookshelfPassword"`
-	AudiobookshelfLibrary  string   `yaml:"AudiobookshelfLibrary"`
-	AudiobookshelfDir      string   `yaml:"AudiobookshelfDir"`
-	ShortenTitles          bool     `yaml:"ShortenTitles"`
-	Genres                 []string `yaml:"Genres"`
+	LogFileName            string        `yaml:"LogFileName"`
+	OutputDir              string        `yaml:"OutputDir"`
+	LogLevel               string        `yaml:"LogLevel"`
+	SearchRowsMax          int           `yaml:"SearchRowsMax"`
+	UseMock                bool          `yaml:"UseMock"`
+	SaveMock               bool          `yaml:"SaveMock"`
+	SearchCondition        string        `yaml:"SearchCondition"`
+	ConcurrentDownloaders  int           `yaml:"ConcurrentDownloaders"`
+	ConcurrentEncoders     int           `yaml:"ConcurrentEncoders"`
+	ReEncodeFiles          bool          `yaml:"ReEncodeFiles"`
+	BasePortNumber         int           `yaml:"BasePortNumber"`
+	BitRateKbs             int           `yaml:"BitRateKbs"`
+	SampleRateHz           int           `yaml:"SampleRateHz"`
+	MaxFileSizeMb          int           `yaml:"MaxFileSizeMb"`
+	CopyToAudiobookshelf   bool          `yaml:"CopyToAudiobookshelf"`
+	AudiobookshelfUrl      string        `yaml:"AudiobookshelfUrl"`
+	AudiobookshelfUser     string        `yaml:"AudiobookshelfUser"`
+	AudiobookshelfPassword string        `yaml:"AudiobookshelfPassword"`
+	AudiobookshelfLibrary  string        `yaml:"AudiobookshelfLibrary"`
+	AudiobookshelfDir      string        `yaml:"AudiobookshelfDir"`
+	ShortenTitles          bool          `yaml:"ShortenTitles"`
+	ShortenPairs           []ShortenPair `yaml:"ShortenPairs"`
+	Genres                 []string      `yaml:"Genres"`
+}
+
+type ShortenPair struct {
+	Search  string `yaml:"Search"`
+	Replace string `yaml:"Replace"`
 }
 
 func Instance() *Config {
@@ -71,7 +77,7 @@ func Load() {
 	config.ConcurrentEncoders = 5
 	config.ReEncodeFiles = true
 	config.BasePortNumber = 31000
-	config.BitRateKbs = 96
+	config.BitRateKbs = 128
 	config.SampleRateHz = 44100
 	config.MaxFileSizeMb = 250
 	config.CopyToAudiobookshelf = true
@@ -80,6 +86,10 @@ func Load() {
 	config.AudiobookshelfLibrary = "Internet Archive"
 	config.AudiobookshelfDir = "/mnt/NAS/Audiobooks/Internet Archive"
 	config.ShortenTitles = true
+	config.ShortenPairs = []ShortenPair{
+		{"Old Time Radio Researchers Group", "OTRR"},
+		{" - Single Episodes", ""},
+	}
 	config.Genres = []string{
 		"Audiobook",
 		"Fiction",

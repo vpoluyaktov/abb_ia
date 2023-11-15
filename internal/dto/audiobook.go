@@ -34,6 +34,7 @@ type Part struct {
 	M4BFile      string
 	FListFile    string
 	MetadataFile string
+	Format       string
 	Size         int64
 	Duration     float64
 	Chapters     []Chapter

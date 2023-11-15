@@ -66,9 +66,9 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.buildSection.SetBorder(true)
 
 	p.buildTable = newTable()
-	p.buildTable.setHeaders(" Part # ", "File name", "Duration", "Total Size", "Build progress")
-	p.buildTable.setWeights(1, 2, 1, 1, 5)
-	p.buildTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
+	p.buildTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Build progress")
+	p.buildTable.setWeights(1, 2, 1, 1, 1, 5)
+	p.buildTable.setAlign(tview.AlignRight, tview.AlignLeft,tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	p.buildSection.AddItem(p.buildTable.t, 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(p.buildSection, 1, 0, 1, 1, 0, 0, true)
 
@@ -80,9 +80,9 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.copySection.SetBorder(true)
 
 	p.copyTable = newTable()
-	p.copyTable.setHeaders(" Part # ", "File name", "Duration", "Total Size", "Copy progress")
-	p.copyTable.setWeights(1, 2, 1, 1, 5)
-	p.copyTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
+	p.copyTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Copy progress")
+	p.copyTable.setWeights(1, 2, 1, 1, 1, 5)
+	p.copyTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	p.copySection.AddItem(p.copyTable.t, 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(p.copySection, 2, 0, 1, 1, 0, 0, true)
 
@@ -143,9 +143,7 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	p.buildTable.clear()
 	p.buildTable.showHeader()
 	for i, part := range ab.Parts {
-		durationH := utils.SecondsToTime(part.Duration)
-		sizeH := utils.BytesToHuman(part.Size)
-		p.buildTable.appendRow(" "+strconv.Itoa(i+1)+" ", filepath.Base(part.M4BFile), durationH, sizeH, "")
+		p.buildTable.appendRow(" "+strconv.Itoa(i+1)+" ", filepath.Base(part.M4BFile), part.Format, utils.SecondsToTime(part.Duration), utils.BytesToHuman(part.Size), "")
 	}
 	p.buildTable.ScrollToBeginning()
 
@@ -153,13 +151,10 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 		p.copyTable.clear()
 		p.copyTable.showHeader()
 		for i, part := range ab.Parts {
-			durationH := utils.SecondsToTime(part.Duration)
-			sizeH := utils.BytesToHuman(part.Size)
-			p.copyTable.appendRow(" "+strconv.Itoa(i+1)+" ", filepath.Base(part.M4BFile), durationH, sizeH, "")
+			p.copyTable.appendRow(" "+strconv.Itoa(i+1)+" ", filepath.Base(part.M4BFile), part.Format, utils.SecondsToTime(part.Duration), utils.BytesToHuman(part.Size), "")
 		}
 		p.copyTable.ScrollToBeginning()
 	}
-
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.buildTable.t}, true)
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
 }
@@ -176,14 +171,14 @@ func (p *BuildPage) stopBuild() {
 
 func (p *BuildPage) updateFileBuildProgress(dp *dto.BuildFileProgress) {
 	// update file progress
-	col := 4
-	w := p.buildTable.getColumnWidth(col) - 5
+	col := 5
+	w := p.buildTable.getColumnWidth(col) - 4
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 	cell := p.buildTable.t.GetCell(dp.FileId+1, col)
-	cell.SetExpansion(0)
-	cell.SetMaxWidth(45)
+	// cell.SetExpansion(0)
+	// cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 	// p.buildTable.t.Select(dp.FileId+1, col)
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
@@ -200,7 +195,7 @@ func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%10s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
-	w := p.progressTable.getColumnWidth(col) - 5
+	w := p.progressTable.getColumnWidth(col) - 4
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
@@ -212,14 +207,14 @@ func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
 
 func (p *BuildPage) updateFileCopyProgress(dp *dto.CopyFileProgress) {
 	// update file progress
-	col := 4
-	w := p.copyTable.getColumnWidth(col) - 5
+	col := 5
+	w := p.copyTable.getColumnWidth(col) - 3
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 	cell := p.copyTable.t.GetCell(dp.FileId+1, col)
-	cell.SetExpansion(0)
-	cell.SetMaxWidth(45)
+	// cell.SetExpansion(0)
+	// cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 	// p.copyTable.t.Select(dp.FileId+1, col)
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
