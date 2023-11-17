@@ -332,7 +332,6 @@ func (p *ChaptersPage) stopConfirmation() {
 }
 
 func (p *ChaptersPage) stopChapters() {
-	// Stop the chapters here
 	p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.StopCommand{Process: "Chapters", Reason: "User request"}, true)
 	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, true)
 }

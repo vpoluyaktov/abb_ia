@@ -130,9 +130,8 @@ func (p *EncodingPage) stopConfirmation() {
 }
 
 func (p *EncodingPage) stopEncoding() {
-	// Stop the encoding here
-	p.mq.SendMessage(mq.EncodingPage, mq.EncodingController, &dto.StopCommand{Process: "Encoding", Reason: "User request"}, false)
-	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	p.mq.SendMessage(mq.EncodingPage, mq.EncodingController, &dto.StopCommand{Process: "Encoding", Reason: "User request"}, true)
+	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, true)
 }
 
 func (p *EncodingPage) updateFileProgress(dp *dto.EncodingFileProgress) {

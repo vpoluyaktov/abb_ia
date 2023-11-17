@@ -130,7 +130,6 @@ func (p *DownloadPage) stopConfirmation() {
 }
 
 func (p *DownloadPage) stopDownload() {
-	// Stop the download here
 	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, &dto.StopCommand{Process: "Download", Reason: "User request"}, false)
 	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }

@@ -107,10 +107,12 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	go c.updateTotalProgress()
 	jd.Start()
 
-	c.stopFlag = true
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildComplete{Audiobook: cmd.Audiobook}, true)
+	if !c.stopFlag {
+		c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildComplete{Audiobook: cmd.Audiobook}, true)
+	}
+	c.stopFlag = true
 }
 
 func (c *BuildController) createFilesLists(ab *dto.Audiobook) {
@@ -218,19 +220,28 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 		logger.Error("FFMPEG Error: " + string(err.Error()))
 	} else {
 		// add Metadata, cover image and convert to .m4b
-		_, err := ffmpeg.NewFFmpeg().
+		ffmpeg := ffmpeg.NewFFmpeg().
 			Input(part.AACFile, "").
 			Input(part.MetadataFile, "").
 			Input(ab.CoverURL, "").
 			Output(part.M4BFile, "-map_metadata 1 -y -acodec copy -y -vf pad='width=ceil(iw/2)*2:height=ceil(ih/2)*2'").
 			Overwrite(true).
 			Params("-hide_banner -nostdin -nostats").
-			SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).
-			Run()
-		if err != nil {
+			SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port))
+
+		go c.killSwitch(ffmpeg)
+		_, err := ffmpeg.Run()
+		if err != nil && ! c.stopFlag {
 			logger.Error("FFMPEG Error: " + string(err.Error()))
 		}
 	}
+}
+
+func (c *BuildController) killSwitch(ffmpeg *ffmpeg.FFmpeg) {
+	for !c.stopFlag {
+		time.Sleep(mq.PullFrequency)
+	}
+	ffmpeg.Kill()
 }
 
 func (c *BuildController) startProgressListener(fileId int) (net.Listener, int) {

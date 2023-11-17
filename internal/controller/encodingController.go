@@ -93,10 +93,12 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	go c.updateTotalProgress()
 	jd.Start()
 
-	c.stopFlag = true
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingComplete{Audiobook: cmd.Audiobook}, true)
+	if !c.stopFlag {
+		c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingComplete{Audiobook: cmd.Audiobook}, true)
+	}
+	c.stopFlag = true
 }
 
 func (c *EncodingController) encodeFile(fileId int, outputDir string) {
@@ -113,14 +115,16 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string) {
 	go c.updateFileProgress(fileId, l)
 
 	// launch ffmpeg process
-	_, err := ffmpeg.NewFFmpeg().
+	ffmpeg := ffmpeg.NewFFmpeg().
 		Input(filePath, "-f mp3").
 		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %dk -ar %d -vn", c.ab.Config.GetBitRate(), c.ab.Config.GetSampleRate())).
 		Overwrite(true).
 		Params("-hide_banner -nostdin -nostats -loglevel fatal").
-		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).
-		Run()
-	if err != nil {
+		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port))
+
+	go c.killSwitch(ffmpeg)
+	_, err := ffmpeg.Run()
+	if err != nil && !c.stopFlag {
 		logger.Error("FFMPEG Error: " + string(err.Error()))
 	} else {
 		err := os.Remove(filePath)
@@ -130,6 +134,13 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string) {
 			os.Rename(tmpFile, filePath)
 		}
 	}
+}
+
+func (c *EncodingController) killSwitch(ffmpeg *ffmpeg.FFmpeg) {
+	for !c.stopFlag {
+		time.Sleep(mq.PullFrequency)
+	}
+	ffmpeg.Kill()
 }
 
 func (c *EncodingController) startProgressListener(fileId int) (net.Listener, int) {

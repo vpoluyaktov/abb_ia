@@ -115,10 +115,12 @@ func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 	go c.updateTotalCopyProgress()
 	jd.Start()
 
-	c.stopFlag = true
 	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyComplete{Audiobook: cmd.Audiobook}, true)
+	if !c.stopFlag {
+		c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyComplete{Audiobook: cmd.Audiobook}, true)
+	}
+	c.stopFlag = true
 }
 
 func (c *CopyController) stopCopy(cmd *dto.StopCommand) {

@@ -87,16 +87,15 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 		jd.AddJob(i, ia.DownloadFile, c.ab.OutputDir, localFileName, item.Server, item.Dir, iaFile.Name, i, iaFile.Size, c.updateFileProgress)
 	}
 	go c.updateTotalProgress()
-	// if c.stopFlag {
-	// 	break
-	// }
 
 	jd.Start()
 
-	c.stopFlag = true
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
+	if ! c.stopFlag {
+		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
+	}
+	c.stopFlag = true
 }
 
 func (c *DownloadController) updateFileProgress(fileId int, fileName string, size int64, pos int64, percent int) {

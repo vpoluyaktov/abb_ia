@@ -1,7 +1,6 @@
 package ffmpeg
 
 import (
-	"os"
 	"os/exec"
 
 	"github.com/vpoluyaktov/abb_ia/internal/logger"
@@ -11,7 +10,7 @@ type FFmpeg struct {
 	input  input
 	output output
 	params params
-	process *os.Process
+	cmd    *exec.Cmd
 }
 
 type input struct {
@@ -33,7 +32,7 @@ func NewFFmpeg() *FFmpeg {
 		input:  input{},
 		output: output{},
 		params: params{},
-		process: nil,
+		cmd:    nil,
 	}
 	return ffmpeg
 }
@@ -76,13 +75,20 @@ func (f *FFmpeg) Run() (string, *exitErr) {
 		args = args.AppendArgs("-i").AppendFileName(fileName)
 	}
 	args = args.AppendArgs(f.output.args).AppendFileName(f.output.fileName)
-	command := exec.Command(cmd, args.String()...)
-	logger.Debug("FFMPEG cmd: " + command.String())
-	f.process = command.Process
-	out, err := command.Output()
+	f.cmd = exec.Command(cmd, args.String()...)
+	logger.Debug("FFMPEG cmd: " + f.cmd.String())
+	out, err := f.cmd.Output()
 	if err != nil {
 		return string(out), ExitErr(err)
 	} else {
 		return string(out), nil
+	}
+}
+
+func (f *FFmpeg) Kill() error {
+	if f.cmd != nil && f.cmd.Process != nil {
+		return f.cmd.Process.Kill()
+	} else {
+		return nil
 	}
 }
