@@ -107,6 +107,7 @@ func (ui *TUI) dispatchMessage(m *mq.Message) {
 		if cmd.Primitive == nil {
 			ui.app.Draw()
 		} else {
+			ui.app.Draw()
 			// ui.app.Draw(cmd.Primitive) // not supported by rivo/tview
 		}
 	case *dto.SetFocusCommand:

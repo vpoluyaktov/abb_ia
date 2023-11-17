@@ -50,6 +50,7 @@ func (h *header) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.DrawCommand:
 		if dto.Primitive == nil {
+			return
 		}
 	default:
 		m.UnsupportedTypeError(mq.Header)

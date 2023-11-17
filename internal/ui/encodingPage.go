@@ -118,7 +118,7 @@ func (p *EncodingPage) displayBookInfo(ab *dto.Audiobook) {
 	p.filesTable.clear()
 	p.filesTable.showHeader()
 	for i, f := range ab.IAItem.AudioFiles {
-		p.filesTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, f.Format, utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size), "")
+		p.filesTable.appendRow(" "+strconv.Itoa(i+1)+" ", f.Name, fmt.Sprintf("MP3 %d kb/s", ab.Config.GetBitRate()), utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size), "")
 	}
 	p.filesTable.t.ScrollToBeginning()
 	p.mq.SendMessage(mq.EncodingPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.filesTable.t}, true)

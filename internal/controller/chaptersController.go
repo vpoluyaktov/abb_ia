@@ -111,7 +111,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		chapterNo++
 		chapterFiles = []dto.Mp3File{}
 		if partSize >= int64(c.ab.Config.GetMaxFileSizeMb())*1024*1024 || i == len(c.ab.Mp3Files)-1 {
-			part := dto.Part{Number: partNo, Format: "VBR MP3", Size: partSize, Duration: partDuration, Chapters: partChapters}
+			part := dto.Part{Number: partNo, Format: mp3.Format(), Size: partSize, Duration: partDuration, Chapters: partChapters}
 			c.ab.Parts = append(c.ab.Parts, part)
 			partNo++
 			fileNo = 1
@@ -154,7 +154,7 @@ func (c *ChaptersController) searchReplaceChapters(cmd *dto.SearchReplaceChapter
 	}
 
 	for partNo, p := range ab.Parts {
-		for chapterNo, _ := range p.Chapters {
+		for chapterNo := range p.Chapters {
 			chapter := &ab.Parts[partNo].Chapters[chapterNo]
 			title := chapter.Name
 			title = re.ReplaceAllString(title, replaceStr)

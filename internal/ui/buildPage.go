@@ -68,7 +68,7 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.buildTable = newTable()
 	p.buildTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Build progress")
 	p.buildTable.setWeights(1, 2, 1, 1, 1, 5)
-	p.buildTable.setAlign(tview.AlignRight, tview.AlignLeft,tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
+	p.buildTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	p.buildSection.AddItem(p.buildTable.t, 0, 0, 1, 1, 0, 0, true)
 	p.grid.AddItem(p.buildSection, 1, 0, 1, 1, 0, 0, true)
 
@@ -244,7 +244,7 @@ func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
 
 func (p *BuildPage) buildComplete(c *dto.BuildComplete) {
 	// copy book to Audiobookshelf if needed
-  ab := c.Audiobook
+	ab := c.Audiobook
 	if ab.Config.IsCopyToAudiobookshelf() {
 		p.mq.SendMessage(mq.BuildPage, mq.CopyController, &dto.CopyCommand{Audiobook: c.Audiobook}, true)
 	} else {

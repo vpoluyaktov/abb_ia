@@ -144,7 +144,7 @@ func (t *table) recalculateColumnWidths() {
 	m := (float64(tw-len(t.colWeight)-1) / float64(allWeights)) // multiplier
 
 	t.colWidth = make([]int, len(t.colWeight))
-	for c, _ := range t.colWidth {
+	for c := range t.colWidth {
 		t.colWidth[c] = int(math.Round(m * float64(t.colWeight[c])))
 	}
 }
