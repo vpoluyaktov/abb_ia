@@ -84,6 +84,7 @@ func (c *CopyController) dispatchMessage(m *mq.Message) {
 }
 
 func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
+	c.startTime = time.Now()
 	logger.Info(mq.CopyController + " received " + cmd.String())
 
 	c.ab = cmd.Audiobook
@@ -141,7 +142,7 @@ func (c *CopyController) copyAudiobookPart(ab *dto.Audiobook, partId int) {
 	defer file.Close()
 
 	// Calculate Audiobookshelf directory structure (see: https://www.audiobookshelf.org/docs#book-directory-structure)
-	destPath := filepath.Join(ab.Config.GetAudiobookshelfDir(), ab.Author)
+	destPath := filepath.Join(ab.Config.GetOutputDir(), ab.Author)
 	if ab.Series != "" {
 		destPath = filepath.Join(destPath, ab.Author+" - "+ab.Series)
 	}
@@ -205,10 +206,10 @@ func (c *CopyController) updateTotalCopyProgress() {
 
 	for !c.stopFlag && percent <= 100 {
 		var totalSize = c.ab.TotalSize
-		var totalBytesDownloaded int64 = 0
+		var totalBytesCopied int64 = 0
 		filesCopied := 0
 		for _, f := range c.filesCopy {
-			totalBytesDownloaded += f.bytesCopied
+			totalBytesCopied += f.bytesCopied
 			if f.progress == 100 {
 				filesCopied++
 			}
@@ -216,13 +217,13 @@ func (c *CopyController) updateTotalCopyProgress() {
 
 		var p int = 0
 		if totalSize > 0 {
-			p = int(float64(totalBytesDownloaded) / float64(totalSize) * 100)
+			p = int(float64(totalBytesCopied) / float64(totalSize) * 100)
 		}
 
 		// fix wrong incorrect calculation
 		if filesCopied == len(c.filesCopy) {
 			p = 100
-			totalBytesDownloaded = c.ab.TotalSize
+			totalBytesCopied = c.ab.TotalSize
 		}
 
 		if percent != p {
@@ -237,14 +238,14 @@ func (c *CopyController) updateTotalCopyProgress() {
 			}
 
 			elapsed := time.Since(c.startTime).Seconds()
-			speed := int64(float64(totalBytesDownloaded) / elapsed)
+			speed := int64(float64(totalBytesCopied) / elapsed)
 			eta := (100 / (float64(percent) / elapsed)) - elapsed
 			if eta < 0 || eta > (60*60*24*365) {
 				eta = 0
 			}
 
 			elapsedH := utils.SecondsToTime(elapsed)
-			bytesH := utils.BytesToHuman(totalBytesDownloaded)
+			bytesH := utils.BytesToHuman(totalBytesCopied)
 			filesH := fmt.Sprintf("%d/%d", filesCopied, len(c.ab.Parts))
 			speedH := utils.SpeedToHuman(speed)
 			etaH := utils.SecondsToTime(eta)

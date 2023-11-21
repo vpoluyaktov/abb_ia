@@ -69,7 +69,9 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.ab.Title = item.Title
 	c.ab.Description = item.Description
 	c.ab.CoverURL = item.CoverUrl
-	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(c.ab.Config.GetOutputDir(), item.ID))
+	c.ab.IaURL = item.IaURL
+	c.ab.LicenseUrl = item.LicenseUrl
+	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(c.ab.Config.GetTmpDir(), item.ID))
 	c.ab.TotalSize = item.TotalSize
 	c.ab.TotalDuration = item.TotalLength
 
@@ -92,7 +94,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	if ! c.stopFlag {
+	if !c.stopFlag {
 		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
 	}
 	c.stopFlag = true

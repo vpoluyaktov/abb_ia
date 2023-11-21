@@ -79,7 +79,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// calculate output file names
 	for i := range c.ab.Parts {
 		part := &c.ab.Parts[i]
-		filePath := filepath.Join(c.ab.Config.GetOutputDir(), c.ab.Author+" - "+c.ab.Title)
+		filePath := filepath.Join(c.ab.Config.GetTmpDir(), c.ab.Author+" - "+c.ab.Title)
 		if len(c.ab.Parts) > 1 {
 			filePath = filePath + fmt.Sprintf(", Part %02d", i+1)
 		}
@@ -149,9 +149,9 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 		f.WriteString("album=" + ab.Title + "\n")
 		f.WriteString("genre=" + ab.Genre + "\n")
 		f.WriteString("description=" + strings.ReplaceAll(ab.Description, "\n", "\\\n") + "\n")
-		f.WriteString("copyright=" + ab.Copyright + "\n")
-		f.WriteString("comment=Downloaded from Internet Archive: " + ab.IaURL + "\n")
-		f.WriteString("encoder=This audiobook was created by 'Audiobook Builder Internet Archive version' https://github.com/vpoluyaktov/abb_ia\n")
+		f.WriteString("copyright=" + ab.LicenseUrl + "\n")
+		f.WriteString("comment=This audiobook was created using the 'Audiobook Builder' tool: https://github.com/vpoluyaktov/abb_ia\\\n" +
+			"The audio files used for this book were obtained from the Internet Archive site: " + ab.IaURL + "\n")
 
 		for _, chapter := range part.Chapters {
 			f.WriteString("[CHAPTER]\n")
@@ -165,7 +165,7 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 }
 
 func (c *BuildController) downloadCoverImage(ab *dto.Audiobook) error {
-	filePath := filepath.Join(ab.Config.GetOutputDir(), ab.Author+" - "+ab.Title)
+	filePath := filepath.Join(ab.Config.GetTmpDir(), ab.Author+" - "+ab.Title)
 	if strings.HasSuffix(ab.CoverURL, ".jpg") {
 		ab.CoverFile = filePath + ".jpg"
 	} else if strings.HasSuffix(ab.CoverURL, ".png") {
@@ -231,7 +231,7 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 
 		go c.killSwitch(ffmpeg)
 		_, err := ffmpeg.Run()
-		if err != nil && ! c.stopFlag {
+		if err != nil && !c.stopFlag {
 			logger.Error("FFMPEG Error: " + string(err.Error()))
 		}
 	}

@@ -11,6 +11,9 @@ func SanitizeFilePath(path string) string {
 		{"!", "."},
 		{"?", "."},
 		{"…", ""},
+		{"#","N"},
+		{"[", ""},
+		{"]", ""},
 	}
 
 	for {

@@ -21,6 +21,7 @@ const (
 	ChaptersController       = "ChaptersController"
 	BuildController          = "BuildController"
 	CopyController           = "CopyController"
+	UploadController         = "UploadController"
 	CleanupController        = "CleanupController"
 	AudiobookshelfController = "AudiobookshelfController"
 )

@@ -39,6 +39,8 @@ func TestGetItemById(t *testing.T) {
 	ia := ia_client.New(5, false, false)
 	item := ia.GetItemDetails("OTRR_Frank_Race_Singles")
 	assert.NotNil(t, item)
+	assert.GreaterOrEqual(t, 1, len(item.Metadata.Title))
+	assert.GreaterOrEqual(t, 1, len(item.Metadata.Creator))
 	if logLevel == logger.DEBUG {
 		if item != nil {
 			fmt.Printf("Title: %s\n", item.Metadata.Title[0])

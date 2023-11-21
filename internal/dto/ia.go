@@ -8,6 +8,8 @@ type IAItem struct {
 	Creator     string
 	Description string
 	CoverUrl    string
+	IaURL       string
+	LicenseUrl  string
 	Server      string
 	Dir         string
 	TotalLength float64

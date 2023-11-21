@@ -196,11 +196,11 @@ func (c *ChaptersController) joinChapters(cmd *dto.JoinChaptersCommand) {
 					previousChapterName = chapter.Name
 
 				}
-				// add last chapter in a part
-				if chNo == len(part.Chapters)-1 {
-					chapters = append(chapters, *chapter)
-					chapterNo++
-				}
+			}
+			// add last chapter in a part
+			if chNo == len(part.Chapters)-1 {
+				chapters = append(chapters, *chapter)
+				chapterNo++
 			}
 		}
 		part.Chapters = chapters

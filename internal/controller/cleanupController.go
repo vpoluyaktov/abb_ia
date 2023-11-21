@@ -47,7 +47,7 @@ func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand) {
 		os.Remove(part.AACFile)
 		os.Remove(part.FListFile)
 		os.Remove(part.MetadataFile)
-		if c.ab.Config.IsCopyToAudiobookshelf() {
+		if c.ab.Config.IsCopyToOutputDir() {
 			os.Remove(part.M4BFile)
 		}
 	}

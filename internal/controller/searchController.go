@@ -60,6 +60,8 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 		item := &dto.IAItem{}
 		item.ID = doc.Identifier
 		item.Title = tview.Escape(doc.Title)
+		item.IaURL = ia_client.IA_BASE_URL + "/details/" + doc.Identifier
+		item.LicenseUrl = doc.Licenseurl
 
 		item.AudioFiles = make([]dto.AudioFile, 0)
 		var totalSize int64 = 0

@@ -15,10 +15,12 @@ type Audiobook struct {
 	Series        string
 	SeriesNo      string
 	Narator       string
+	Year          string
 	CoverURL      string
 	CoverFile     string
 	IaURL         string
 	Copyright     string
+	LicenseUrl    string
 	OutputDir     string
 	Mp3Files      []Mp3File
 	TotalDuration float64
