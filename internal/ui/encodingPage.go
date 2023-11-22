@@ -136,7 +136,7 @@ func (p *EncodingPage) stopEncoding() {
 
 func (p *EncodingPage) updateFileProgress(dp *dto.EncodingFileProgress) {
 	col := 5
-	w := p.filesTable.getColumnWidth(col) - 5
+	w := p.filesTable.getColumnWidth(col) - 4
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)

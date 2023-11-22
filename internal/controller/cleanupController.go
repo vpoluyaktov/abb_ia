@@ -52,4 +52,6 @@ func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand) {
 		}
 	}
 	os.Remove(c.ab.CoverFile)
+
+	c.mq.SendMessage(mq.CleanupController, mq.BuildPage, &dto.CleanupComplete{Audiobook: cmd.Audiobook}, true)
 }

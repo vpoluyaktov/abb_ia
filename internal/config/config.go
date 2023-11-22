@@ -42,6 +42,7 @@ type Config struct {
 	SampleRateHz           int           `yaml:"SampleRateHz"`
 	MaxFileSizeMb          int           `yaml:"MaxFileSizeMb"`
 	UploadToAudiobookshef  bool          `yaml:"UploadToAudiobookshelf"`
+	ScanAudiobookshef      bool          `yaml:"ScanAudiobookshelf"`
 	AudiobookshelfUrl      string        `yaml:"AudiobookshelfUrl"`
 	AudiobookshelfUser     string        `yaml:"AudiobookshelfUser"`
 	AudiobookshelfPassword string        `yaml:"AudiobookshelfPassword"`
@@ -84,6 +85,7 @@ func Load() {
 	config.SampleRateHz = 44100
 	config.MaxFileSizeMb = 250
 	config.UploadToAudiobookshef = true
+	config.ScanAudiobookshef = true
 	config.AudiobookshelfUser = "admin"
 	config.AudiobookshelfPassword = ""
 	config.AudiobookshelfLibrary = "Internet Archive"
@@ -273,6 +275,14 @@ func (c *Config) SetUploadToAudiobookshelf(b bool) {
 
 func (c *Config) IsUploadToAudiobookshef() bool {
 	return c.UploadToAudiobookshef
+}
+
+func (c *Config) SetScanAudiobookshelf(b bool) {
+	c.ScanAudiobookshef = b
+}
+
+func (c *Config) IsScanAudiobookshef() bool {
+	return c.ScanAudiobookshef
 }
 
 func (c *Config) GetAudiobookshelfUrl() string {

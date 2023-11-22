@@ -1,6 +1,6 @@
 bin/
 mock/
-output/
+tmp/
 dist/
 __debug_bin*
 abb_ia.log

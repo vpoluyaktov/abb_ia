@@ -85,6 +85,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 		}
 		part.AACFile = filePath + ".aac"
 		part.M4BFile = filePath + ".m4b"
+		c.files[i].fileName = part.M4BFile
 		c.files[i].totalDuration = part.Duration
 	}
 

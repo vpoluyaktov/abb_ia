@@ -120,7 +120,7 @@ func (p *BuildPage) dispatchMessage(m *mq.Message) {
 		p.updateTotalBuildProgress(dto)
 	case *dto.BuildComplete:
 		p.buildComplete(dto)
-	case *dto.CopyFileProgress:
+	case *dto.UploadFileProgress:
 		p.updateFileCopyProgress(dto)
 	case *dto.CopyProgress:
 		p.updateTotalCopyProgress(dto)
@@ -128,6 +128,10 @@ func (p *BuildPage) dispatchMessage(m *mq.Message) {
 		p.copyComplete(dto)
 	case *dto.UploadComplete:
 		p.uploadComplete(dto)
+	case *dto.ScanComplete:
+		p.scanComplete(dto)
+	case *dto.CleanupComplete:
+		p.cleanupComplete(dto)
 	default:
 		m.UnsupportedTypeError(mq.BuildPage)
 	}
@@ -207,7 +211,7 @@ func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
 }
 
-func (p *BuildPage) updateFileCopyProgress(dp *dto.CopyFileProgress) {
+func (p *BuildPage) updateFileCopyProgress(dp *dto.UploadFileProgress) {
 	// update file progress
 	col := 5
 	w := p.copyTable.getColumnWidth(col) - 3
@@ -244,28 +248,49 @@ func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
 	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
 }
 
+/*
+ * A chain of final operations -> ?Copy -> ?Upload -> ?Scan -> Cleanup - Done msg
+ */
 func (p *BuildPage) buildComplete(c *dto.BuildComplete) {
 	// copy the book to Output directory if needed
 	ab := c.Audiobook
 	if ab.Config.IsCopyToOutputDir() {
-		p.mq.SendMessage(mq.BuildPage, mq.CopyController, &dto.CopyCommand{Audiobook: c.Audiobook}, true)
-	}
-
-	if ab.Config.IsUploadToAudiobookshef() {
-		p.mq.SendMessage(mq.BuildPage, mq.AudiobookshelfController, &dto.AudiobookshelfUploadCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.CopyController, &dto.CopyCommand{Audiobook: ab}, true)
+	} else {
+		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.CopyComplete{Audiobook: ab}, true)
 	}
 }
 
 func (p *BuildPage) copyComplete(c *dto.CopyComplete) {
-	p.mq.SendMessage(mq.BuildPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: c.Audiobook}, true)
-	p.mq.SendMessage(mq.BuildPage, mq.AudiobookshelfController, &dto.AudiobookshelfScanCommand{Audiobook: c.Audiobook}, true)
-	newMessageDialog(p.mq, "Build Complete", "Audiobook has been created", p.buildSection)
-	//p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	// upload the book to Audiobookshelf server if needed
+	ab := c.Audiobook
+	if ab.Config.IsUploadToAudiobookshef() {
+		p.mq.SendMessage(mq.BuildPage, mq.AudiobookshelfController, &dto.AudiobookshelfUploadCommand{Audiobook: ab}, true)
+	} else {
+		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.AudiobookshelfScanCommand{Audiobook: ab}, true)
+	}
 }
 
 func (p *BuildPage) uploadComplete(c *dto.UploadComplete) {
+	// launch Audiobookshelf library scan if needed
+	ab := c.Audiobook
+	if ab.Config.IsScanAudiobookshef() {
+		p.mq.SendMessage(mq.BuildPage, mq.AudiobookshelfController, &dto.AudiobookshelfScanCommand{Audiobook: c.Audiobook}, true)
+	} else {
+		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.ScanComplete{Audiobook: ab}, true)
+	}
+}
+
+func (p *BuildPage) scanComplete(c *dto.ScanComplete) {
+	// clean up temporary directory
 	p.mq.SendMessage(mq.BuildPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: c.Audiobook}, true)
-	p.mq.SendMessage(mq.BuildPage, mq.AudiobookshelfController, &dto.AudiobookshelfScanCommand{Audiobook: c.Audiobook}, true)
+}
+
+func (p *BuildPage) cleanupComplete(c *dto.CleanupComplete) {
+	p.bookReadyMgs(c.Audiobook)
+}
+
+func (p *BuildPage) bookReadyMgs(ab *dto.Audiobook) {
 	newMessageDialog(p.mq, "Build Complete", "Audiobook has been created", p.buildSection)
 	//p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }

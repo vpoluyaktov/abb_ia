@@ -141,7 +141,7 @@ func (c *AudiobookshelfClient) ScanLibrary(libraryID string) error {
 }
 
 // Upload audiobook to The Audibookshelf server
-func (c *AudiobookshelfClient) UploadBook(ab *dto.Audiobook, libraryID string, folderID string, callback func(int, int) ) error {
+func (c *AudiobookshelfClient) UploadBook(ab *dto.Audiobook, libraryID string, folderID string, callback Fn ) error {
 	// Open each file for upload
 	var filesList []*os.File
 	for _, part := range ab.Parts {
@@ -175,7 +175,9 @@ func (c *AudiobookshelfClient) UploadBook(ab *dto.Audiobook, libraryID string, f
 		if err != nil {
 			return err
 		}
-		pr := &progressReader{
+		pr := &ProgressReader{
+			FileId:   i,
+			FileName: filepath.Base(file.Name()),
 			Reader:   file,
 			Size:     fileStat.Size(),
 			Callback: callback,
@@ -214,16 +216,24 @@ func (c *AudiobookshelfClient) UploadBook(ab *dto.Audiobook, libraryID string, f
 	return nil
 }
 
-type progressReader struct {
+// Progress Reader for file upload progress
+type Fn func(fileId int, fileName string, size int64, pos int64, percent int)
+type ProgressReader struct {
+	FileId   int
+	FileName string
 	Reader   io.Reader
 	Size     int64
-	Callback func(int, int)
+	Pos      int64
+	Percent  int
+	Callback Fn
 }
 
-func (pr *progressReader) Read(p []byte) (int, error) {
+func (pr *ProgressReader) Read(p []byte) (int, error) {
 	n, err := pr.Reader.Read(p)
 	if err == nil {
-		pr.Callback(n, int(pr.Size))
+		pr.Pos += int64(n)
+		pr.Percent = int(float64(pr.Pos) / float64(pr.Size) * 100)
+		pr.Callback(pr.FileId, pr.FileName, pr.Size, pr.Pos, pr.Percent)
 	}
 	return n, err
 }

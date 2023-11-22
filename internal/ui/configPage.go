@@ -47,6 +47,7 @@ type ConfigPage struct {
 	audiobookshelfUser     *tview.InputField
 	audiobookshelfPassword *tview.InputField
 	audiobookshelfLibrary  *tview.InputField
+	scanAudiobookshelf *tview.Checkbox
 
 	saveConfigButton *tview.Button
 	cancelButton     *tview.Button
@@ -129,9 +130,10 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	absFormLeft.SetHorizontal(false)
 	p.uploadToAudiobookshelf = absFormLeft.AddCheckbox("Upload the audiobook to Audiobookshelf server?", false, func(t bool) { p.configCopy.SetUploadToAudiobookshelf(t) })
 	p.audiobookshelfUrl = absFormLeft.AddInputField("Audiobookshelf Server URL:", "", 40, nil, func(t string) { p.configCopy.SetAudiobookshelfUrl(t) })
-	p.audiobookshelfLibrary = absFormLeft.AddInputField("Audiobookshelf destination Library:", "", 40, nil, func(t string) { p.configCopy.SetAudiobookshelfLibrary(t) })
 	p.audiobookshelfUser = absFormLeft.AddInputField("Audiobookshelf Server User:", "", 40, nil, func(t string) { p.configCopy.SetAudiobookshelfUser(t) })
 	p.audiobookshelfPassword = absFormLeft.AddPasswordField("Audiobookshelf Server Password:", "", 40, 0, func(t string) { p.configCopy.SetAudiobookshelfPassword(t) })
+	p.audiobookshelfLibrary = absFormLeft.AddInputField("Audiobookshelf destination Library:", "", 40, nil, func(t string) { p.configCopy.SetAudiobookshelfLibrary(t) })
+	p.scanAudiobookshelf = absFormLeft.AddCheckbox("Scan the Audiobookshelf library after copy/upload?", false, func(t bool) { p.configCopy.SetScanAudiobookshelf(t) })
 	p.absSection.AddItem(absFormLeft.f, 0, 0, 1, 1, 0, 0, true)
 
 	// absFormRight := newForm()
@@ -183,6 +185,7 @@ func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 	p.uploadToAudiobookshelf.SetChecked(p.configCopy.IsCopyToOutputDir())
 	p.audiobookshelfUrl.SetText(p.configCopy.GetAudiobookshelfUrl())
 	p.audiobookshelfLibrary.SetText(p.configCopy.GetAudiobookshelfLibrary())
+	p.scanAudiobookshelf.SetChecked(p.configCopy.IsScanAudiobookshef())
 	p.audiobookshelfUser.SetText(p.configCopy.GetAudiobookshelfUser())
 	p.audiobookshelfPassword.SetText(p.configCopy.GetAudiobookshelfPassword())
 
