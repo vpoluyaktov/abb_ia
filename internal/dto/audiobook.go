@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"abb_ia/internal/config"
 )
 
 type Audiobook struct {

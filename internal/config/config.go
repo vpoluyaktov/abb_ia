@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/utils"
 	"gopkg.in/yaml.v3"
 )
 

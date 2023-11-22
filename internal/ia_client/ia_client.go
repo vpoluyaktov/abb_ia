@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"abb_ia/internal/logger"
+	"abb_ia/internal/utils"
 	"github.com/go-resty/resty/v2"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 const (
@@ -112,7 +112,7 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 			logger.Error("IAClient GetItemDetails() mock load error: " + err.Error())
 		}
 	} else {
-		var getURL = fmt.Sprintf(IA_BASE_URL + "/details/%s/?output=json", itemId)
+		var getURL = fmt.Sprintf(IA_BASE_URL+"/details/%s/?output=json", itemId)
 		_, err := client.restyClient.R().SetResult(result).Get(getURL)
 		if err != nil {
 			logger.Error("IAClient GetItemDetails() error: " + err.Error())

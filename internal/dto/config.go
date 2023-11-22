@@ -3,7 +3,7 @@ package dto
 import (
 	"fmt"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"abb_ia/internal/config"
 )
 
 type DisplayConfigCommand struct {

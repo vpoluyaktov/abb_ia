@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/ffmpeg"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/ffmpeg"
+	"abb_ia/internal/utils"
 
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
 )
 
 type BuildController struct {
@@ -151,7 +151,7 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 		f.WriteString("genre=" + ab.Genre + "\n")
 		f.WriteString("description=" + strings.ReplaceAll(ab.Description, "\n", "\\\n") + "\n")
 		f.WriteString("copyright=" + ab.LicenseUrl + "\n")
-		f.WriteString("comment=This audiobook was created using the 'Audiobook Builder' tool: https://github.com/vpoluyaktov/abb_ia\\\n" +
+		f.WriteString("comment=This audiobook was created using the 'Audiobook Builder' tool: https://abb_ia\\\n" +
 			"The audio files used for this book were obtained from the Internet Archive site: " + ab.IaURL + "\n")
 
 		for _, chapter := range part.Chapters {

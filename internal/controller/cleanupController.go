@@ -3,9 +3,9 @@ package controller
 import (
 	"os"
 
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
 )
 
 type CleanupController struct {

@@ -3,13 +3,13 @@ package ui
 import (
 	"strings"
 
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/utils"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/mq"
 )
 
 type ConfigPage struct {
@@ -47,7 +47,7 @@ type ConfigPage struct {
 	audiobookshelfUser     *tview.InputField
 	audiobookshelfPassword *tview.InputField
 	audiobookshelfLibrary  *tview.InputField
-	scanAudiobookshelf *tview.Checkbox
+	scanAudiobookshelf     *tview.Checkbox
 
 	saveConfigButton *tview.Button
 	cancelButton     *tview.Button

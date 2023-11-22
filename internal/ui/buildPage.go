@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
+	"abb_ia/internal/dto"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type BuildPage struct {

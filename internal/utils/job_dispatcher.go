@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"abb_ia/internal/logger"
 )
 
 type JobDispatcher struct {

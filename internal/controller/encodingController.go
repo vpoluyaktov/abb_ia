@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/ffmpeg"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/ffmpeg"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 )
 
 type EncodingController struct {

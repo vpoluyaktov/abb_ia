@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"abb_ia/internal/config"
+	"abb_ia/internal/ia_client"
+	"abb_ia/internal/logger"
 	"github.com/stretchr/testify/assert"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/ia_client"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
 )
 
 const (
@@ -51,7 +51,7 @@ func TestGetItemById(t *testing.T) {
 			fmt.Printf("Image: %s\n", item.Misc.Image)
 
 			// for file, meta := range item.Files {
-				// fmt.Printf("%s -> %s\n", file, meta.Format)
+			// fmt.Printf("%s -> %s\n", file, meta.Format)
 			// }
 		}
 	}

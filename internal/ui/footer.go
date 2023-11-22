@@ -1,10 +1,10 @@
 package ui
 
 import (
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/mq"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
 type footer struct {

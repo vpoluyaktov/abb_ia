@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
+	"abb_ia/internal/dto"
 )
 
 type AudiobookshelfClient struct {
@@ -114,7 +114,6 @@ func (c *AudiobookshelfClient) GetFolders(libraries []Library, libraryName strin
 	return nil, fmt.Errorf("no library with name '%s' found", libraryName)
 }
 
-
 // Call the Audiobookshelf API for a library Scan
 func (c *AudiobookshelfClient) ScanLibrary(libraryID string) error {
 	url := c.url + "/api/libraries/" + libraryID + "/scan"
@@ -141,7 +140,7 @@ func (c *AudiobookshelfClient) ScanLibrary(libraryID string) error {
 }
 
 // Upload audiobook to The Audibookshelf server
-func (c *AudiobookshelfClient) UploadBook(ab *dto.Audiobook, libraryID string, folderID string, callback Fn ) error {
+func (c *AudiobookshelfClient) UploadBook(ab *dto.Audiobook, libraryID string, folderID string, callback Fn) error {
 	// Open each file for upload
 	var filesList []*os.File
 	for _, part := range ab.Parts {

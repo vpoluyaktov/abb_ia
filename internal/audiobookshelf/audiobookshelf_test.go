@@ -3,9 +3,9 @@ package audiobookshelf_test
 import (
 	"testing"
 
+	"abb_ia/internal/audiobookshelf"
+	"abb_ia/internal/config"
 	"github.com/stretchr/testify/assert"
-	"github.com/vpoluyaktov/abb_ia/internal/audiobookshelf"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 )
 
 func TestLogin(t *testing.T) {

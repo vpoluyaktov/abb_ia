@@ -1,10 +1,10 @@
 package ui
 
 import (
+	"abb_ia/internal/dto"
+	"abb_ia/internal/mq"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
 type dialogWindow struct {
@@ -41,10 +41,11 @@ func newDialogWindow(dispatcher *mq.Dispatcher, height int, width int, focus tvi
 
 	d.grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-			case tcell.KeyEscape: {
+		case tcell.KeyEscape:
+			{
 				d.Close()
 			}
-		}		
+		}
 		return event
 	})
 

@@ -3,7 +3,7 @@ package ffmpeg
 import (
 	"os/exec"
 
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"abb_ia/internal/logger"
 )
 
 type FFmpeg struct {

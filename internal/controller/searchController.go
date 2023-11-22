@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"strings"
 
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/ia_client"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/ia_client"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type SearchController struct {

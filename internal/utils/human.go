@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"abb_ia/internal/logger"
 )
 
 // Convert time in HH:MM:SS or SSSSS.MI string format to seconds

@@ -3,7 +3,7 @@ package controller
 import (
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/mq"
 )
 
 type controller interface {

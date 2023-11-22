@@ -8,7 +8,7 @@ builds:
   - id: default
     main: ./main.go
     binary: abb_ia
-    ldflags: -X github.com/vpoluyaktov/abb_ia/internal/config.appVersion={{.Version}} -X github.com/vpoluyaktov/abb_ia/internal/config.buildDate={{.Date}}
+    ldflags: -X abb_ia/internal/config.appVersion={{.Version}} -X abb_ia/internal/config.buildDate={{.Date}}
     env: [CGO_ENABLED=0]
     goos:
       - linux

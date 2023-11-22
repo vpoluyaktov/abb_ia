@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github.com/vpoluyaktov/abb_ia/internal/controller"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/ui"
+	"abb_ia/internal/controller"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/ui"
 )
 
 func Execute() {

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strconv"
 
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type SearchPage struct {
@@ -263,6 +263,6 @@ func (p *SearchPage) showNewVersionMessage(dto *dto.NewAppVersionFound) {
 	newMessageDialog(p.mq, "Notification",
 		"New version of the application has been released: [darkblue]"+dto.NewVersion+"[black]\n"+
 			"Your current version is [darkblue]"+dto.CurrentVersion+"[black]\n"+
-			"You can download the new version of the application from:\n[darkblue]https://github.com/vpoluyaktov/abb_ia/releases",
+			"You can download the new version of the application from:\n[darkblue]https://abb_ia/releases",
 		p.searchSection)
 }
