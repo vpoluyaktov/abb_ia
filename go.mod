@@ -1,4 +1,4 @@
-module github.com/vpoluyaktov/abb_ia
+module abb_ia
 
 go 1.18
 

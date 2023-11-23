@@ -3,7 +3,7 @@ package controller
 import (
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/mq"
 )
 
 type controller interface {
@@ -25,7 +25,7 @@ func NewConductor(dispatcher *mq.Dispatcher) *Conductor {
 	c.controllers = append(c.controllers, NewChaptersController(c.dispatcher))
 	c.controllers = append(c.controllers, NewBuildController(c.dispatcher))
 	c.controllers = append(c.controllers, NewCopyController(c.dispatcher))
-	c.controllers = append(c.controllers, NewAudiobookshelfController(c.dispatcher))
+	c.controllers = append(c.controllers, NewUploadController(c.dispatcher))
 	c.controllers = append(c.controllers, NewCleanupController(c.dispatcher))
 	c.controllers = append(c.controllers, NewBootController(c.dispatcher))
 	return c

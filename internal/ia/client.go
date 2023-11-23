@@ -11,19 +11,19 @@ import (
 	"strings"
 	"time"
 
+	"abb_ia/internal/logger"
+	"abb_ia/internal/utils"
 	"github.com/go-resty/resty/v2"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 const (
-	IA_BASE_URL     = "https://archive.org"
-	MOCK_DIR        = "mock"
+	IA_BASE_URL = "https://archive.org"
+	MOCK_DIR    = "mock"
 )
 
 type IAClient struct {
 	restyClient    *resty.Client
-	maxSearchRows int
+	maxSearchRows  int
 	loadMockResult bool
 	saveMockResult bool
 }
@@ -112,8 +112,8 @@ func (client *IAClient) GetItemDetails(itemId string) *ItemDetails {
 			logger.Error("IAClient GetItemDetails() mock load error: " + err.Error())
 		}
 	} else {
-		var getURL = IA_BASE_URL + "/details/%s/?output=json"
-		_, err := client.restyClient.R().SetResult(result).Get(fmt.Sprintf(getURL, itemId))
+		var getURL = fmt.Sprintf(IA_BASE_URL+"/details/%s/?output=json", itemId)
+		_, err := client.restyClient.R().SetResult(result).Get(getURL)
 		if err != nil {
 			logger.Error("IAClient GetItemDetails() error: " + err.Error())
 		}
@@ -141,7 +141,12 @@ func (client *IAClient) DownloadFile(localDir string, localFile string, iaServer
 
 	iaDir = strings.TrimPrefix(iaDir, "/")
 	iaFile = strings.TrimPrefix(iaFile, "/")
-	fileUrl := fmt.Sprintf("https://%s/%s/%s", iaServer, iaDir, iaFile)
+	URL := &url.URL{
+		Scheme: "https",
+		Host:   iaServer,
+		Path:   iaDir + "/" + iaFile,
+	}
+	fileUrl := URL.String()
 	localPath := filepath.Join(localDir, localFile)
 	tempPath := localPath + ".tmp"
 

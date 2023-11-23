@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
+	"abb_ia/internal/config"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 func TestMain(m *testing.M) {

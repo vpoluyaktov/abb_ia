@@ -3,8 +3,8 @@ package mq
 import (
 	"fmt"
 
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
 )
 
 type Message struct {

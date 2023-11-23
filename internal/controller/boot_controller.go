@@ -3,11 +3,12 @@ package controller
 import (
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/github"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 )
 
 type BootController struct {
@@ -57,13 +58,13 @@ func (c *BootController) checkFFmpeg() bool {
 
 func (c *BootController) checkNewVersion() {
 
-	latestVersion, err := utils.GetLatestVersion(config.Instance().GetRepoOwner(), config.Instance().GetRepoName())
+	latestVersion, err := github.GetLatestVersion(config.Instance().GetRepoOwner(), config.Instance().GetRepoName())
 	if err != nil {
 		logger.Error("Can't check new version: " + err.Error())
 		return
 	}
 
-	result, err := utils.CompareVersions(latestVersion, config.Instance().AppVersion())
+	result, err := github.CompareVersions(latestVersion, config.Instance().AppVersion())
 	if err != nil {
 		logger.Error("Can not compare versions: " + err.Error())
 		return

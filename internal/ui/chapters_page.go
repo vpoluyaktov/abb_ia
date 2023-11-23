@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"strings"
 
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type ChaptersPage struct {
@@ -122,6 +122,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	descriptionSection.SetColumns(-1, 40)
 	descriptionSection.SetBorder(false)
 	p.descriptionEditor = newTextArea("")
+	p.descriptionEditor.SetChangedFunc(p.updateDescription)
 	p.descriptionEditor.SetBorder(true)
 	p.descriptionEditor.SetTitle(" Book description: ")
 	p.descriptionEditor.SetTitleAlign(tview.AlignLeft)
@@ -158,7 +159,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	f6.AddInputField("Replace:", "", 30, nil, func(s string) { p.replaceChapters = s })
 	f6.AddButton("Replace", p.searchReplaceChapters)
 	f6.AddButton(" Undo  ", p.undoChapters)
-	f6.AddButton(" Join Chapters  ", p.joinChapters)
+	f6.AddButton(" Join Similar Chapters ", p.joinChapters)
 	f6.SetButtonsAlign(tview.AlignRight)
 	f6.SetMouseDblClickFunc(func() {})
 	p.chaptersSection.AddItem(f6.f, 0, 1, 1, 1, 0, 0, false)
@@ -221,7 +222,7 @@ func (p *ChaptersPage) displayParts(ab *dto.Audiobook) {
 func (p *ChaptersPage) addPart(part *dto.Part) {
 	if len(p.ab.Parts) > 1 {
 		number := strconv.Itoa(part.Number)
-		p.chaptersTable.appendSeparator("", "", "", "", "Part Number "+number)
+		p.chaptersTable.appendSeparator("", "", "", "", "Part # "+number+". Size: "+utils.BytesToHuman(part.Size))
 	}
 	for _, chapter := range part.Chapters {
 		p.addChapter(&chapter)
@@ -236,6 +237,12 @@ func (p *ChaptersPage) addChapter(chapter *dto.Chapter) {
 	durationH := utils.SecondsToTime(chapter.Duration)
 	p.chaptersTable.appendRow(number, startH, endH, durationH, chapter.Name)
 	p.chaptersTable.ScrollToBeginning()
+}
+
+func (p *ChaptersPage) updateDescription() {
+	if p.ab != nil {
+		p.ab.Description = p.descriptionEditor.GetText()
+	}
 }
 
 func (p *ChaptersPage) updateChapterEntry(row int, col int) {
@@ -332,7 +339,6 @@ func (p *ChaptersPage) stopConfirmation() {
 }
 
 func (p *ChaptersPage) stopChapters() {
-	// Stop the chapters here
 	p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.StopCommand{Process: "Chapters", Reason: "User request"}, true)
 	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, true)
 }

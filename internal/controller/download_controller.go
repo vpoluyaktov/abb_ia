@@ -5,11 +5,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/ia_client"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/ia"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 )
 
 type DownloadController struct {
@@ -69,7 +69,9 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.ab.Title = item.Title
 	c.ab.Description = item.Description
 	c.ab.CoverURL = item.CoverUrl
-	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(c.ab.Config.GetOutputDir(), item.ID))
+	c.ab.IaURL = item.IaURL
+	c.ab.LicenseUrl = item.LicenseUrl
+	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(c.ab.Config.GetTmpDir(), item.ID))
 	c.ab.TotalSize = item.TotalSize
 	c.ab.TotalDuration = item.TotalLength
 
@@ -87,16 +89,15 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 		jd.AddJob(i, ia.DownloadFile, c.ab.OutputDir, localFileName, item.Server, item.Dir, iaFile.Name, i, iaFile.Size, c.updateFileProgress)
 	}
 	go c.updateTotalProgress()
-	// if c.stopFlag {
-	// 	break
-	// }
 
 	jd.Start()
 
-	c.stopFlag = true
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
+	if !c.stopFlag {
+		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
+	}
+	c.stopFlag = true
 }
 
 func (c *DownloadController) updateFileProgress(fileId int, fileName string, size int64, pos int64, percent int) {

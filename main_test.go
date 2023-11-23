@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
+	"abb_ia/internal/config"
+	"abb_ia/internal/logger"
 )
 
 func TestMain(m *testing.M) {

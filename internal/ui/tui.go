@@ -5,9 +5,9 @@ import (
 	"os/exec"
 	"time"
 
+	"abb_ia/internal/dto"
+	"abb_ia/internal/mq"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
 type components interface {
@@ -107,6 +107,7 @@ func (ui *TUI) dispatchMessage(m *mq.Message) {
 		if cmd.Primitive == nil {
 			ui.app.Draw()
 		} else {
+			ui.app.Draw()
 			// ui.app.Draw(cmd.Primitive) // not supported by rivo/tview
 		}
 	case *dto.SetFocusCommand:

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"abb_ia/internal/config"
 )
 
 type Audiobook struct {
@@ -15,10 +15,12 @@ type Audiobook struct {
 	Series        string
 	SeriesNo      string
 	Narator       string
+	Year          string
 	CoverURL      string
 	CoverFile     string
 	IaURL         string
 	Copyright     string
+	LicenseUrl    string
 	OutputDir     string
 	Mp3Files      []Mp3File
 	TotalDuration float64
@@ -34,6 +36,7 @@ type Part struct {
 	M4BFile      string
 	FListFile    string
 	MetadataFile string
+	Format       string
 	Size         int64
 	Duration     float64
 	Chapters     []Chapter

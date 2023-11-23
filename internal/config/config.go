@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -25,28 +25,36 @@ var (
 
 // Fields of this stuct should to be private but I have to make them public because yaml.Marshal/Unmarshal can't work with private fields
 type Config struct {
-	LogFileName            string   `yaml:"LogFileName"`
-	OutputDir              string   `yaml:"OutputDir"`
-	LogLevel               string   `yaml:"LogLevel"`
-	SearchRowsMax          int      `yaml:"SearchRowsMax"`
-	UseMock                bool     `yaml:"UseMock"`
-	SaveMock               bool     `yaml:"SaveMock"`
-	SearchCondition        string   `yaml:"SearchCondition"`
-	ConcurrentDownloaders  int      `yaml:"ConcurrentDownloaders"`
-	ConcurrentEncoders     int      `yaml:"ConcurrentEncoders"`
-	ReEncodeFiles          bool     `yaml:"ReEncodeFiles"`
-	BasePortNumber         int      `yaml:"BasePortNumber"`
-	BitRateKbs             int      `yaml:"BitRateKbs"`
-	SampleRateHz           int      `yaml:"SampleRateHz"`
-	MaxFileSizeMb          int      `yaml:"MaxFileSizeMb"`
-	CopyToAudiobookshelf   bool     `yaml:"CopyToAudiobookshelf"`
-	AudiobookshelfUrl      string   `yaml:"AudiobookshelfUrl"`
-	AudiobookshelfUser     string   `yaml:"AudiobookshelfUser"`
-	AudiobookshelfPassword string   `yaml:"AudiobookshelfPassword"`
-	AudiobookshelfLibrary  string   `yaml:"AudiobookshelfLibrary"`
-	AudiobookshelfDir      string   `yaml:"AudiobookshelfDir"`
-	ShortenTitles          bool     `yaml:"ShortenTitles"`
-	Genres                 []string `yaml:"Genres"`
+	SearchCondition        string        `yaml:"SearchCondition"`
+	SearchRowsMax          int           `yaml:"SearchRowsMax"`
+	LogFileName            string        `yaml:"LogFileName"`
+	OutputDir              string        `yaml:"Outputdir"`
+	CopyToOutputDir        bool          `yaml:"CopyToOutputDir"`
+	TmpDir                 string        `yaml:"TmpDir"`
+	LogLevel               string        `yaml:"LogLevel"`
+	UseMock                bool          `yaml:"UseMock"`
+	SaveMock               bool          `yaml:"SaveMock"`
+	ConcurrentDownloaders  int           `yaml:"ConcurrentDownloaders"`
+	ConcurrentEncoders     int           `yaml:"ConcurrentEncoders"`
+	ReEncodeFiles          bool          `yaml:"ReEncodeFiles"`
+	BasePortNumber         int           `yaml:"BasePortNumber"`
+	BitRateKbs             int           `yaml:"BitRateKbs"`
+	SampleRateHz           int           `yaml:"SampleRateHz"`
+	MaxFileSizeMb          int           `yaml:"MaxFileSizeMb"`
+	UploadToAudiobookshef  bool          `yaml:"UploadToAudiobookshelf"`
+	ScanAudiobookshef      bool          `yaml:"ScanAudiobookshelf"`
+	AudiobookshelfUrl      string        `yaml:"AudiobookshelfUrl"`
+	AudiobookshelfUser     string        `yaml:"AudiobookshelfUser"`
+	AudiobookshelfPassword string        `yaml:"AudiobookshelfPassword"`
+	AudiobookshelfLibrary  string        `yaml:"AudiobookshelfLibrary"`
+	ShortenTitles          bool          `yaml:"ShortenTitles"`
+	ShortenPairs           []ShortenPair `yaml:"ShortenPairs"`
+	Genres                 []string      `yaml:"Genres"`
+}
+
+type ShortenPair struct {
+	Search  string `yaml:"Search"`
+	Replace string `yaml:"Replace"`
 }
 
 func Instance() *Config {
@@ -61,7 +69,9 @@ func Load() {
 
 	// default settings
 	config.LogFileName = "abb_ia.log"
-	config.OutputDir = "output"
+	config.TmpDir = "tmp"
+	config.CopyToOutputDir = true
+	config.OutputDir = "/mnt/NAS/Audiobooks/Internet Archive"
 	config.LogLevel = "INFO"
 	config.SearchRowsMax = 25
 	config.UseMock = false
@@ -71,15 +81,19 @@ func Load() {
 	config.ConcurrentEncoders = 5
 	config.ReEncodeFiles = true
 	config.BasePortNumber = 31000
-	config.BitRateKbs = 96
+	config.BitRateKbs = 128
 	config.SampleRateHz = 44100
 	config.MaxFileSizeMb = 250
-	config.CopyToAudiobookshelf = true
+	config.UploadToAudiobookshef = true
+	config.ScanAudiobookshef = true
 	config.AudiobookshelfUser = "admin"
 	config.AudiobookshelfPassword = ""
 	config.AudiobookshelfLibrary = "Internet Archive"
-	config.AudiobookshelfDir = "/mnt/NAS/Audiobooks/Internet Archive"
 	config.ShortenTitles = true
+	config.ShortenPairs = []ShortenPair{
+		{"Old Time Radio Researchers Group", "OTRR"},
+		{" - Single Episodes", ""},
+	}
 	config.Genres = []string{
 		"Audiobook",
 		"Fiction",
@@ -135,12 +149,28 @@ func (c *Config) GetLogFileName() string {
 	return c.LogFileName
 }
 
-func (c *Config) SetOutputDir(outputDir string) {
-	c.OutputDir = outputDir
+func (c *Config) SetTmpDir(tmpDir string) {
+	c.TmpDir = tmpDir
+}
+
+func (c *Config) GetTmpDir() string {
+	return c.TmpDir
 }
 
 func (c *Config) GetOutputDir() string {
 	return c.OutputDir
+}
+
+func (c *Config) SetOutputdDir(d string) {
+	c.OutputDir = d
+}
+
+func (c *Config) SetCopyToOutputDir(b bool) {
+	c.CopyToOutputDir = b
+}
+
+func (c *Config) IsCopyToOutputDir() bool {
+	return c.CopyToOutputDir
 }
 
 func (c *Config) SetLogLevel(logLevel string) {
@@ -239,20 +269,20 @@ func (c *Config) GetMaxFileSizeMb() int {
 	return c.MaxFileSizeMb
 }
 
-func (c *Config) SetCopyToAudiobookshelf(b bool) {
-	c.CopyToAudiobookshelf = b
+func (c *Config) SetUploadToAudiobookshelf(b bool) {
+	c.UploadToAudiobookshef = b
 }
 
-func (c *Config) IsCopyToAudiobookshelf() bool {
-	return c.CopyToAudiobookshelf
+func (c *Config) IsUploadToAudiobookshef() bool {
+	return c.UploadToAudiobookshef
 }
 
-func (c *Config) GetAudiobookshelfDir() string {
-	return c.AudiobookshelfDir
+func (c *Config) SetScanAudiobookshelf(b bool) {
+	c.ScanAudiobookshef = b
 }
 
-func (c *Config) SetAudiobookshelfDir(d string) {
-	c.AudiobookshelfDir = d
+func (c *Config) IsScanAudiobookshef() bool {
+	return c.ScanAudiobookshef
 }
 
 func (c *Config) GetAudiobookshelfUrl() string {

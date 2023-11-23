@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/ffmpeg"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/ffmpeg"
+	"abb_ia/internal/utils"
 
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
 )
 
 type BuildController struct {
@@ -79,12 +79,13 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// calculate output file names
 	for i := range c.ab.Parts {
 		part := &c.ab.Parts[i]
-		filePath := filepath.Join(c.ab.Config.GetOutputDir(), c.ab.Author+" - "+c.ab.Title)
+		filePath := filepath.Join(c.ab.Config.GetTmpDir(), c.ab.Author+" - "+c.ab.Title)
 		if len(c.ab.Parts) > 1 {
 			filePath = filePath + fmt.Sprintf(", Part %02d", i+1)
 		}
 		part.AACFile = filePath + ".aac"
 		part.M4BFile = filePath + ".m4b"
+		c.files[i].fileName = part.M4BFile
 		c.files[i].totalDuration = part.Duration
 	}
 
@@ -107,10 +108,12 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	go c.updateTotalProgress()
 	jd.Start()
 
-	c.stopFlag = true
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildComplete{Audiobook: cmd.Audiobook}, true)
+	if !c.stopFlag {
+		c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildComplete{Audiobook: cmd.Audiobook}, true)
+	}
+	c.stopFlag = true
 }
 
 func (c *BuildController) createFilesLists(ab *dto.Audiobook) {
@@ -147,9 +150,9 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 		f.WriteString("album=" + ab.Title + "\n")
 		f.WriteString("genre=" + ab.Genre + "\n")
 		f.WriteString("description=" + strings.ReplaceAll(ab.Description, "\n", "\\\n") + "\n")
-		f.WriteString("copyright=" + ab.Copyright + "\n")
-		f.WriteString("comment=Downloaded from Internet Archive: " + ab.IaURL + "\n")
-		f.WriteString("encoder=This audiobook was created by 'Audiobook Builder Internet Archive version' https://github.com/vpoluyaktov/abb_ia\n")
+		f.WriteString("copyright=" + ab.LicenseUrl + "\n")
+		f.WriteString("comment=This audiobook was created using the 'Audiobook Builder' tool: https://abb_ia\\\n" +
+			"The audio files used for this book were obtained from the Internet Archive site: " + ab.IaURL + "\n")
 
 		for _, chapter := range part.Chapters {
 			f.WriteString("[CHAPTER]\n")
@@ -163,7 +166,7 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 }
 
 func (c *BuildController) downloadCoverImage(ab *dto.Audiobook) error {
-	filePath := filepath.Join(ab.Config.GetOutputDir(), ab.Author+" - "+ab.Title)
+	filePath := filepath.Join(ab.Config.GetTmpDir(), ab.Author+" - "+ab.Title)
 	if strings.HasSuffix(ab.CoverURL, ".jpg") {
 		ab.CoverFile = filePath + ".jpg"
 	} else if strings.HasSuffix(ab.CoverURL, ".png") {
@@ -218,19 +221,28 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 		logger.Error("FFMPEG Error: " + string(err.Error()))
 	} else {
 		// add Metadata, cover image and convert to .m4b
-		_, err := ffmpeg.NewFFmpeg().
+		ffmpeg := ffmpeg.NewFFmpeg().
 			Input(part.AACFile, "").
 			Input(part.MetadataFile, "").
 			Input(ab.CoverURL, "").
 			Output(part.M4BFile, "-map_metadata 1 -y -acodec copy -y -vf pad='width=ceil(iw/2)*2:height=ceil(ih/2)*2'").
 			Overwrite(true).
 			Params("-hide_banner -nostdin -nostats").
-			SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).
-			Run()
-		if err != nil {
+			SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port))
+
+		go c.killSwitch(ffmpeg)
+		_, err := ffmpeg.Run()
+		if err != nil && !c.stopFlag {
 			logger.Error("FFMPEG Error: " + string(err.Error()))
 		}
 	}
+}
+
+func (c *BuildController) killSwitch(ffmpeg *ffmpeg.FFmpeg) {
+	for !c.stopFlag {
+		time.Sleep(mq.PullFrequency)
+	}
+	ffmpeg.Kill()
 }
 
 func (c *BuildController) startProgressListener(fileId int) (net.Listener, int) {

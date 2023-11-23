@@ -28,6 +28,11 @@ func GetIndex(s []string, str string) int {
 	return -1
 }
 
+// Remove an element from a slice 
+func RemoveElement(slice []interface{}, index int) []interface{} {
+	return append(slice[:index], slice[index+1:]...)
+}
+
 func AddSpaces(list []string) []string {
 	var output []string
 	for _, v := range list {

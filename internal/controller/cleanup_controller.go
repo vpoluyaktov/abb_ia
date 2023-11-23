@@ -3,9 +3,9 @@ package controller
 import (
 	"os"
 
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
 )
 
 type CleanupController struct {
@@ -47,9 +47,11 @@ func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand) {
 		os.Remove(part.AACFile)
 		os.Remove(part.FListFile)
 		os.Remove(part.MetadataFile)
-		if c.ab.Config.IsCopyToAudiobookshelf() {
+		if c.ab.Config.IsCopyToOutputDir() {
 			os.Remove(part.M4BFile)
 		}
 	}
 	os.Remove(c.ab.CoverFile)
+
+	c.mq.SendMessage(mq.CleanupController, mq.BuildPage, &dto.CleanupComplete{Audiobook: cmd.Audiobook}, true)
 }

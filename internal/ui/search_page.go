@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strconv"
 
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 type SearchPage struct {
@@ -203,7 +203,7 @@ func (p *SearchPage) createBook() {
 	// get selectet row from the results table
 	row, _ := p.resultTable.t.GetSelection()
 	if row <= 0 || len(p.searchResult) <= 0 || len(p.searchResult) < row {
-		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection)
+		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection, func() {})
 	} else {
 		item := p.searchResult[row-1]
 		// create new audiobook object
@@ -248,7 +248,7 @@ func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
 	newMessageDialog(p.mq, "Error",
 		"No results were found for your search term: [darkblue]'"+dto.SearchCondition+"'[black].\n"+
 			"Please revise your search criteria.",
-		p.searchSection)
+		p.searchSection, func() {})
 }
 
 func (p *SearchPage) showFFMPEGNotFoundError(dto *dto.FFMPEGNotFoundError) {
@@ -256,13 +256,13 @@ func (p *SearchPage) showFFMPEGNotFoundError(dto *dto.FFMPEGNotFoundError) {
 		"This application requires the utilities [darkblue]ffmpeg[black] and [darkblue]ffprobe[black].\n"+
 			"Please install both [darkblue]ffmpeg[black] and [darkblue]ffprobe[black] by following the instructions provided on FFMPEG website\n"+
 			"[darkblue]https://ffmpeg.org/download.html",
-		p.searchSection)
+		p.searchSection, func() {})
 }
 
 func (p *SearchPage) showNewVersionMessage(dto *dto.NewAppVersionFound) {
 	newMessageDialog(p.mq, "Notification",
 		"New version of the application has been released: [darkblue]"+dto.NewVersion+"[black]\n"+
 			"Your current version is [darkblue]"+dto.CurrentVersion+"[black]\n"+
-			"You can download the new version of the application from:\n[darkblue]https://github.com/vpoluyaktov/abb_ia/releases",
-		p.searchSection)
+			"You can download the new version of the application from:\n[darkblue]https://abb_ia/releases",
+		p.searchSection, func() {})
 }
