@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"abb_ia/internal/config"
-	"abb_ia/internal/ia_client"
+	"abb_ia/internal/ia"
 	"abb_ia/internal/logger"
 	"github.com/stretchr/testify/assert"
 )

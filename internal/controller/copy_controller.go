@@ -86,7 +86,6 @@ func (c *CopyController) dispatchMessage(m *mq.Message) {
 func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 	c.startTime = time.Now()
 	logger.Info(mq.CopyController + " received " + cmd.String())
-
 	c.ab = cmd.Audiobook
 
 	// update part size and whole audiobook size after re-encoding
@@ -193,7 +192,7 @@ func (c *CopyController) updateFileCopyProgress(fileId int, fileName string, siz
 		}
 
 		// sent a message only if progress changed
-		c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.UploadFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
+		c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
 	}
 	c.filesCopy[fileId].fileId = fileId
 	c.filesCopy[fileId].fileSize = size

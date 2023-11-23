@@ -87,7 +87,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			for name, metadata := range d.Files {
 				format := metadata.Format
 				// collect mp3 files
-				// TODO: Implement filtering for mp3 files with multiple bitrates (see https://archive.org/details/voyage_moon_1512_librivox or https://archive.org/details/OTRR_Blair_of_the_Mounties_Singles for ex.)
+
 				if utils.Contains(dto.Mp3Formats, format) {
 					size, sErr := strconv.ParseInt(metadata.Size, 10, 64)
 					length, lErr := utils.TimeToSeconds(metadata.Length)
@@ -99,12 +99,13 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 						if metadata.Title != "" {
 							file.Title = metadata.Title
 						} else {
-							file.Title = file.Name
+							file.Title = utils.SanitizeMp3FileName(file.Name)
 						}
 						file.Size = size
 						file.Length = length
 						file.Format = metadata.Format
 						// check if there is a file with the same title but different bitrate. Keep highest bitrate only
+						// see https://archive.org/details/voyage_moon_1512_librivox or https://archive.org/details/OTRR_Blair_of_the_Mounties_Singles for ex.
 						addNewFile := true
 						for i, oldFile := range item.AudioFiles {
 							if file.Title == oldFile.Title {

@@ -2,12 +2,12 @@ package dto
 
 import "fmt"
 
-type AudiobookshelfScanCommand struct {
+type AbsScanCommand struct {
 	Audiobook *Audiobook
 }
 
-func (c *AudiobookshelfScanCommand) String() string {
-	return fmt.Sprintf("AudiobookshelfScanCommand: %s", c.Audiobook.String())
+func (c *AbsScanCommand) String() string {
+	return fmt.Sprintf("AbsScanCommand: %s", c.Audiobook.String())
 }
 
 type ScanComplete struct {
@@ -18,12 +18,12 @@ func (c *ScanComplete) String() string {
 	return fmt.Sprintf("ScanComplete: %s", c.Audiobook.String())
 }
 
-type AudiobookshelfUploadCommand struct {
+type AbsUploadCommand struct {
 	Audiobook *Audiobook
 }
 
-func (c *AudiobookshelfUploadCommand) String() string {
-	return fmt.Sprintf("AudiobookshelfUploadCommand: %s", c.Audiobook.String())
+func (c *AbsUploadCommand) String() string {
+	return fmt.Sprintf("AbsUploadCommand: %s", c.Audiobook.String())
 }
 
 type UploadFileProgress struct {

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"abb_ia/internal/dto"
-	"abb_ia/internal/ia_client"
+	"abb_ia/internal/ia"
 	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"

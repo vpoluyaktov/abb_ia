@@ -17,13 +17,6 @@ type ChaptersController struct {
 	stopFlag bool
 }
 
-/**
- * Creates a new ChaptersController instance.
- * @param dispatcher - The message queue dispatcher.
- * @returns The new ChaptersController instance.
- *
- * This code is useful for creating a new ChaptersController instance and registering it with the message queue dispatcher. This allows the ChaptersController to receive messages from the message queue and dispatch them to the appropriate handler.
- **/
 func NewChaptersController(dispatcher *mq.Dispatcher) *ChaptersController {
 	c := &ChaptersController{}
 	c.mq = dispatcher
@@ -60,15 +53,6 @@ func (c *ChaptersController) stopChapters(cmd *dto.StopCommand) {
 	logger.Debug(mq.ChaptersController + ": Received StopChapters command")
 }
 
-/**
- * @description Splits an audiobook into parts and chapters.
- * @param {dto.ChaptersCreate} cmd - The command to create chapters.
- * @returns {void}
- *
- * This function is useful for splitting an audiobook into parts and chapters.
- * It takes in a command object containing the audiobook and then splits the audiobook into parts and chapters.
- * It then sends messages to the ChaptersPage and Footer to update the status and busy indicator.
- */
 func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 
 	logger.Debug(mq.ChaptersController + " received " + cmd.String())
@@ -92,6 +76,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	var fileNo int = 1
 	var chapterNo int = 1
 	var offset float64 = 0
+	var abSize int64 = 0
 	var partSize int64 = 0
 	var partDuration float64 = 0
 	var partChapters []dto.Chapter = []dto.Chapter{}
@@ -102,6 +87,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		mp3, _ := ffmpeg.NewFFProbe(filePath)
 		chapterFiles = append(chapterFiles, dto.Mp3File{Number: fileNo, FileName: file.FileName, Size: mp3.Size(), Duration: mp3.Duration()})
 		fileNo++
+		abSize += mp3.Size()
 		partSize += mp3.Size()
 		partDuration += mp3.Duration()
 		chapter := dto.Chapter{Number: chapterNo, Name: mp3.Title(), Size: mp3.Size(), Duration: mp3.Duration(), Start: offset, End: offset + mp3.Duration(), Files: chapterFiles}

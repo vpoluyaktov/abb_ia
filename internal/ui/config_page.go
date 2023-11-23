@@ -182,7 +182,7 @@ func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 	p.maxFileSize.SetText(utils.ToString(p.configCopy.GetMaxFileSizeMb()))
 	p.shortenTitles.SetChecked(p.configCopy.IsShortenTitle())
 
-	p.uploadToAudiobookshelf.SetChecked(p.configCopy.IsCopyToOutputDir())
+	p.uploadToAudiobookshelf.SetChecked(p.configCopy.IsUploadToAudiobookshef())
 	p.audiobookshelfUrl.SetText(p.configCopy.GetAudiobookshelfUrl())
 	p.audiobookshelfLibrary.SetText(p.configCopy.GetAudiobookshelfLibrary())
 	p.scanAudiobookshelf.SetChecked(p.configCopy.IsScanAudiobookshef())

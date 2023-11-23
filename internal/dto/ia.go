@@ -24,6 +24,7 @@ func (i *IAItem) String() string {
 
 type AudioFile struct {
 	Name   string
+	Title  string
 	Format string
 	Length float64
 	Size   int64
