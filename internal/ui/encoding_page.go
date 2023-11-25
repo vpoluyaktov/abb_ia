@@ -19,6 +19,7 @@ type EncodingPage struct {
 	filesSection  *tview.Grid
 	filesTable    *table
 	progressTable *table
+	ab            *dto.Audiobook
 }
 
 func newEncodingPage(dispatcher *mq.Dispatcher) *EncodingPage {
@@ -80,7 +81,6 @@ func newEncodingPage(dispatcher *mq.Dispatcher) *EncodingPage {
 	p.progressTable.t.SetSelectable(false, false)
 	progressSection.AddItem(p.progressTable.t, 0, 0, 1, 1, 0, 0, false)
 	p.grid.AddItem(progressSection, 2, 0, 1, 1, 0, 0, false)
-
 	return p
 }
 
@@ -107,6 +107,7 @@ func (p *EncodingPage) dispatchMessage(m *mq.Message) {
 }
 
 func (p *EncodingPage) displayBookInfo(ab *dto.Audiobook) {
+	p.ab = ab
 	p.infoPanel.clear()
 	// p.infoPanel.appendRow("", "")
 	p.infoPanel.appendRow("Title:", ab.Title)
@@ -131,6 +132,7 @@ func (p *EncodingPage) stopConfirmation() {
 
 func (p *EncodingPage) stopEncoding() {
 	p.mq.SendMessage(mq.EncodingPage, mq.EncodingController, &dto.StopCommand{Process: "Encoding", Reason: "User request"}, true)
+	p.mq.SendMessage(mq.EncodingPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, true)
 	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, true)
 }
 

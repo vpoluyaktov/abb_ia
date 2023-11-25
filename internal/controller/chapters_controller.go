@@ -54,9 +54,8 @@ func (c *ChaptersController) stopChapters(cmd *dto.StopCommand) {
 }
 
 func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
-
 	logger.Debug(mq.ChaptersController + " received " + cmd.String())
-
+	c.stopFlag = false
 	c.ab = cmd.Audiobook
 
 	if c.ab.Config.IsShortenTitle() {

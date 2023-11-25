@@ -30,13 +30,13 @@ func (c *CleanupController) checkMQ() {
 func (c *CleanupController) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.CleanupCommand:
-		go c.cleanUp(dto)
+		go c.cleanUp(dto, m.From)
 	default:
 		m.UnsupportedTypeError(mq.CleanupController)
 	}
 }
 
-func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand) {
+func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand, requestor string) {
 	logger.Info(mq.CleanupController + " received " + cmd.String())
 	c.ab = cmd.Audiobook
 
@@ -53,5 +53,7 @@ func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand) {
 	}
 	os.Remove(c.ab.CoverFile)
 
-	c.mq.SendMessage(mq.CleanupController, mq.BuildPage, &dto.CleanupComplete{Audiobook: cmd.Audiobook}, true)
+	if requestor == mq.BuildPage {
+		c.mq.SendMessage(mq.CleanupController, mq.BuildPage, &dto.CleanupComplete{Audiobook: cmd.Audiobook}, true)
+	}
 }

@@ -339,11 +339,20 @@ func (p *ChaptersPage) stopConfirmation() {
 }
 
 func (p *ChaptersPage) stopChapters() {
-	p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.StopCommand{Process: "Chapters", Reason: "User request"}, true)
-	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, true)
+	p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.StopCommand{Process: "Chapters", Reason: "User request"}, false)
+	p.mq.SendMessage(mq.ChaptersPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, true)
+	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }
 
 func (p *ChaptersPage) buildBook() {
+	// update ab fields just to ensure (they are not updated automatically if a value wasn't change)
+	p.ab.Author = p.author.GetText()
+	p.ab.Title = p.title.GetText()
+	p.ab.Series = p.series.GetText()
+	p.ab.SeriesNo = p.seriesNo.GetText()
+	p.ab.Narator = p.narator.GetText()
+	_, p.ab.Genre = p.genre.GetCurrentOption()
+
 	p.mq.SendMessage(mq.ChaptersPage, mq.BuildController, &dto.BuildCommand{Audiobook: p.ab}, true)
 	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, true)
 }

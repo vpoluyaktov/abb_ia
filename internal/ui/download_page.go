@@ -19,6 +19,7 @@ type DownloadPage struct {
 	filesSection  *tview.Grid
 	filesTable    *table
 	progressTable *table
+	ab            *dto.Audiobook
 }
 
 func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
@@ -107,6 +108,7 @@ func (p *DownloadPage) dispatchMessage(m *mq.Message) {
 }
 
 func (p *DownloadPage) displayBookInfo(ab *dto.Audiobook) {
+	p.ab = ab
 	p.infoPanel.clear()
 	// p.infoPanel.appendRow("", "")
 	p.infoPanel.appendRow("Title:", ab.Title)
@@ -131,6 +133,7 @@ func (p *DownloadPage) stopConfirmation() {
 
 func (p *DownloadPage) stopDownload() {
 	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, &dto.StopCommand{Process: "Download", Reason: "User request"}, false)
+	p.mq.SendMessage(mq.DownloadPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, true)
 	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }
 

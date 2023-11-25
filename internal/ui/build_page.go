@@ -27,6 +27,7 @@ type BuildPage struct {
 	uploadTable     *table
 	progressTable   *table
 	progressSection *tview.Grid
+	ab              *dto.Audiobook
 }
 
 func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
@@ -157,6 +158,8 @@ func (p *BuildPage) dispatchMessage(m *mq.Message) {
 
 func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 
+	p.ab = ab
+
 	// dynamic grid layout generation
 	p.grid.Clear()
 	p.grid.SetColumns(0)
@@ -220,6 +223,7 @@ func (p *BuildPage) stopConfirmation() {
 func (p *BuildPage) stopBuild() {
 	// Stop the build here
 	p.mq.SendMessage(mq.BuildPage, mq.BuildController, &dto.StopCommand{Process: "Build", Reason: "User request"}, false)
+	p.mq.SendMessage(mq.ChaptersPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, true)
 	p.switchToSearch()
 }
 

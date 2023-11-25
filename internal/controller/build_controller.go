@@ -69,11 +69,10 @@ func (c *BuildController) stopBuild(cmd *dto.StopCommand) {
 }
 
 func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
-	c.startTime = time.Now()
 	logger.Info(mq.BuildController + " received " + cmd.String())
-
-	c.ab = cmd.Audiobook
 	c.stopFlag = false
+	c.startTime = time.Now()
+	c.ab = cmd.Audiobook
 	c.files = make([]fileBuild, len(c.ab.Parts))
 
 	// calculate output file names
