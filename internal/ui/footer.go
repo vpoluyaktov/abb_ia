@@ -4,6 +4,7 @@ import (
 	"abb_ia/internal/config"
 	"abb_ia/internal/dto"
 	"abb_ia/internal/mq"
+
 	"github.com/rivo/tview"
 )
 
@@ -71,7 +72,7 @@ func (f *footer) dispatchMessage(m *mq.Message) {
 
 func (f *footer) updateStatus(s *dto.UpdateStatus) {
 	f.statusMessage.SetText(s.Message)
-	f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	ui.Draw()
 }
 
 func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
@@ -86,7 +87,7 @@ func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
 		f.busyIndicator.SetText("")
 		f.busyIndicator.SetTextColor(footerFgColor)
 		f.busyIndicator.SetBackgroundColor(footerBgColor)
-		f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+		ui.Draw()
 	}
 }
 
@@ -98,7 +99,7 @@ func (f *footer) updateBusyIndicator() {
 	// for f.busyFlag {
 	// 	for i := 0; i < len(busyChars); i++ {
 	// 		f.busyIndicator.SetText(busyChars[i])
-	// 		f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	// 		ui.Draw()
 	// 		time.Sleep(200 * time.Millisecond)
 	// 		if !f.busyFlag {
 	// 			break

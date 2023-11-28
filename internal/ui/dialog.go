@@ -3,6 +3,7 @@ package ui
 import (
 	"abb_ia/internal/dto"
 	"abb_ia/internal/mq"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -57,16 +58,16 @@ func (d *dialogWindow) Show() {
 	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.AddPageCommand{Name: "DialogWindow", Grid: d.grid}, false)
 	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.ShowPageCommand{Name: "DialogWindow"}, false)
 	d.mq.SendMessage(mq.DialogWindow, mq.TUI, &dto.SetFocusCommand{Primitive: d.form}, false)
-	d.mq.SendMessage(mq.DialogWindow, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	ui.Draw()
 }
 
 func (d *dialogWindow) Close() {
 	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.RemovePageCommand{Name: "DialogWindow"}, false)
 	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.RemovePageCommand{Name: "Shadow"}, false)
 	if d.focus != nil {
-		d.mq.SendMessage(mq.DialogWindow, mq.TUI, &dto.SetFocusCommand{Primitive: d.focus}, false)
+		ui.SetFocus(d.focus)
 	}
-	d.mq.SendMessage(mq.DialogWindow, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	ui.Draw()
 }
 
 func (d *dialogWindow) setForm(f *tview.Form) {
@@ -91,6 +92,7 @@ func (d *dialogWindow) setFormAttributes() {
 }
 
 type OkFunc func()
+
 func newMessageDialog(dispatcher *mq.Dispatcher, title string, message string, focus tview.Primitive, okFunc OkFunc) {
 	d := newDialogWindow(dispatcher, 12, 80, focus)
 	f := newForm()
@@ -106,11 +108,12 @@ func newMessageDialog(dispatcher *mq.Dispatcher, title string, message string, f
 		okFunc()
 		d.Close()
 	})
-	d.setForm(f.f)
+	d.setForm(f.Form)
 	d.Show()
 }
 
 type YesNoFunc func()
+
 func newYesNoDialog(dispatcher *mq.Dispatcher, title string, message string, focus tview.Primitive, yesFunc YesNoFunc, noFunc YesNoFunc) {
 	d := newDialogWindow(dispatcher, 11, 60, focus)
 	f := newForm()
@@ -130,6 +133,6 @@ func newYesNoDialog(dispatcher *mq.Dispatcher, title string, message string, foc
 		noFunc()
 		d.Close()
 	})
-	d.setForm(f.f)
+	d.setForm(f.Form)
 	d.Show()
 }

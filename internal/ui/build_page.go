@@ -10,23 +10,22 @@ import (
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
 type BuildPage struct {
 	mq              *mq.Dispatcher
-	grid            *tview.Grid
+	mainGrid        *grid
 	infoPanel       *infoPanel
-	infoSection     *tview.Grid
-	buildSection    *tview.Grid
-	copySection     *tview.Grid
-	uploadSection   *tview.Grid
+	infoSection     *grid
+	buildSection    *grid
+	copySection     *grid
+	uploadSection   *grid
 	buildTable      *table
 	copyTable       *table
 	uploadTable     *table
 	progressTable   *table
-	progressSection *tview.Grid
+	progressSection *grid
 	ab              *dto.Audiobook
 }
 
@@ -35,36 +34,27 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.mq = dispatcher
 	p.mq.RegisterListener(mq.BuildPage, p.dispatchMessage)
 
-	p.grid = tview.NewGrid()
-	p.grid.SetRows(7, -1, -1, -1, 4)
-	p.grid.SetColumns(0)
-
-	// Ignore mouse events when the grid has no focus
-	p.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-		if p.grid.HasFocus() {
-			return action, event
-		} else {
-			return action, nil
-		}
-	})
+	p.mainGrid = newGrid()
+	p.mainGrid.SetRows(7, -1, -1, -1, 4)
+	p.mainGrid.SetColumns(0)
 
 	// book info section
-	p.infoSection = tview.NewGrid()
+	p.infoSection = newGrid()
 	p.infoSection.SetColumns(-2, -1)
 	p.infoSection.SetBorder(true)
 	p.infoSection.SetTitle(" Audiobook information: ")
 	p.infoSection.SetTitleAlign(tview.AlignLeft)
 	p.infoPanel = newInfoPanel()
-	p.infoSection.AddItem(p.infoPanel.t, 0, 0, 1, 1, 0, 0, true)
+	p.infoSection.AddItem(p.infoPanel.Table, 0, 0, 1, 1, 0, 0, true)
 	f := newForm()
 	f.SetHorizontal(false)
-	f.f.SetButtonsAlign(tview.AlignRight)
+	f.SetButtonsAlign(tview.AlignRight)
 	f.AddButton("Stop", p.stopConfirmation)
-	p.infoSection.AddItem(f.f, 0, 1, 1, 1, 0, 0, false)
-	p.grid.AddItem(p.infoSection, 0, 0, 1, 1, 0, 0, false)
+	p.infoSection.AddItem(f.Form, 0, 1, 1, 1, 0, 0, false)
+	p.mainGrid.AddItem(p.infoSection.Grid, 0, 0, 1, 1, 0, 0, false)
 
 	// audiobook build section
-	p.buildSection = tview.NewGrid()
+	p.buildSection = newGrid()
 	p.buildSection.SetColumns(-1)
 	p.buildSection.SetTitle(" Building audiobook... ")
 	p.buildSection.SetTitleAlign(tview.AlignLeft)
@@ -73,11 +63,11 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.buildTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Build progress")
 	p.buildTable.setWeights(1, 2, 1, 1, 1, 5)
 	p.buildTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
-	p.buildSection.AddItem(p.buildTable.t, 0, 0, 1, 1, 0, 0, true)
-	p.grid.AddItem(p.buildSection, 1, 0, 1, 1, 0, 0, true)
+	p.buildSection.AddItem(p.buildTable.Table, 0, 0, 1, 1, 0, 0, true)
+	p.mainGrid.AddItem(p.buildSection.Grid, 1, 0, 1, 1, 0, 0, true)
 
 	// copy section
-	p.copySection = tview.NewGrid()
+	p.copySection = newGrid()
 	p.copySection.SetColumns(-1)
 	p.copySection.SetTitle(" Copying the book to the output directory: ")
 	p.copySection.SetTitleAlign(tview.AlignLeft)
@@ -86,11 +76,11 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.copyTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Copy Progress")
 	p.copyTable.setWeights(1, 2, 1, 1, 1, 5)
 	p.copyTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
-	p.copySection.AddItem(p.copyTable.t, 0, 0, 1, 1, 0, 0, true)
-	p.grid.AddItem(p.copySection, 2, 0, 1, 1, 0, 0, true)
+	p.copySection.AddItem(p.copyTable.Table, 0, 0, 1, 1, 0, 0, true)
+	p.mainGrid.AddItem(p.copySection.Grid, 2, 0, 1, 1, 0, 0, true)
 
 	// upload section
-	p.uploadSection = tview.NewGrid()
+	p.uploadSection = newGrid()
 	p.uploadSection.SetColumns(-1)
 	p.uploadSection.SetTitle(" Uploading the book to Audiobookshelf server: ")
 	p.uploadSection.SetTitleAlign(tview.AlignLeft)
@@ -99,11 +89,11 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.uploadTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Upload Progress")
 	p.uploadTable.setWeights(1, 2, 1, 1, 1, 5)
 	p.uploadTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
-	p.uploadSection.AddItem(p.uploadTable.t, 0, 0, 1, 1, 0, 0, true)
-	p.grid.AddItem(p.uploadSection, 3, 0, 1, 1, 0, 0, true)
+	p.uploadSection.AddItem(p.uploadTable.Table, 0, 0, 1, 1, 0, 0, true)
+	p.mainGrid.AddItem(p.uploadSection.Grid, 3, 0, 1, 1, 0, 0, true)
 
 	// total progress section
-	p.progressSection = tview.NewGrid()
+	p.progressSection = newGrid()
 	p.progressSection.SetColumns(-1)
 	p.progressSection.SetBorder(true)
 	p.progressSection.SetTitle(" Build progress: ")
@@ -111,9 +101,17 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	p.progressTable = newTable()
 	p.progressTable.setWeights(1)
 	p.progressTable.setAlign(tview.AlignLeft)
-	p.progressTable.t.SetSelectable(false, false)
-	p.progressSection.AddItem(p.progressTable.t, 0, 0, 1, 1, 0, 0, false)
-	p.grid.AddItem(p.progressSection, 4, 0, 1, 1, 0, 0, false)
+	p.progressTable.SetSelectable(false, false)
+	p.progressSection.AddItem(p.progressTable.Table, 0, 0, 1, 1, 0, 0, false)
+	p.mainGrid.AddItem(p.progressSection.Grid, 4, 0, 1, 1, 0, 0, false)
+
+	p.mainGrid.SetNavigationOrder(
+		p.infoPanel.Table,
+		p.buildTable,
+		p.copyTable,
+		p.uploadTable,
+		p.progressTable,
+	)
 
 	return p
 }
@@ -161,26 +159,26 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	p.ab = ab
 
 	// dynamic grid layout generation
-	p.grid.Clear()
-	p.grid.SetColumns(0)
-	p.grid.SetRows(7, -1, 4)
-	p.grid.AddItem(p.infoSection, 0, 0, 1, 1, 0, 0, false)
-	p.grid.AddItem(p.buildSection, 1, 0, 1, 1, 0, 0, true)
+	p.mainGrid.Clear()
+	p.mainGrid.SetColumns(0)
+	p.mainGrid.SetRows(7, -1, 4)
+	p.mainGrid.AddItem(p.infoSection.Grid, 0, 0, 1, 1, 0, 0, false)
+	p.mainGrid.AddItem(p.buildSection.Grid, 1, 0, 1, 1, 0, 0, true)
 	if ab.Config.IsCopyToOutputDir() && ab.Config.IsUploadToAudiobookshef() {
-		p.grid.SetRows(7, -1, -1, -1, 4)
-		p.grid.AddItem(p.copySection, 2, 0, 1, 1, 0, 0, true)
-		p.grid.AddItem(p.uploadSection, 3, 0, 1, 1, 0, 0, true)
-		p.grid.AddItem(p.progressSection, 4, 0, 1, 1, 0, 0, false)
+		p.mainGrid.SetRows(7, -1, -1, -1, 4)
+		p.mainGrid.AddItem(p.copySection.Grid, 2, 0, 1, 1, 0, 0, true)
+		p.mainGrid.AddItem(p.uploadSection.Grid, 3, 0, 1, 1, 0, 0, true)
+		p.mainGrid.AddItem(p.progressSection.Grid, 4, 0, 1, 1, 0, 0, false)
 	} else if ab.Config.IsCopyToOutputDir() {
-		p.grid.SetRows(7, -1, -1, 4)
-		p.grid.AddItem(p.copySection, 2, 0, 1, 1, 0, 0, true)
-		p.grid.AddItem(p.progressSection, 3, 0, 1, 1, 0, 0, false)
+		p.mainGrid.SetRows(7, -1, -1, 4)
+		p.mainGrid.AddItem(p.copySection.Grid, 2, 0, 1, 1, 0, 0, true)
+		p.mainGrid.AddItem(p.progressSection.Grid, 3, 0, 1, 1, 0, 0, false)
 	} else if ab.Config.IsUploadToAudiobookshef() {
-		p.grid.SetRows(7, -1, -1, 4)
-		p.grid.AddItem(p.uploadSection, 2, 0, 1, 1, 0, 0, true)
-		p.grid.AddItem(p.progressSection, 3, 0, 1, 1, 0, 0, false)
+		p.mainGrid.SetRows(7, -1, -1, 4)
+		p.mainGrid.AddItem(p.uploadSection.Grid, 2, 0, 1, 1, 0, 0, true)
+		p.mainGrid.AddItem(p.progressSection.Grid, 3, 0, 1, 1, 0, 0, false)
 	} else {
-		p.grid.AddItem(p.progressSection, 2, 0, 1, 1, 0, 0, false)
+		p.mainGrid.AddItem(p.progressSection.Grid, 2, 0, 1, 1, 0, 0, false)
 	}
 
 	p.infoPanel.clear()
@@ -191,33 +189,33 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	p.infoPanel.appendRow("Size:", utils.BytesToHuman(ab.TotalSize))
 	p.infoPanel.appendRow("Parts:", strconv.Itoa(len(ab.Parts)))
 
-	p.buildTable.clear()
+	p.buildTable.Clear()
 	p.buildTable.showHeader()
 	for i, part := range ab.Parts {
 		p.buildTable.appendRow(" "+strconv.Itoa(i+1)+" ", filepath.Base(part.M4BFile), part.Format, utils.SecondsToTime(part.Duration), utils.BytesToHuman(part.Size), "")
 	}
 	p.buildTable.ScrollToBeginning()
 
-	p.copyTable.clear()
+	p.copyTable.Clear()
 	p.copyTable.showHeader()
 	for i, part := range ab.Parts {
 		p.copyTable.appendRow(" "+strconv.Itoa(i+1)+" ", filepath.Base(part.M4BFile), part.Format, utils.SecondsToTime(part.Duration), utils.BytesToHuman(part.Size), "")
 	}
 	p.copyTable.ScrollToBeginning()
 
-	p.uploadTable.clear()
+	p.uploadTable.Clear()
 	p.uploadTable.showHeader()
 	for i, part := range ab.Parts {
 		p.uploadTable.appendRow(" "+strconv.Itoa(i+1)+" ", filepath.Base(part.M4BFile), part.Format, utils.SecondsToTime(part.Duration), utils.BytesToHuman(part.Size), "")
 	}
 	p.uploadTable.ScrollToBeginning()
 
-	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.buildTable.t}, true)
-	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	ui.SetFocus(p.buildTable.Table)
+	ui.Draw()
 }
 
 func (p *BuildPage) stopConfirmation() {
-	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop the build?", p.buildSection, p.stopBuild, func() {})
+	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop the build?", p.buildSection.Grid, p.stopBuild, func() {})
 }
 
 func (p *BuildPage) stopBuild() {
@@ -234,12 +232,12 @@ func (p *BuildPage) updateFileBuildProgress(dp *dto.BuildFileProgress) {
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
-	cell := p.buildTable.t.GetCell(dp.FileId+1, col)
+	cell := p.buildTable.GetCell(dp.FileId+1, col)
 	// cell.SetExpansion(0)
 	// cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 	// p.buildTable.t.Select(dp.FileId+1, col)
-	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
+	ui.Draw()
 }
 
 func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
@@ -248,8 +246,8 @@ func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
 			p.progressTable.appendRow("")
 		}
 	}
-	infoCell := p.progressTable.t.GetCell(0, 0)
-	progressCell := p.progressTable.t.GetCell(1, 0)
+	infoCell := p.progressTable.GetCell(0, 0)
+	progressCell := p.progressTable.GetCell(1, 0)
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%10s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
@@ -260,7 +258,7 @@ func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
 	// progressCell.SetExpansion(0)
 	// progressCell.SetMaxWidth(0)
 	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
+	ui.Draw()
 }
 
 func (p *BuildPage) updateFileCopyProgress(dp *dto.CopyFileProgress) {
@@ -270,12 +268,12 @@ func (p *BuildPage) updateFileCopyProgress(dp *dto.CopyFileProgress) {
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
-	cell := p.copyTable.t.GetCell(dp.FileId+1, col)
+	cell := p.copyTable.GetCell(dp.FileId+1, col)
 	// cell.SetExpansion(0)
 	// cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 	// p.copyTable.t.Select(dp.FileId+1, col)
-	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
+	ui.Draw()
 }
 
 func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
@@ -285,8 +283,8 @@ func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
 		}
 	}
 	p.progressSection.SetTitle(" Copy progress: ")
-	infoCell := p.progressTable.t.GetCell(0, 0)
-	progressCell := p.progressTable.t.GetCell(1, 0)
+	infoCell := p.progressTable.GetCell(0, 0)
+	progressCell := p.progressTable.GetCell(1, 0)
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
@@ -297,7 +295,7 @@ func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
 	// progressCell.SetExpansion(0)
 	// progressCell.SetMaxWidth(0)
 	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
+	ui.Draw()
 }
 
 func (p *BuildPage) updateFileUploadProgress(dp *dto.UploadFileProgress) {
@@ -307,12 +305,12 @@ func (p *BuildPage) updateFileUploadProgress(dp *dto.UploadFileProgress) {
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
 	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
-	cell := p.uploadTable.t.GetCell(dp.FileId+1, col)
+	cell := p.uploadTable.GetCell(dp.FileId+1, col)
 	// cell.SetExpansion(0)
 	// cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 	// p.uploadTable.t.Select(dp.FileId+1, col)
-	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
+	ui.Draw()
 }
 
 func (p *BuildPage) updateTotalUploadProgress(dp *dto.UploadProgress) {
@@ -322,8 +320,8 @@ func (p *BuildPage) updateTotalUploadProgress(dp *dto.UploadProgress) {
 		}
 	}
 	p.progressSection.SetTitle(" Upload progress: ")
-	infoCell := p.progressTable.t.GetCell(0, 0)
-	progressCell := p.progressTable.t.GetCell(1, 0)
+	infoCell := p.progressTable.GetCell(0, 0)
+	progressCell := p.progressTable.GetCell(1, 0)
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
@@ -334,7 +332,7 @@ func (p *BuildPage) updateTotalUploadProgress(dp *dto.UploadProgress) {
 	// progressCell.SetExpansion(0)
 	// progressCell.SetMaxWidth(0)
 	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	p.mq.SendMessage(mq.BuildPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, false)
+	ui.Draw()
 }
 
 /*
@@ -380,7 +378,7 @@ func (p *BuildPage) cleanupComplete(c *dto.CleanupComplete) {
 }
 
 func (p *BuildPage) bookReadyMgs(ab *dto.Audiobook) {
-	newMessageDialog(p.mq, "Build Complete", "Audiobook has been created", p.buildSection, p.switchToSearch)
+	newMessageDialog(p.mq, "Build Complete", "Audiobook has been created", p.buildSection.Grid, p.switchToSearch)
 }
 
 func (p *BuildPage) switchToSearch() {

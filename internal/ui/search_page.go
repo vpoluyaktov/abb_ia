@@ -9,25 +9,27 @@ import (
 	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
-	"github.com/gdamore/tcell/v2"
+
 	"github.com/rivo/tview"
 )
 
 type SearchPage struct {
 	mq             *mq.Dispatcher
-	grid           *tview.Grid
+	mainGrid       *grid
 	searchCriteria string
 	searchResult   []*dto.IAItem
 
-	searchSection *tview.Grid
-	inputField    *tview.InputField
-	searchButton  *tview.Button
-	clearButton   *tview.Button
+	searchSection         *grid
+	inputField            *tview.InputField
+	searchButton          *tview.Button
+	clearButton           *tview.Button
+	createAudioBookButton *tview.Button
+	SettingsButton        *tview.Button
 
-	resultSection *tview.Grid
+	resultSection *grid
 	resultTable   *table
 
-	detailsSection  *tview.Grid
+	detailsSection  *grid
 	descriptionView *tview.TextView
 	filesTable      *table
 }
@@ -39,21 +41,12 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 
 	p.searchCriteria = config.Instance().GetSearchCondition()
 
-	p.grid = tview.NewGrid()
-	p.grid.SetRows(5, -1, -1)
-	p.grid.SetColumns(0)
-
-	// Ignore mouse events when the grid has no focus
-	p.grid.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
-		if p.grid.HasFocus() {
-			return action, event
-		} else {
-			return action, nil
-		}
-	})
+	p.mainGrid = newGrid()
+	p.mainGrid.SetRows(5, -1, -1)
+	p.mainGrid.SetColumns(0)
 
 	// search section
-	p.searchSection = tview.NewGrid()
+	p.searchSection = newGrid()
 	p.searchSection.SetColumns(-2, -1)
 	p.searchSection.SetBorder(true)
 	p.searchSection.SetTitle(" Internet Archive Search ")
@@ -63,18 +56,18 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.inputField = f.AddInputField("Search criteria", config.Instance().GetSearchCondition(), 40, nil, func(t string) { p.searchCriteria = t })
 	p.searchButton = f.AddButton("Search", p.runSearch)
 	p.clearButton = f.AddButton("Clear", p.clearEverything)
-	p.searchSection.AddItem(f.f, 0, 0, 1, 1, 0, 0, true)
+	p.searchSection.AddItem(f.Form, 0, 0, 1, 1, 0, 0, true)
 	f = newForm()
 	f.SetHorizontal(false)
-	f.f.SetButtonsAlign(tview.AlignRight)
-	p.searchButton = f.AddButton("Create Audiobook", p.createBook)
-	p.clearButton = f.AddButton("Settings", p.updateConfig)
-	p.searchSection.AddItem(f.f, 0, 1, 1, 1, 0, 0, true)
+	f.SetButtonsAlign(tview.AlignRight)
+	p.createAudioBookButton = f.AddButton("Create Audiobook", p.createBook)
+	p.SettingsButton = f.AddButton("Settings", p.updateConfig)
+	p.searchSection.AddItem(f.Form, 0, 1, 1, 1, 0, 0, true)
 
-	p.grid.AddItem(p.searchSection, 0, 0, 1, 1, 0, 0, true)
+	p.mainGrid.AddItem(p.searchSection.Grid, 0, 0, 1, 1, 0, 0, true)
 
 	// result section
-	p.resultSection = tview.NewGrid()
+	p.resultSection = newGrid()
 	p.resultSection.SetColumns(-1)
 	p.resultSection.SetTitle(" Search result: ")
 	p.resultSection.SetTitleAlign(tview.AlignLeft)
@@ -84,12 +77,12 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.resultTable.setHeaders("Author", "Title", "Files", "Duration (hh:mm:ss)", "Total Size")
 	p.resultTable.setWeights(3, 6, 2, 1, 1)
 	p.resultTable.setAlign(tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
-	p.resultTable.t.SetSelectionChangedFunc(p.updateDetails)
-	p.resultSection.AddItem(p.resultTable.t, 0, 0, 1, 1, 0, 0, true)
-	p.grid.AddItem(p.resultSection, 1, 0, 1, 1, 0, 0, true)
+	p.resultTable.SetSelectionChangedFunc(p.updateDetails)
+	p.resultSection.AddItem(p.resultTable.Table, 0, 0, 1, 1, 0, 0, true)
+	p.mainGrid.AddItem(p.resultSection.Grid, 1, 0, 1, 1, 0, 0, true)
 
 	// details section
-	p.detailsSection = tview.NewGrid()
+	p.detailsSection = newGrid()
 	p.detailsSection.SetRows(-1)
 	p.detailsSection.SetColumns(-1, 1, -1)
 
@@ -102,22 +95,34 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.detailsSection.AddItem(p.descriptionView, 0, 0, 1, 1, 0, 0, true)
 
 	p.filesTable = newTable()
-	p.filesTable.t.SetBorder(true)
-	p.filesTable.t.SetTitle(" Files: ")
-	p.filesTable.t.SetTitleAlign(tview.AlignLeft)
+	p.filesTable.SetBorder(true)
+	p.filesTable.SetTitle(" Files: ")
+	p.filesTable.SetTitleAlign(tview.AlignLeft)
 	p.filesTable.setHeaders("File name", "Format", "Duration", "Size")
 	p.filesTable.setWeights(3, 1, 1, 1)
 	p.filesTable.setAlign(tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
-	p.detailsSection.AddItem(p.filesTable.t, 0, 2, 1, 1, 0, 0, true)
+	p.detailsSection.AddItem(p.filesTable.Table, 0, 2, 1, 1, 0, 0, true)
 
-	p.grid.AddItem(p.detailsSection, 2, 0, 1, 1, 0, 0, true)
+	p.mainGrid.AddItem(p.detailsSection.Grid, 2, 0, 1, 1, 0, 0, true)
 
 	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
-	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
+	ui.SetFocus(p.searchSection.Grid)
 
-	p.grid.Focus(func(pr tview.Primitive) {
-		p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.searchSection}, true)
+	p.mainGrid.Focus(func(pr tview.Primitive) {
+		ui.SetFocus(p.searchSection.Grid)
 	})
+
+	// screen navigation order
+	p.mainGrid.SetNavigationOrder(
+		p.inputField,
+		p.searchButton,
+		p.clearButton,
+		p.createAudioBookButton,
+		p.SettingsButton,
+		p.resultTable.Table,
+		p.descriptionView,
+		p.filesTable.Table,
+	)
 
 	return p
 }
@@ -151,15 +156,15 @@ func (p *SearchPage) runSearch() {
 	p.resultTable.showHeader()
 	// Disable Search Button here
 	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.SearchCommand{SearchCondition: p.searchCriteria}, false)
-	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.resultTable.t}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.resultTable.Table}, true)
 }
 
 func (p *SearchPage) clearSearchResults() {
 	p.searchResult = make([]*dto.IAItem, 0)
 	p.resultSection.SetTitle(" Search result: ")
-	p.resultTable.clear()
+	p.resultTable.Clear()
 	p.descriptionView.SetText("")
-	p.filesTable.clear()
+	p.filesTable.Clear()
 }
 
 func (p *SearchPage) clearEverything() {
@@ -172,9 +177,8 @@ func (p *SearchPage) updateResult(i *dto.IAItem) {
 	p.searchResult = append(p.searchResult, i)
 	p.resultTable.appendRow(i.Creator, i.Title, strconv.Itoa(len(i.AudioFiles)), utils.SecondsToTime(i.TotalLength), utils.BytesToHuman(i.TotalSize))
 	p.resultTable.ScrollToBeginning()
-	// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.resultTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
 	p.updateDetails(1, 0)
-	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	ui.Draw()
 }
 
 func (p *SearchPage) updateTitle(sp *dto.SearchProgress) {
@@ -186,24 +190,22 @@ func (p *SearchPage) updateDetails(row int, col int) {
 		d := p.searchResult[row-1].Description
 		p.descriptionView.SetText(d)
 		p.descriptionView.ScrollToBeginning()
-		// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.descriptionView}, true) // single primitive refresh is not supported by tview (but supported by cview)
 
-		p.filesTable.clear()
+		p.filesTable.Clear()
 		p.filesTable.showHeader()
 		files := p.searchResult[row-1].AudioFiles
 		for _, f := range files {
 			p.filesTable.appendRow(f.Name, f.Format, utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size))
 		}
 		p.filesTable.ScrollToBeginning()
-		// p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.DrawCommand{Primitive: p.filesTable.t}, true) // single primitive refresh is not supported by tview (but supported by cview)
 	}
 }
 
 func (p *SearchPage) createBook() {
 	// get selectet row from the results table
-	row, _ := p.resultTable.t.GetSelection()
+	row, _ := p.resultTable.GetSelection()
 	if row <= 0 || len(p.searchResult) <= 0 || len(p.searchResult) < row {
-		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection, func() {})
+		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection.Grid, func() {})
 	} else {
 		item := p.searchResult[row-1]
 		// create new audiobook object
@@ -212,7 +214,7 @@ func (p *SearchPage) createBook() {
 		c := config.Instance().GetCopy()
 		ab.Config = &c
 
-		d := newDialogWindow(p.mq, 17, 55, p.resultSection)
+		d := newDialogWindow(p.mq, 17, 55, p.resultSection.Grid)
 		f := newForm()
 		f.SetTitle("Create Audiobook")
 		f.AddInputField("Concurrent Downloaders:", utils.ToString(ab.Config.GetConcurrentDownloaders()), 4, acceptInt, func(t string) { ab.Config.SetConcurrentDownloaders(utils.ToInt(t)) })
@@ -229,7 +231,7 @@ func (p *SearchPage) createBook() {
 		f.AddButton("Cancel", func() {
 			d.Close()
 		})
-		d.setForm(f.f)
+		d.setForm(f.Form)
 		d.Show()
 	}
 }
@@ -248,7 +250,7 @@ func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
 	newMessageDialog(p.mq, "Error",
 		"No results were found for your search term: [darkblue]'"+dto.SearchCondition+"'[black].\n"+
 			"Please revise your search criteria.",
-		p.searchSection, func() {})
+		p.searchSection.Grid, func() {})
 }
 
 func (p *SearchPage) showFFMPEGNotFoundError(dto *dto.FFMPEGNotFoundError) {
@@ -256,7 +258,7 @@ func (p *SearchPage) showFFMPEGNotFoundError(dto *dto.FFMPEGNotFoundError) {
 		"This application requires the utilities [darkblue]ffmpeg[black] and [darkblue]ffprobe[black].\n"+
 			"Please install both [darkblue]ffmpeg[black] and [darkblue]ffprobe[black] by following the instructions provided on FFMPEG website\n"+
 			"[darkblue]https://ffmpeg.org/download.html",
-		p.searchSection, func() {})
+		p.searchSection.Grid, func() {})
 }
 
 func (p *SearchPage) showNewVersionMessage(dto *dto.NewAppVersionFound) {
@@ -264,5 +266,5 @@ func (p *SearchPage) showNewVersionMessage(dto *dto.NewAppVersionFound) {
 		"New version of the application has been released: [darkblue]"+dto.NewVersion+"[black]\n"+
 			"Your current version is [darkblue]"+dto.CurrentVersion+"[black]\n"+
 			"You can download the new version of the application from:\n[darkblue]https://abb_ia/releases",
-		p.searchSection, func() {})
+		p.searchSection.Grid, func() {})
 }

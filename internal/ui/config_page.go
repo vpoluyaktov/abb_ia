@@ -7,19 +7,20 @@ import (
 	"abb_ia/internal/dto"
 	"abb_ia/internal/logger"
 	"abb_ia/internal/utils"
+
 	"github.com/rivo/tview"
 
 	"abb_ia/internal/mq"
 )
 
 type ConfigPage struct {
-	mq   *mq.Dispatcher
-	grid *tview.Grid
+	mq       *mq.Dispatcher
+	mainGrid *grid
 
 	configCopy    config.Config
-	configSection *tview.Grid
-	buildSection  *tview.Grid
-	absSection    *tview.Grid
+	configSection *grid
+	buildSection  *grid
+	absSection    *grid
 
 	// Audobookbuilder config section
 	logFileNameField *tview.InputField
@@ -58,12 +59,12 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.mq = dispatcher
 	p.mq.RegisterListener(mq.ConfigPage, p.dispatchMessage)
 
-	p.grid = tview.NewGrid()
-	p.grid.SetRows(-1, -1, -1)
-	p.grid.SetColumns(0)
+	p.mainGrid = newGrid()
+	p.mainGrid.SetRows(-1, -1, -1)
+	p.mainGrid.SetColumns(0)
 
 	// Audobookbuilder config section
-	p.configSection = tview.NewGrid()
+	p.configSection = newGrid()
 	p.configSection.SetColumns(-2, -2, -1)
 	p.configSection.SetBorder(true)
 	p.configSection.SetTitle(" Audiobook Builder Configuration: ")
@@ -75,7 +76,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.maxSearchRows = configFormLeft.AddInputField("Maximum rows in the search result:", "", 4, acceptInt, func(t string) { p.configCopy.SetSearchRowsMax(utils.ToInt(t)) })
 	p.useMockField = configFormLeft.AddCheckbox("Use mock?", false, func(t bool) { p.configCopy.SetUseMock(t) })
 	p.saveMockField = configFormLeft.AddCheckbox("Save mock?", false, func(t bool) { p.configCopy.SetSaveMock(t) })
-	p.configSection.AddItem(configFormLeft.f, 0, 0, 1, 1, 0, 0, true)
+	p.configSection.AddItem(configFormLeft.Form, 0, 0, 1, 1, 0, 0, true)
 
 	configFormRight := newForm()
 	configFormRight.SetHorizontal(false)
@@ -84,19 +85,19 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.tmpDir = configFormRight.AddInputField("Temporary (working) directory:", "", 40, nil, func(t string) { p.configCopy.SetTmpDir(t) })
 	p.logFileNameField = configFormRight.AddInputField("Log file name:", "", 40, nil, func(t string) { p.configCopy.SetLogfileName(t) })
 	p.logLevelField = configFormRight.AddDropdown("Log level:", utils.AddSpaces(logger.LogLeves()), 1, func(o string, i int) { p.configCopy.SetLogLevel(strings.TrimSpace(o)) })
-	p.configSection.AddItem(configFormRight.f, 0, 1, 1, 1, 0, 0, true)
+	p.configSection.AddItem(configFormRight.Form, 0, 1, 1, 1, 0, 0, true)
 
 	buttonsForm := newForm()
 	buttonsForm.SetHorizontal(false)
 	buttonsForm.SetButtonsAlign(tview.AlignRight)
 	p.saveConfigButton = buttonsForm.AddButton("Save Settings", p.SaveConfig)
 	p.cancelButton = buttonsForm.AddButton("Cancel", p.Cancel)
-	p.configSection.AddItem(buttonsForm.f, 0, 2, 1, 1, 0, 0, false)
+	p.configSection.AddItem(buttonsForm.Form, 0, 2, 1, 1, 0, 0, false)
 
-	p.grid.AddItem(p.configSection, 0, 0, 1, 1, 0, 0, true)
+	p.mainGrid.AddItem(p.configSection.Grid, 0, 0, 1, 1, 0, 0, true)
 
 	// audiobook build configuration section
-	p.buildSection = tview.NewGrid()
+	p.buildSection = newGrid()
 	p.buildSection.SetColumns(-1, -1)
 	p.buildSection.SetBorder(true)
 	p.buildSection.SetTitle(" Audiobook Build Configuration: ")
@@ -109,18 +110,18 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.reEncodeFiles = buildFormLeft.AddCheckbox("Re-encode .mp3 files to the same Bit Rate?", false, func(t bool) { p.configCopy.SetReEncodeFiles(t) })
 	p.bitRate = buildFormLeft.AddInputField("Bit Rate (Kbps):", "", 4, acceptInt, func(t string) { p.configCopy.SetBitRate(utils.ToInt(t)) })
 	p.sampleRate = buildFormLeft.AddInputField("Sample Rate (Hz):", "", 6, acceptInt, func(t string) { p.configCopy.SetSampleRate(utils.ToInt(t)) })
-	p.buildSection.AddItem(buildFormLeft.f, 0, 0, 1, 1, 0, 0, true)
+	p.buildSection.AddItem(buildFormLeft.Form, 0, 0, 1, 1, 0, 0, true)
 
 	buildFormRight := newForm()
 	buildFormRight.SetHorizontal(false)
 	p.maxFileSize = buildFormRight.AddInputField("Audiobook part max file size (Mb):", "", 6, acceptInt, func(t string) { p.configCopy.SetMaxFileSizeMb(utils.ToInt(t)) })
 	p.shortenTitles = buildFormRight.AddCheckbox("Shorten titles (for ex. Old Time Radio -> OTRR)?", false, func(t bool) { p.configCopy.SetShortenTitles(t) })
-	p.buildSection.AddItem(buildFormRight.f, 0, 1, 1, 1, 0, 0, true)
+	p.buildSection.AddItem(buildFormRight.Form, 0, 1, 1, 1, 0, 0, true)
 
-	p.grid.AddItem(p.buildSection, 1, 0, 1, 1, 0, 0, true)
+	p.mainGrid.AddItem(p.buildSection.Grid, 1, 0, 1, 1, 0, 0, true)
 
 	// audiobookshelf config section
-	p.absSection = tview.NewGrid()
+	p.absSection = newGrid()
 	p.absSection.SetColumns(-1)
 	p.absSection.SetBorder(true)
 	p.absSection.SetTitle(" Audiobookshelf Integration: ")
@@ -134,13 +135,41 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.audiobookshelfPassword = absFormLeft.AddPasswordField("Audiobookshelf Server Password:", "", 40, 0, func(t string) { p.configCopy.SetAudiobookshelfPassword(t) })
 	p.audiobookshelfLibrary = absFormLeft.AddInputField("Audiobookshelf destination Library:", "", 40, nil, func(t string) { p.configCopy.SetAudiobookshelfLibrary(t) })
 	p.scanAudiobookshelf = absFormLeft.AddCheckbox("Scan the Audiobookshelf library after copy/upload?", false, func(t bool) { p.configCopy.SetScanAudiobookshelf(t) })
-	p.absSection.AddItem(absFormLeft.f, 0, 0, 1, 1, 0, 0, true)
+	p.absSection.AddItem(absFormLeft.Form, 0, 0, 1, 1, 0, 0, true)
 
 	// absFormRight := newForm()
 	// absFormRight.SetHorizontal(false)
 	// p.absSection.AddItem(absFormRight.f, 0, 1, 1, 1, 0, 0, true)
 
-	p.grid.AddItem(p.absSection, 2, 0, 1, 1, 0, 0, true)
+	p.mainGrid.AddItem(p.absSection.Grid, 2, 0, 1, 1, 0, 0, true)
+
+	// screen navigation order
+	p.mainGrid.SetNavigationOrder(
+		p.searchCondition,
+		p.maxSearchRows,
+		p.useMockField,
+		p.saveMockField,
+		p.outputDir,
+		p.copyToOutputDir,
+		p.tmpDir,
+		p.logFileNameField,
+		p.logLevelField,
+		p.saveConfigButton,
+		p.cancelButton,
+		p.concurrentDownloaders,
+		p.concurrentEncoders,
+		p.reEncodeFiles,
+		p.bitRate,
+		p.sampleRate,
+		p.maxFileSize,
+		p.shortenTitles,
+		p.uploadToAudiobookshelf,
+		p.audiobookshelfUrl,
+		p.audiobookshelfUser,
+		p.audiobookshelfPassword,
+		p.audiobookshelfLibrary,
+		p.scanAudiobookshelf,
+	)
 
 	return p
 }
@@ -189,8 +218,8 @@ func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 	p.audiobookshelfUser.SetText(p.configCopy.GetAudiobookshelfUser())
 	p.audiobookshelfPassword.SetText(p.configCopy.GetAudiobookshelfPassword())
 
-	p.mq.SendMessage(mq.ConfigPage, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
-	p.mq.SendMessage(mq.ConfigPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.configSection}, true)
+	ui.Draw()
+	ui.SetFocus(p.configSection.Grid)
 }
 
 func (p *ConfigPage) SaveConfig() {
