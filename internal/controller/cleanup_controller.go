@@ -42,16 +42,17 @@ func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand, requestor string) {
 
 	if !(c.ab.Config.IsSaveMock() || c.ab.Config.IsUseMock()) {
 		os.RemoveAll(c.ab.OutputDir)
-	}
-	for _, part := range c.ab.Parts {
-		os.Remove(part.AACFile)
-		os.Remove(part.FListFile)
-		os.Remove(part.MetadataFile)
-		if c.ab.Config.IsCopyToOutputDir() {
-			os.Remove(part.M4BFile)
+		os.Remove(c.ab.CoverFile)
+
+		for _, part := range c.ab.Parts {
+			os.Remove(part.AACFile)
+			os.Remove(part.FListFile)
+			os.Remove(part.MetadataFile)
+			if c.ab.Config.IsCopyToOutputDir() {
+				os.Remove(part.M4BFile)
+			}
 		}
 	}
-	os.Remove(c.ab.CoverFile)
 
 	if requestor == mq.BuildPage {
 		c.mq.SendMessage(mq.CleanupController, mq.BuildPage, &dto.CleanupComplete{Audiobook: cmd.Audiobook}, true)

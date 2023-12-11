@@ -2,6 +2,7 @@ bin/
 mock/
 tmp/
 dist/
+output/
 __debug_bin*
 abb_ia.log
 config.yaml
