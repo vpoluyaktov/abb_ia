@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"abb_ia/internal/dto"
 	"abb_ia/internal/ffmpeg"
+	"abb_ia/internal/mp4"
 	"abb_ia/internal/utils"
 
 	"abb_ia/internal/logger"
@@ -144,15 +146,6 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 		f.WriteString("major_brand=isom\n")
 		f.WriteString("minor_version=512\n")
 		f.WriteString("compatible_brands=isomiso2mp41\n")
-		f.WriteString("title=" + ab.Title + "\n")
-		f.WriteString("artist=" + ab.Author + "\n")
-		f.WriteString("album=" + ab.Title + "\n")
-		f.WriteString("genre=" + ab.Genre + "\n")
-		f.WriteString("description=" + strings.ReplaceAll(ab.Description, "\n", "\\\n") + "\n")
-		f.WriteString("copyright=" + ab.LicenseUrl + "\n")
-		f.WriteString("comment=This audiobook was created using the 'Audiobook Builder' tool: https://github.com/"+ab.Config.GetRepoOwner()+"/"+ab.Config.GetRepoName()+"\\\n" +
-			"The audio files used for this book were obtained from the Internet Archive site: " + ab.IaURL + "\n")
-
 		for _, chapter := range part.Chapters {
 			f.WriteString("[CHAPTER]\n")
 			f.WriteString("TIMEBASE=1/1000\n")
@@ -218,22 +211,50 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 		Run()
 	if err != nil {
 		logger.Error("FFMPEG Error: " + string(err.Error()))
-	} else {
-		// add Metadata, cover image and convert to .m4b
-		ffmpeg := ffmpeg.NewFFmpeg().
-			Input(part.AACFile, "").
-			Input(part.MetadataFile, "").
-			Input(ab.CoverURL, "").
-			Output(part.M4BFile, "-map_metadata 1 -y -acodec copy -y -vf pad='width=ceil(iw/2)*2:height=ceil(ih/2)*2'").
-			Overwrite(true).
-			Params("-hide_banner -nostdin -nostats").
-			SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port))
+		return
+	}
 
-		go c.killSwitch(ffmpeg)
-		_, err := ffmpeg.Run()
-		if err != nil && !c.stopFlag {
-			logger.Error("FFMPEG Error: " + string(err.Error()))
-		}
+	// add chapters and convert to .m4b
+	ffmpeg := ffmpeg.NewFFmpeg().
+		Input(part.AACFile, "").
+		Input(part.MetadataFile, "").
+		Output(part.M4BFile, "-map_metadata 1 -y -vn -y -acodec copy").
+		Overwrite(true).
+		Params("-hide_banner -nostdin -nostats").
+		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port))
+
+	go c.killSwitch(ffmpeg)
+	_, err = ffmpeg.Run()
+	if err != nil && !c.stopFlag {
+		logger.Error("FFMPEG Error: " + string(err.Error()))
+		return
+	}
+
+	// clean up 
+	os.Remove(part.AACFile)
+
+	// add tags and cover image
+	m4b, er := mp4.NewMp4(part.M4BFile)
+	if er != nil && !c.stopFlag {
+		logger.Error("Can't open m4b file for write: " + err.Error())
+	}
+	m4b.SetTag("\xa9nam", ab.Title)
+	m4b.SetTag("\xa9alb", ab.Title)
+	m4b.SetTag("\xa9ART", ab.Author)
+	m4b.SetTag("desc", ab.Description)
+	m4b.SetTag("cprt", ab.LicenseUrl)
+	m4b.SetTag("purl", ab.IaURL)
+	m4b.SetTag("\xa9cmt", "This audiobook was created using the 'Audiobook Builder' tool: https://github.com/"+ab.Config.GetRepoOwner()+"/"+ab.Config.GetRepoName()+"\n"+
+		"The audio files used for this book were obtained from the Internet Archive site: "+ab.IaURL)
+
+	imageData, er := ioutil.ReadFile(ab.CoverFile)
+	if er == nil {
+		m4b.SetImage(imageData, mp4.DataTypeJPEG)
+	}
+
+	er = m4b.Save()
+	if er != nil {
+		logger.Error("Can't save m4b file: " + err.Error())
 	}
 }
 

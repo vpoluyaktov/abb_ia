@@ -11,6 +11,7 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
+	github.com/google/uuid v1.1.2 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
@@ -25,9 +26,11 @@ require (
 )
 
 require (
+	github.com/abema/go-mp4 v1.1.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/rivo/tview v0.0.0-20230406072732-e22ce9588bb4
 	github.com/stretchr/testify v1.8.3
+	github.com/sunfish-shogi/bufseekio v0.1.0
 	golang.org/x/net v0.17.0 // indirect
 	jaytaylor.com/html2text v0.0.0-20230321000545-74c2419ad056
 )
