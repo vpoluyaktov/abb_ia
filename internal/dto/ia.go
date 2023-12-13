@@ -8,6 +8,8 @@ type IAItem struct {
 	Creator     string
 	Description string
 	CoverUrl    string
+	IaURL       string
+	LicenseUrl  string
 	Server      string
 	Dir         string
 	TotalLength float64
@@ -22,6 +24,7 @@ func (i *IAItem) String() string {
 
 type AudioFile struct {
 	Name   string
+	Title  string
 	Format string
 	Length float64
 	Size   int64

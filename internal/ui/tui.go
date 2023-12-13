@@ -5,9 +5,10 @@ import (
 	"os/exec"
 	"time"
 
+	"abb_ia/internal/dto"
+	"abb_ia/internal/mq"
+
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
 type components interface {
@@ -22,11 +23,13 @@ type TUI struct {
 	app        *tview.Application
 }
 
+var ui *TUI
+
 type Fn func()
 
 func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 
-	ui := TUI{}
+	ui = &TUI{}
 	ui.app = tview.NewApplication()
 	ui.app.EnableMouse(true)
 	setColorTheme()
@@ -48,12 +51,12 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	frame := newFrame(dispatcher)
 	frame.addHeader(header)
 	frame.addFooter(footer)
-	frame.addPage("SearchPage", searchPage.grid)
-	frame.addPage("ConfigPage", configPage.grid)
-	frame.addPage("DownloadPage", downloadPage.grid)
-	frame.addPage("EncodingPage", encodingPage.grid)
-	frame.addPage("ChaptersPage", chaptersPage.grid)
-	frame.addPage("BuildPage", buildPage.grid)
+	frame.addPage("SearchPage", searchPage.mainGrid.Grid)
+	frame.addPage("ConfigPage", configPage.mainGrid.Grid)
+	frame.addPage("DownloadPage", downloadPage.mainGrid.Grid)
+	frame.addPage("EncodingPage", encodingPage.mainGrid.Grid)
+	frame.addPage("ChaptersPage", chaptersPage.mainGrid.Grid)
+	frame.addPage("BuildPage", buildPage.mainGrid.Grid)
 
 	ui.components = append(ui.components, frame)
 	ui.components = append(ui.components, header)
@@ -68,7 +71,7 @@ func NewTUI(dispatcher *mq.Dispatcher) *TUI {
 	frame.switchToPage("SearchPage")
 
 	ui.app.SetRoot(frame.grid, true)
-	return &ui
+	return ui
 }
 
 func (ui *TUI) startEventListener() {
@@ -101,12 +104,25 @@ func (ui *TUI) checkMQ() {
 	}
 }
 
+func (ui *TUI) SetFocus(p tview.Primitive) {
+	ui.app.SetFocus(p)
+}
+
+func (ui *TUI) GetFocus() tview.Primitive {
+	return ui.app.GetFocus()
+}
+
+func (ui *TUI) Draw()  {
+	go ui.app.Draw()
+}
+
 func (ui *TUI) dispatchMessage(m *mq.Message) {
 	switch cmd := m.Dto.(type) {
 	case *dto.DrawCommand:
 		if cmd.Primitive == nil {
 			ui.app.Draw()
 		} else {
+			ui.app.Draw()
 			// ui.app.Draw(cmd.Primitive) // not supported by rivo/tview
 		}
 	case *dto.SetFocusCommand:

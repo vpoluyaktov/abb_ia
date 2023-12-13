@@ -5,12 +5,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/ia_client"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/ia"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 )
 
 type DownloadController struct {
@@ -29,10 +28,10 @@ type fileDownload struct {
 }
 
 func NewDownloadController(dispatcher *mq.Dispatcher) *DownloadController {
-	dc := &DownloadController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.DownloadController, dc.dispatchMessage)
-	return dc
+	c := &DownloadController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.DownloadController, c.dispatchMessage)
+	return c
 }
 
 func (c *DownloadController) checkMQ() {
@@ -70,7 +69,9 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.ab.Title = item.Title
 	c.ab.Description = item.Description
 	c.ab.CoverURL = item.CoverUrl
-	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(config.Instance().GetOutputDir(), item.ID))
+	c.ab.IaURL = item.IaURL
+	c.ab.LicenseUrl = item.LicenseUrl
+	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(c.ab.Config.GetTmpDir(), item.ID))
 	c.ab.TotalSize = item.TotalSize
 	c.ab.TotalDuration = item.TotalLength
 
@@ -78,26 +79,25 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 
 	// download files
-	ia := ia_client.New(config.Instance().GetSearchRowsMax(), config.Instance().IsUseMock(), config.Instance().IsSaveMock())
+	ia := ia_client.New(c.ab.Config.GetSearchRowsMax(), c.ab.Config.IsUseMock(), c.ab.Config.IsSaveMock())
 	c.stopFlag = false
 	c.files = make([]fileDownload, len(item.AudioFiles))
-	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentDownloaders())
+	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentDownloaders())
 	for i, iaFile := range item.AudioFiles {
 		localFileName := utils.SanitizeFilePath(filepath.Join(item.Dir, iaFile.Name))
 		c.ab.Mp3Files = append(c.ab.Mp3Files, dto.Mp3File{Number: i, FileName: localFileName, Size: iaFile.Size, Duration: iaFile.Length})
 		jd.AddJob(i, ia.DownloadFile, c.ab.OutputDir, localFileName, item.Server, item.Dir, iaFile.Name, i, iaFile.Size, c.updateFileProgress)
 	}
 	go c.updateTotalProgress()
-	// if c.stopFlag {
-	// 	break
-	// }
 
 	jd.Start()
 
-	c.stopFlag = true
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
+	if !c.stopFlag {
+		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
+	}
+	c.stopFlag = true
 }
 
 func (c *DownloadController) updateFileProgress(fileId int, fileName string, size int64, pos int64, percent int) {

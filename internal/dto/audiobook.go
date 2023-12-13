@@ -3,6 +3,8 @@ package dto
 import (
 	"encoding/json"
 	"fmt"
+
+	"abb_ia/internal/config"
 )
 
 type Audiobook struct {
@@ -13,16 +15,19 @@ type Audiobook struct {
 	Series        string
 	SeriesNo      string
 	Narator       string
+	Year          string
 	CoverURL      string
 	CoverFile     string
 	IaURL         string
 	Copyright     string
+	LicenseUrl    string
 	OutputDir     string
 	Mp3Files      []Mp3File
 	TotalDuration float64
 	TotalSize     int64
 	Parts         []Part
 	IAItem        *IAItem
+	Config        *config.Config
 }
 
 type Part struct {
@@ -31,6 +36,7 @@ type Part struct {
 	M4BFile      string
 	FListFile    string
 	MetadataFile string
+	Format       string
 	Size         int64
 	Duration     float64
 	Chapters     []Chapter
@@ -83,20 +89,20 @@ func (ab *Audiobook) SetChapter(chapterNumber int, ch Chapter) error {
 }
 
 func (ab *Audiobook) GetCopy() (*Audiobook, error) {
-		// Convert the source struct to JSON
-		jsonBytes, err := json.Marshal(ab)
-		if err != nil {
-			return nil, err
-		}
-	
-		// Create a new destination struct
-		destination := &Audiobook{}
-	
-		// Convert the JSON back to the destination struct
-		err = json.Unmarshal(jsonBytes, destination)
-		if err != nil {
-			return nil, err
-		}
-	
-		return destination, nil
+	// Convert the source struct to JSON
+	jsonBytes, err := json.Marshal(ab)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new destination struct
+	destination := &Audiobook{}
+
+	// Convert the JSON back to the destination struct
+	err = json.Unmarshal(jsonBytes, destination)
+	if err != nil {
+		return nil, err
+	}
+
+	return destination, nil
 }

@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
 )
 
 type ConfigController struct {
@@ -12,10 +12,10 @@ type ConfigController struct {
 }
 
 func NewConfigController(dispatcher *mq.Dispatcher) *ConfigController {
-	sc := &ConfigController{}
-	sc.mq = dispatcher
-	sc.mq.RegisterListener(mq.ConfigController, sc.dispatchMessage)
-	return sc
+	c := &ConfigController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.ConfigController, c.dispatchMessage)
+	return c
 }
 
 func (c *ConfigController) checkMQ() {

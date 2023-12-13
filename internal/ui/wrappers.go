@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	"sync"
@@ -9,11 +10,114 @@ import (
 	"github.com/rivo/tview"
 )
 
+// // //////////////////////////////////////////////////////////////
+// // tview.Grid wrapper
+// // //////////////////////////////////////////////////////////////
+type grid struct {
+	*tview.Grid
+	navigationOrder []tview.Primitive
+}
+
+func newGrid() *grid {
+	g := &grid{}
+	g.Grid = tview.NewGrid()
+	g.navigationOrder = []tview.Primitive{}
+
+	// Ignore mouse events when the grid has no focus
+	g.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+		if g.HasFocus() {
+			return action, event
+		} else if len(g.navigationOrder) == 0 {
+			return action, event
+		} else {
+			return action, nil
+		}
+	})
+
+	// Tab / Backtab navigation
+	g.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if g.Grid.HasFocus() {
+			switch event.Key() {
+			case tcell.KeyTab:
+				if len(g.navigationOrder) == 0 {
+					return event
+				}
+				currentElement, err := g.getFocusIndex()
+				if err != nil {
+					return event
+				}
+				nextElement := currentElement + 1
+				if nextElement > len(g.navigationOrder)-1 {
+					nextElement = 0
+				}
+				nextPrimitive := g.navigationOrder[nextElement]
+				ui.SetFocus(nextPrimitive)
+				ui.Draw()
+				return nil
+
+			case tcell.KeyBacktab:
+				if len(g.navigationOrder) == 0 {
+					return event
+				}
+				currentElement, err := g.getFocusIndex()
+				if err != nil {
+					return event
+				}
+				previousElement := currentElement - 1
+				if previousElement < 0 {
+					previousElement = len(g.navigationOrder) - 1
+				}
+				previousPrimitive := g.navigationOrder[previousElement]
+				ui.SetFocus(previousPrimitive)
+				ui.Draw()
+				return nil
+			default:
+				return event
+			}
+		} else {
+			return event
+		}
+	})
+
+	g.SetFocusFunc(func() {
+		// g.SetBorderColor(yellow)
+	})
+
+	g.SetBlurFunc(func() {
+		// g.SetBorderColor(black)
+	})
+
+	return g
+}
+
+func (g *grid) SetNavigationOrder(navigationOrder ...tview.Primitive) {
+	g.navigationOrder = navigationOrder
+}
+
+// return an index of the focus element in the navigation list
+func (g *grid) getFocusIndex() (int, error) {
+	index := 0
+	found := false
+	focus := ui.GetFocus()
+	for i, v := range g.navigationOrder {
+		if focus == v {
+			found = true
+			index = i
+			break
+		}
+	}
+	if found {
+		return index, nil
+	} else {
+		return index, fmt.Errorf("focus element not found")
+	}
+}
+
 // //////////////////////////////////////////////////////////////
 // tview.Table wrapper
 // //////////////////////////////////////////////////////////////
 type table struct {
-	t         *tview.Table
+	*tview.Table
 	headers   []string
 	colWeight []int
 	colWidth  []int
@@ -22,52 +126,35 @@ type table struct {
 
 func newTable() *table {
 	t := &table{}
-	t.t = tview.NewTable()
-	t.t.SetDrawFunc(t.draw)
-	t.t.SetSelectable(true, false)
-	t.t.SetSeparator(tview.Borders.Vertical)
-	// t.t.SetSortClicked(false)
-	// t.t.SetSortFunc() // TODO implement sorting
-	// t.t.ShowFocus(true)
-	t.t.SetBorder(false)
-	t.t.Clear()
-	// t.t.SetEvaluateAllRows(true)
+	t.Table = tview.NewTable()
+	t.Table.SetDrawFunc(t.draw)
+	t.Table.SetSelectable(true, false)
+	t.Table.SetSeparator(tview.Borders.Vertical)
+	// t.Table.SetSortClicked(false)
+	// t.Table.SetSortFunc() // TODO implement sorting??
+	// t.Table.ShowFocus(true)
+	t.Table.SetBorder(false)
+	t.Table.Clear()
+	t.Table.SetEvaluateAllRows(true)
 	return t
-}
-
-// Enter Key
-func (t *table) SetSelectedFunc(f func(row, column int)) {
-	t.t.SetSelectedFunc(f)
 }
 
 // Mouse Double Click
 func (t *table) SetMouseDblClickFunc(f func(row, column int)) {
-	t.t.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+	t.Table.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
 		switch action {
 		case tview.MouseLeftDoubleClick:
 			{
-				f(t.t.GetSelection())
+				f(t.Table.GetSelection())
 			}
 		}
 		return action, event
 	})
 }
 
-func (t *table) SetBorder(b bool) {
-	t.t.SetBorder(b)
-}
-
-func (t *table) SetTitle(s string) {
-	t.t.SetTitle(s)
-}
-
-func (t *table) SetTitleAlign(a int) {
-	t.t.SetTitleAlign(a)
-}
-
 func (t *table) draw(screen tcell.Screen, x int, y int, width int, height int) (int, int, int, int) {
 	t.recalculateColumnWidths()
-	return t.t.GetInnerRect()
+	return t.Table.GetInnerRect()
 }
 
 func (t *table) setHeaders(headers ...string) {
@@ -90,27 +177,27 @@ func (t *table) showHeader() {
 		cell.SetBackgroundColor(blue)
 		cell.SetAlign(tview.AlignCenter)
 		cell.SetExpansion(t.colWeight[c])
-		cell.SetMaxWidth(t.colWidth[c])
+		// cell.SetMaxWidth(t.colWidth[c])
 		cell.NotSelectable = true
-		t.t.SetCell(0, c, cell)
+		t.SetCell(0, c, cell)
 	}
-	t.t.SetFixed(1, 0)
-	t.t.Select(1, 0)
+	t.SetFixed(1, 0)
+	t.Select(1, 0)
 }
 
 func (t *table) appendRow(cols ...string) {
-	row := t.t.GetRowCount()
+	row := t.GetRowCount()
 	for col, val := range cols {
 		cell := tview.NewTableCell(val)
 		cell.SetAlign(int(t.aligns[col]))
 		cell.SetExpansion(t.colWeight[col])
-		cell.SetMaxWidth(t.colWidth[col])
-		t.t.SetCell(row, col, cell)
+		// cell.SetMaxWidth(t.colWidth[col])
+		t.SetCell(row, col, cell)
 	}
 }
 
 func (t *table) appendSeparator(cols ...string) {
-	row := t.t.GetRowCount()
+	row := t.GetRowCount()
 	for col, val := range cols {
 		cell := tview.NewTableCell(val)
 		cell.SetAlign(int(t.aligns[col]))
@@ -119,16 +206,8 @@ func (t *table) appendSeparator(cols ...string) {
 		// cell.NotSelectable = true
 		cell.SetTextColor(tview.Styles.PrimaryTextColor)
 		cell.SetBackgroundColor(lightBlue)
-		t.t.SetCell(row, col, cell)
+		t.SetCell(row, col, cell)
 	}
-}
-
-func (t *table) ScrollToBeginning() {
-	t.t.ScrollToBeginning()
-}
-
-func (t *table) clear() {
-	t.t.Clear()
 }
 
 // TODO - implement more accurate calculation
@@ -140,12 +219,13 @@ func (t *table) recalculateColumnWidths() {
 	for _, w := range t.colWeight {
 		allWeights += w
 	}
-	_, _, tw, _ := t.t.GetInnerRect()                           // table weight
-	m := (float64(tw-len(t.colWeight)-1) / float64(allWeights)) // multiplier
+	_, _, tw, _ := t.Table.GetInnerRect()    // table weight
+	m := (float64(tw) / float64(allWeights)) // multiplier
 
 	t.colWidth = make([]int, len(t.colWeight))
-	for c, _ := range t.colWidth {
-		t.colWidth[c] = int(math.Round(m * float64(t.colWeight[c])))
+	for c := range t.colWidth {
+		width := int(math.Round(m * float64(t.colWeight[c])))
+		t.colWidth[c] = width
 	}
 }
 
@@ -156,81 +236,61 @@ func (t *table) getColumnWidth(col int) int {
 	return t.colWidth[col]
 }
 
-func (t *table) GetRowCount() int {
-	return t.t.GetColumnCount()
-}
-
 // //////////////////////////////////////////////////////////////
 // tview.Table wrapper (vertical layout)
 // //////////////////////////////////////////////////////////////
 type infoPanel struct {
-	t *tview.Table
+	*tview.Table
 }
 
 func newInfoPanel() *infoPanel {
 	p := &infoPanel{}
-	p.t = tview.NewTable()
-	p.t.SetSelectable(false, false)
-	p.t.SetBorder(false)
+	p.Table = tview.NewTable()
+	p.SetSelectable(false, false)
+	p.SetBorder(false)
 	return p
 }
 
 func (p *infoPanel) appendRow(label string, value string) {
-	row := p.t.GetRowCount()
+	row := p.GetRowCount()
 	// label
 	labelCell := tview.NewTableCell(" " + label)
 	labelCell.SetTextColor(yellow)
-	p.t.SetCell(row, 0, labelCell)
+	p.SetCell(row, 0, labelCell)
 	// value
 	valueCell := tview.NewTableCell(" " + value)
-	p.t.SetCell(row, 1, valueCell)
+	p.SetCell(row, 1, valueCell)
 }
 
 func (p *infoPanel) clear() {
-	p.t.Clear()
+	p.Clear()
 }
 
 // //////////////////////////////////////////////////////////////
 // tview.Form wrapper
 // //////////////////////////////////////////////////////////////
 type form struct {
-	f  *tview.Form
+	*tview.Form
 	mu sync.Mutex
 }
 
 func newForm() *form {
 	f := &form{}
-	f.f = tview.NewForm()
-	f.f.SetFieldTextColor(black)
+	f.Form = tview.NewForm()
+	f.SetFieldTextColor(black)
 	// f.f.SetFieldBackgroundColor(black)
-	f.f.SetButtonTextColor(black)
+	f.SetButtonTextColor(black)
 	// f.f.SetButtonBackgroundColor()
 	return f
 }
 
-func (f *form) SetHorizontal(b bool) {
-	f.f.SetHorizontal(b)
-}
-
 func (f *form) SetTitle(t string) {
-	f.f.SetTitle(" " + t + " ")
-}
-
-func (f *form) SetBorder(b bool) {
-	f.f.SetBorder(b)
-}
-
-func (f *form) SetButtonsAlign(a int) {
-	f.f.SetButtonsAlign(a)
-}
-
-func (f *form) SetBorderPadding(top int, bottom int, left int, right int) {
-	f.f.SetBorderPadding(top, bottom, left, right)
+	f.Form.SetTitle(" " + t + " ")
 }
 
 // Mouse Double Click
 func (f *form) SetMouseDblClickFunc(fn func()) {
-	f.f.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
+	f.SetMouseCapture(func(action tview.MouseAction, event *tcell.EventMouse) (tview.MouseAction, *tcell.EventMouse) {
 		switch action {
 		case tview.MouseLeftDoubleClick:
 			{
@@ -248,9 +308,9 @@ func (f *form) AddInputField(label, value string, fieldWidth int, accept func(te
 	// 	value = fmt.Sprintf("%*s", fieldWidth, value)
 	// }
 
-	f.f.AddInputField(label, value, fieldWidth, accept, changed)
+	f.Form.AddInputField(label, value, fieldWidth, accept, changed)
 	// return just created input field
-	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.InputField)
+	obj := f.GetFormItem(f.GetFormItemCount() - 1).(*tview.InputField)
 	f.mu.Unlock()
 	return obj
 }
@@ -262,63 +322,63 @@ func acceptInt(textToCheck string, lastChar rune) bool {
 
 func (f *form) AddButton(label string, selected func()) *tview.Button {
 	f.mu.Lock()
-	f.f.AddButton(label, selected)
+	f.Form.AddButton(label, selected)
 	// return just created button
-	obj := f.f.GetButton(f.f.GetButtonCount() - 1)
+	obj := f.GetButton(f.GetButtonCount() - 1)
 	f.mu.Unlock()
 	return obj
 }
 
 func (f *form) AddCheckbox(label string, checked bool, changed func(checked bool)) *tview.Checkbox {
 	f.mu.Lock()
-	f.f.AddCheckbox(label, checked, changed)
+	f.Form.AddCheckbox(label, checked, changed)
 	// return just created checkbox
-	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.Checkbox)
+	obj := f.GetFormItem(f.GetFormItemCount() - 1).(*tview.Checkbox)
 	f.mu.Unlock()
 	return obj
 }
 
 func (f *form) AddDropdown(label string, options []string, initialOption int, selected func(option string, optionIndex int)) *tview.DropDown {
 	f.mu.Lock()
-	f.f.AddDropDown(label, options, initialOption, selected)
+	f.AddDropDown(label, options, initialOption, selected)
 	// return just created dropdown
-	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.DropDown)
+	obj := f.GetFormItem(f.GetFormItemCount() - 1).(*tview.DropDown)
 	f.mu.Unlock()
 	return obj
 }
 
 func (f *form) AddPasswordField(label, value string, fieldWidth int, mask rune, changed func(text string)) *tview.InputField {
 	f.mu.Lock()
-	f.f.AddPasswordField(label, value, fieldWidth, mask, changed)
+	f.Form.AddPasswordField(label, value, fieldWidth, mask, changed)
 	// return just created InputField
-	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.InputField)
+	obj := f.GetFormItem(f.GetFormItemCount() - 1).(*tview.InputField)
 	f.mu.Unlock()
 	return obj
 }
 
 func (f *form) AddTextArea(label, text string, fieldWidth, fieldHeight, maxLength int, changed func(text string)) *tview.TextArea {
 	f.mu.Lock()
-	f.f.AddTextArea(label, text, fieldWidth, fieldHeight, maxLength, changed)
+	f.Form.AddTextArea(label, text, fieldWidth, fieldHeight, maxLength, changed)
 	// return just created InputField
-	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.TextArea)
+	obj := f.GetFormItem(f.GetFormItemCount() - 1).(*tview.TextArea)
 	f.mu.Unlock()
 	return obj
 }
 
 func (f *form) AddTextView(label, text string, fieldWidth, fieldHeight int, dynamicColors, scrollable bool) *tview.TextView {
 	f.mu.Lock()
-	f.f.AddTextView(label, text, fieldWidth, fieldHeight, dynamicColors, scrollable)
+	f.Form.AddTextView(label, text, fieldWidth, fieldHeight, dynamicColors, scrollable)
 	// return just created InputField
-	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1).(*tview.TextView)
+	obj := f.GetFormItem(f.GetFormItemCount() - 1).(*tview.TextView)
 	f.mu.Unlock()
 	return obj
 }
 
 func (f *form) AddFormItem(item tview.FormItem) *tview.FormItem {
 	f.mu.Lock()
-	f.f.AddFormItem(item)
+	f.Form.AddFormItem(item)
 	// return just created FormItem
-	obj := f.f.GetFormItem(f.f.GetFormItemCount() - 1)
+	obj := f.GetFormItem(f.GetFormItemCount() - 1)
 	f.mu.Unlock()
 	return &obj
 }

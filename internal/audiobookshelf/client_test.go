@@ -3,9 +3,9 @@ package audiobookshelf_test
 import (
 	"testing"
 
+	"abb_ia/internal/audiobookshelf"
+	"abb_ia/internal/config"
 	"github.com/stretchr/testify/assert"
-	"github.com/vpoluyaktov/abb_ia/internal/audiobookshelf"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
 )
 
 func TestLogin(t *testing.T) {
@@ -15,11 +15,9 @@ func TestLogin(t *testing.T) {
 	password := config.Instance().GetAudiobookshelfPassword()
 
 	if url != "" && username != "" && password != "" {
-		loginResp, err := audiobookshelf.Login(url+"/login", username, password)
-
+		absClient := audiobookshelf.NewClient(url)
+		err := absClient.Login(username, password)
 		assert.NoError(t, err)
-		assert.NotNil(t, loginResp.User.ID)
-		assert.NotNil(t, loginResp.User.Token)
 	}
 }
 
@@ -30,13 +28,14 @@ func TestLibraries(t *testing.T) {
 	password := config.Instance().GetAudiobookshelfPassword()
 
 	if url != "" && username != "" && password != "" {
-		loginResp, err := audiobookshelf.Login(url+"/login", username, password)
+		absClient := audiobookshelf.NewClient(url)
+		err := absClient.Login(username, password)
 		assert.NoError(t, err)
 		if err == nil {
-			libraryResponse, err := audiobookshelf.Libraries(url, loginResp.User.Token)
+			libraries, err := absClient.GetLibraries()
 			assert.NoError(t, err)
-			assert.NotNil(t, libraryResponse)
-			assert.NotEmpty(t, libraryResponse.Libraries)
+			assert.NotNil(t, libraries)
+			assert.NotEmpty(t, libraries)
 		}
 	}
 }
@@ -49,19 +48,16 @@ func TestScan(t *testing.T) {
 	libraryName := config.Instance().GetAudiobookshelfLibrary()
 
 	if url != "" && username != "" && password != "" && libraryName != "" {
-		loginResp, err := audiobookshelf.Login(url+"/login", username, password)
+		absClient := audiobookshelf.NewClient(url)
+		err := absClient.Login(username, password)
+		assert.NoError(t, err)
 		if err == nil {
+			libraries, err := absClient.GetLibraries()
 			assert.NoError(t, err)
-			libraryResponse, err := audiobookshelf.Libraries(url, loginResp.User.Token)
+			libraryID, err := absClient.GetLibraryId(libraries, libraryName)
 			if err == nil {
+				err = absClient.ScanLibrary(libraryID)
 				assert.NoError(t, err)
-				libraryID, err := audiobookshelf.GetLibraryByName(libraryResponse.Libraries, libraryName)
-				if err == nil {
-					err = audiobookshelf.ScanLibrary(url, loginResp.User.Token, libraryID)
-					assert.NoError(t, err)
-					assert.NotNil(t, libraryResponse)
-					assert.NotEmpty(t, libraryResponse.Libraries)
-				}
 			}
 		}
 	}

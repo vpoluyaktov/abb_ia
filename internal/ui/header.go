@@ -1,16 +1,16 @@
 package ui
 
 import (
+	"abb_ia/internal/dto"
+	"abb_ia/internal/mq"
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
 type header struct {
-	mq        *mq.Dispatcher
-	grid      *tview.Grid
-	appName   *tview.TextView
-	version   *tview.TextView
+	mq      *mq.Dispatcher
+	grid    *tview.Grid
+	appName *tview.TextView
+	version *tview.TextView
 }
 
 func newHeader(dispatcher *mq.Dispatcher) *header {
@@ -50,6 +50,7 @@ func (h *header) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.DrawCommand:
 		if dto.Primitive == nil {
+			return
 		}
 	default:
 		m.UnsupportedTypeError(mq.Header)

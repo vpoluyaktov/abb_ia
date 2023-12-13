@@ -1,10 +1,11 @@
 package ui
 
 import (
+	"abb_ia/internal/config"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/mq"
+
 	"github.com/rivo/tview"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
 )
 
 type footer struct {
@@ -71,7 +72,7 @@ func (f *footer) dispatchMessage(m *mq.Message) {
 
 func (f *footer) updateStatus(s *dto.UpdateStatus) {
 	f.statusMessage.SetText(s.Message)
-	f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	ui.Draw()
 }
 
 func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
@@ -79,14 +80,14 @@ func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
 		f.busyFlag = true
 		f.busyIndicator.SetTextColor(busyIndicatorFgColor)
 		f.busyIndicator.SetBackgroundColor(busyIndicatorBgColor)
-		f.busyIndicator.SetText(" Busy > ")
+		f.busyIndicator.SetText(" Busy> ")
 		go f.updateBusyIndicator()
 	} else {
 		f.busyFlag = false
 		f.busyIndicator.SetText("")
 		f.busyIndicator.SetTextColor(footerFgColor)
 		f.busyIndicator.SetBackgroundColor(footerBgColor)
-		f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+		ui.Draw()
 	}
 }
 
@@ -98,7 +99,7 @@ func (f *footer) updateBusyIndicator() {
 	// for f.busyFlag {
 	// 	for i := 0; i < len(busyChars); i++ {
 	// 		f.busyIndicator.SetText(busyChars[i])
-	// 		f.mq.SendMessage(mq.Footer, mq.TUI, &dto.DrawCommand{Primitive: nil}, true)
+	// 		ui.Draw()
 	// 		time.Sleep(200 * time.Millisecond)
 	// 		if !f.busyFlag {
 	// 			break

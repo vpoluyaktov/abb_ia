@@ -3,7 +3,7 @@ package dto
 import (
 	"fmt"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
+	"abb_ia/internal/config"
 )
 
 type DisplayConfigCommand struct {
@@ -11,7 +11,7 @@ type DisplayConfigCommand struct {
 }
 
 func (c *DisplayConfigCommand) String() string {
-	return fmt.Sprintf("DisplayConfigCommand: %s", c.Config.GetLogLevel)
+	return fmt.Sprintf("DisplayConfigCommand: %s", c.Config.GetLogLevel())
 }
 
 type SaveConfigCommand struct {
@@ -19,5 +19,5 @@ type SaveConfigCommand struct {
 }
 
 func (c *SaveConfigCommand) String() string {
-	return fmt.Sprintf("SaveConfigCommand: %s", c.Config.GetLogLevel)
+	return fmt.Sprintf("SaveConfigCommand: %s", c.Config.GetLogLevel())
 }

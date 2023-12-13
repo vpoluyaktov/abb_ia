@@ -3,22 +3,22 @@ package controller
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/ffmpeg"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/ffmpeg"
+	"abb_ia/internal/mp4"
+	"abb_ia/internal/utils"
 
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
 )
 
 type BuildController struct {
@@ -26,21 +26,25 @@ type BuildController struct {
 	ab        *dto.Audiobook
 	startTime time.Time
 	stopFlag  bool
-
-	// progress tracking arrays
-	filesBuild []fileBuild
+	files     []fileBuild
 }
 
+// progress tracking arrays
 type fileBuild struct {
-	fileId   int
-	progress int
+	fileName         string
+	totalDuration    float64
+	bytesProcessed   int64
+	secondsProcessed float64
+	encodingSpeed    float64
+	progress         int
+	complete         bool
 }
 
 func NewBuildController(dispatcher *mq.Dispatcher) *BuildController {
-	dc := &BuildController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.BuildController, dc.dispatchMessage)
-	return dc
+	c := &BuildController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.BuildController, c.dispatchMessage)
+	return c
 }
 
 func (c *BuildController) checkMQ() {
@@ -67,20 +71,23 @@ func (c *BuildController) stopBuild(cmd *dto.StopCommand) {
 }
 
 func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
-	c.startTime = time.Now()
 	logger.Info(mq.BuildController + " received " + cmd.String())
-
+	c.stopFlag = false
+	c.startTime = time.Now()
 	c.ab = cmd.Audiobook
+	c.files = make([]fileBuild, len(c.ab.Parts))
 
 	// calculate output file names
 	for i := range c.ab.Parts {
 		part := &c.ab.Parts[i]
-		filePath := filepath.Join(config.Instance().GetOutputDir(), c.ab.Author+" - "+c.ab.Title)
+		filePath := filepath.Join(c.ab.Config.GetTmpDir(), c.ab.Author+" - "+c.ab.Title)
 		if len(c.ab.Parts) > 1 {
 			filePath = filePath + fmt.Sprintf(", Part %02d", i+1)
 		}
 		part.AACFile = filePath + ".aac"
 		part.M4BFile = filePath + ".m4b"
+		c.files[i].fileName = part.M4BFile
+		c.files[i].totalDuration = part.Duration
 	}
 
 	c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
@@ -94,22 +101,20 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	c.downloadCoverImage(c.ab)
 
 	// build audiobook parts
-	c.stopFlag = false
-	c.filesBuild = make([]fileBuild, len(c.ab.Parts))
-	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentEncoders())
+
+	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentEncoders())
 	for i := range c.ab.Parts {
 		jd.AddJob(i, c.buildAudiobookPart, c.ab, i)
 	}
-	go c.updateTotalBuildProgress()
-	// if c.stopFlag {
-	// 	break
-	// }
+	go c.updateTotalProgress()
 	jd.Start()
 
-	c.stopFlag = true
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildComplete{Audiobook: cmd.Audiobook}, true)
+	if !c.stopFlag {
+		c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildComplete{Audiobook: cmd.Audiobook}, true)
+	}
+	c.stopFlag = true
 }
 
 func (c *BuildController) createFilesLists(ab *dto.Audiobook) {
@@ -141,15 +146,6 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 		f.WriteString("major_brand=isom\n")
 		f.WriteString("minor_version=512\n")
 		f.WriteString("compatible_brands=isomiso2mp41\n")
-		f.WriteString("title=" + ab.Title + "\n")
-		f.WriteString("artist=" + ab.Author + "\n")
-		f.WriteString("album=" + ab.Title + "\n")
-		f.WriteString("genre=" + ab.Genre + "\n")
-		f.WriteString("description=" + strings.ReplaceAll(ab.Description, "\n", "\\\n") + "\n")
-		f.WriteString("copyright=" + ab.Copyright + "\n")
-		f.WriteString("comment=Downloaded from Internet Archive: " + ab.IaURL + "\n")
-		f.WriteString("encoder=This audiobook was created by 'Audiobook Builder Internet Archive version' https://github.com/vpoluyaktov/abb_ia\n")
-
 		for _, chapter := range part.Chapters {
 			f.WriteString("[CHAPTER]\n")
 			f.WriteString("TIMEBASE=1/1000\n")
@@ -162,7 +158,7 @@ func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 }
 
 func (c *BuildController) downloadCoverImage(ab *dto.Audiobook) error {
-	filePath := filepath.Join(config.Instance().GetOutputDir(), ab.Author+" - "+ab.Title)
+	filePath := filepath.Join(ab.Config.GetTmpDir(), ab.Author+" - "+ab.Title)
 	if strings.HasSuffix(ab.CoverURL, ".jpg") {
 		ab.CoverFile = filePath + ".jpg"
 	} else if strings.HasSuffix(ab.CoverURL, ".png") {
@@ -194,12 +190,16 @@ func (c *BuildController) downloadCoverImage(ab *dto.Audiobook) error {
 }
 
 func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
+	if c.stopFlag {
+		return
+	}
+
 	part := &ab.Parts[partId]
 
 	// launch progress listener
 	l, port := c.startProgressListener(partId)
 	defer l.Close()
-	go c.updateFileBuildProgress(partId, part.M4BFile, part.Duration, l)
+	go c.updateFileProgress(partId, l)
 
 	// concatenate mp3 files into single .aac file
 	_, err := ffmpeg.NewFFmpeg().
@@ -211,21 +211,58 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 		Run()
 	if err != nil {
 		logger.Error("FFMPEG Error: " + string(err.Error()))
-	} else {
-		// add Metadata, cover image and convert to .m4b
-		_, err := ffmpeg.NewFFmpeg().
-			Input(part.AACFile, "").
-			Input(part.MetadataFile, "").
-			Input(ab.CoverURL, "").
-			Output(part.M4BFile, "-map_metadata 1 -y -acodec copy -y -vf pad='width=ceil(iw/2)*2:height=ceil(ih/2)*2'").
-			Overwrite(true).
-			Params("-hide_banner -nostdin -nostats").
-			SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).
-			Run()
-		if err != nil {
-			logger.Error("FFMPEG Error: " + string(err.Error()))
-		}
+		return
 	}
+
+	// add chapters and convert to .m4b
+	ffmpeg := ffmpeg.NewFFmpeg().
+		Input(part.AACFile, "").
+		Input(part.MetadataFile, "").
+		Output(part.M4BFile, "-map_metadata 1 -y -vn -y -acodec copy").
+		Overwrite(true).
+		Params("-hide_banner -nostdin -nostats").
+		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port))
+
+	go c.killSwitch(ffmpeg)
+	_, err = ffmpeg.Run()
+	if err != nil && !c.stopFlag {
+		logger.Error("FFMPEG Error: " + string(err.Error()))
+		return
+	}
+
+	// clean up 
+	os.Remove(part.AACFile)
+
+	// add tags and cover image
+	m4b, er := mp4.NewMp4(part.M4BFile)
+	if er != nil && !c.stopFlag {
+		logger.Error("Can't open m4b file for write: " + err.Error())
+	}
+	m4b.SetTag("\xa9nam", ab.Title)
+	m4b.SetTag("\xa9alb", ab.Title)
+	m4b.SetTag("\xa9ART", ab.Author)
+	m4b.SetTag("desc", ab.Description)
+	m4b.SetTag("cprt", ab.LicenseUrl)
+	m4b.SetTag("purl", ab.IaURL)
+	m4b.SetTag("\xa9cmt", "This audiobook was created using the 'Audiobook Builder' tool: https://github.com/"+ab.Config.GetRepoOwner()+"/"+ab.Config.GetRepoName()+"\n"+
+		"The audio files used for this book were obtained from the Internet Archive site: "+ab.IaURL)
+
+	imageData, er := ioutil.ReadFile(ab.CoverFile)
+	if er == nil {
+		m4b.SetImage(imageData, mp4.DataTypeJPEG)
+	}
+
+	er = m4b.Save()
+	if er != nil {
+		logger.Error("Can't save m4b file: " + err.Error())
+	}
+}
+
+func (c *BuildController) killSwitch(ffmpeg *ffmpeg.FFmpeg) {
+	for !c.stopFlag {
+		time.Sleep(mq.PullFrequency)
+	}
+	ffmpeg.Kill()
 }
 
 func (c *BuildController) startProgressListener(fileId int) (net.Listener, int) {
@@ -240,95 +277,88 @@ func (c *BuildController) startProgressListener(fileId int) (net.Listener, int) 
 	return l, portNumber
 }
 
-func (c *BuildController) updateFileBuildProgress(fileId int, fileName string, totalDuration float64, l net.Listener) {
-
-	re := regexp.MustCompile(`out_time_ms=(\d+)`)
+func (c *BuildController) updateFileProgress(fileId int, l net.Listener) {
 	fd, err := l.Accept()
 	if err != nil {
-		return // listener is closed
+		return // listener may be closed already
 	}
 	buf := make([]byte, 16)
 	data := ""
 	percent := 0
-	for {
+
+	for !c.stopFlag {
 		_, err := fd.Read(buf)
 		if err != nil {
 			return // listener is closed
 		}
 		data += string(buf)
-		a := re.FindAllStringSubmatch(data, -1)
-		p := 0
-		pstr := ""
-		if len(a) > 0 && len(a[len(a)-1]) > 0 {
-			c, _ := strconv.Atoi(a[len(a)-1][len(a[len(a)-1])-1])
-			pstr = fmt.Sprintf("%.2f", float64(c)/totalDuration/1000000)
-		}
-		if strings.Contains(data, "progress=end") {
-			p = 100
-		}
-		if pstr == "" {
-			p = 0
-		}
-		pflt, err := strconv.ParseFloat(pstr, 64)
-		if err != nil {
-			p = 0
-		} else {
-			p = int(pflt * 100)
+		bytesProcessed, secondsProcessed, encodingSpeed, complete := ffmpeg.ParseFFMPEGProgress(data)
+		percent = int(secondsProcessed / c.files[fileId].totalDuration * 100)
+		// wrong calculation protection
+		if percent < 0 {
+			percent = 0
+		} else if percent > 100 {
+			percent = 100
+		} else if percent < c.files[fileId].progress {
+			percent = c.files[fileId].progress
+		} else if complete {
+			percent = 100
 		}
 
-		if p != percent {
-			percent = p
-
-			// wrong calculation protection
-			if percent < 0 {
-				percent = 0
-			} else if percent > 100 {
-				percent = 100
-			}
-
-			// sent a message only if progress changed
-			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, true)
+		// sent a message only if progress changed
+		if percent != c.files[fileId].progress {
+			c.files[fileId].bytesProcessed = bytesProcessed
+			c.files[fileId].secondsProcessed = secondsProcessed
+			c.files[fileId].encodingSpeed = encodingSpeed
+			c.files[fileId].progress = percent
+			c.files[fileId].complete = complete
+			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildFileProgress{FileId: fileId, FileName: c.files[fileId].fileName, Percent: percent}, true)
 		}
-		c.filesBuild[fileId].fileId = fileId
-		c.filesBuild[fileId].progress = percent
 	}
 }
 
-func (c *BuildController) updateTotalBuildProgress() {
-	var percent int = -1
+func (c *BuildController) updateTotalProgress() {
+	var p int = -1
 
-	for !c.stopFlag && percent <= 100 {
-		var totalPercent int = 0
-		files := 0
-		for _, f := range c.filesBuild {
-			totalPercent += f.progress
-			if f.progress == 100 {
-				files++
+	for !c.stopFlag && p <= 100 {
+		var totalDuration float64 = 0
+		var secondsProcessed float64 = 0
+		var totalSpeed float64 = 0
+		filesProcessed := 0
+		filesComplete := 0
+		for _, f := range c.files {
+			totalDuration += f.totalDuration
+			secondsProcessed += f.secondsProcessed
+			totalSpeed += f.encodingSpeed
+			if f.complete {
+				filesComplete++
+			}
+			if f.encodingSpeed > 0 {
+				filesProcessed++
 			}
 		}
-		p := int(totalPercent / len(c.filesBuild))
+		percent := int(secondsProcessed / totalDuration * 100)
+		// wrong calculation protection
+		if percent < 0 {
+			percent = 0
+		} else if percent > 100 {
+			percent = 100
+		}
 
 		if percent != p {
 			// sent a message only if progress changed
-			percent = p
-
-			// wrong calculation protection
-			if percent < 0 {
-				percent = 0
-			} else if percent > 100 {
-				percent = 100
-			}
+			p = percent
 
 			elapsed := time.Since(c.startTime).Seconds()
-			speed := int64(float64(percent) / elapsed)
+			speed := totalSpeed / float64(filesProcessed)
 			eta := (100 / (float64(percent) / elapsed)) - elapsed
 			if eta < 0 || eta > (60*60*24*365) {
 				eta = 0
 			}
 
 			elapsedH := utils.SecondsToTime(elapsed)
-			filesH := fmt.Sprintf("%d/%d", files, len(c.ab.Parts))
-			speedH := utils.SpeedToHuman(speed)
+			filesH := fmt.Sprintf("%d/%d", filesComplete, len(c.ab.Parts))
+			speedH := fmt.Sprintf("%.0fx", speed)
 			etaH := utils.SecondsToTime(eta)
 
 			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, true)

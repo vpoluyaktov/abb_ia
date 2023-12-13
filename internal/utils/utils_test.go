@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
+	"abb_ia/internal/config"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
 )
 
 func TestMain(m *testing.M) {
@@ -47,7 +47,7 @@ func TestTimeToSeconds(t *testing.T) {
 func TestSecondToTime(t *testing.T) {
 	sec := float64((5 * 3600) + (45 * 60) + 35)
 	time := utils.SecondsToTime(sec)
-	assert.Equal(t, " 5:45:35", time)
+	assert.Equal(t, "5:45:35", time)
 }
 
 func TestBytesToHuman(t *testing.T) {

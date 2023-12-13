@@ -8,12 +8,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/vpoluyaktov/abb_ia/internal/config"
-	"github.com/vpoluyaktov/abb_ia/internal/dto"
-	"github.com/vpoluyaktov/abb_ia/internal/utils"
+	"abb_ia/internal/dto"
+	"abb_ia/internal/utils"
 
-	"github.com/vpoluyaktov/abb_ia/internal/logger"
-	"github.com/vpoluyaktov/abb_ia/internal/mq"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
 )
 
 /**
@@ -60,10 +59,10 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 }
 
 func NewCopyController(dispatcher *mq.Dispatcher) *CopyController {
-	dc := &CopyController{}
-	dc.mq = dispatcher
-	dc.mq.RegisterListener(mq.CopyController, dc.dispatchMessage)
-	return dc
+	c := &CopyController{}
+	c.mq = dispatcher
+	c.mq.RegisterListener(mq.CopyController, c.dispatchMessage)
+	return c
 }
 
 func (c *CopyController) checkMQ() {
@@ -85,8 +84,8 @@ func (c *CopyController) dispatchMessage(m *mq.Message) {
 }
 
 func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
+	c.startTime = time.Now()
 	logger.Info(mq.CopyController + " received " + cmd.String())
-
 	c.ab = cmd.Audiobook
 
 	// update part size and whole audiobook size after re-encoding
@@ -109,17 +108,19 @@ func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 
 	c.stopFlag = false
 	c.filesCopy = make([]fileCopy, len(c.ab.Parts))
-	jd := utils.NewJobDispatcher(config.Instance().GetConcurrentDownloaders())
+	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentDownloaders())
 	for i := range c.ab.Parts {
 		jd.AddJob(i, c.copyAudiobookPart, c.ab, i)
 	}
 	go c.updateTotalCopyProgress()
 	jd.Start()
 
-	c.stopFlag = true
 	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyComplete{Audiobook: cmd.Audiobook}, true)
+	if !c.stopFlag {
+		c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyComplete{Audiobook: cmd.Audiobook}, true)
+	}
+	c.stopFlag = true
 }
 
 func (c *CopyController) stopCopy(cmd *dto.StopCommand) {
@@ -140,7 +141,7 @@ func (c *CopyController) copyAudiobookPart(ab *dto.Audiobook, partId int) {
 	defer file.Close()
 
 	// Calculate Audiobookshelf directory structure (see: https://www.audiobookshelf.org/docs#book-directory-structure)
-	destPath := filepath.Join(config.Instance().GetAudiobookshelfDir(), ab.Author)
+	destPath := filepath.Join(ab.Config.GetOutputDir(), ab.Author)
 	if ab.Series != "" {
 		destPath = filepath.Join(destPath, ab.Author+" - "+ab.Series)
 	}
@@ -204,10 +205,10 @@ func (c *CopyController) updateTotalCopyProgress() {
 
 	for !c.stopFlag && percent <= 100 {
 		var totalSize = c.ab.TotalSize
-		var totalBytesDownloaded int64 = 0
+		var totalBytesCopied int64 = 0
 		filesCopied := 0
 		for _, f := range c.filesCopy {
-			totalBytesDownloaded += f.bytesCopied
+			totalBytesCopied += f.bytesCopied
 			if f.progress == 100 {
 				filesCopied++
 			}
@@ -215,13 +216,13 @@ func (c *CopyController) updateTotalCopyProgress() {
 
 		var p int = 0
 		if totalSize > 0 {
-			p = int(float64(totalBytesDownloaded) / float64(totalSize) * 100)
+			p = int(float64(totalBytesCopied) / float64(totalSize) * 100)
 		}
 
 		// fix wrong incorrect calculation
 		if filesCopied == len(c.filesCopy) {
 			p = 100
-			totalBytesDownloaded = c.ab.TotalSize
+			totalBytesCopied = c.ab.TotalSize
 		}
 
 		if percent != p {
@@ -236,14 +237,14 @@ func (c *CopyController) updateTotalCopyProgress() {
 			}
 
 			elapsed := time.Since(c.startTime).Seconds()
-			speed := int64(float64(totalBytesDownloaded) / elapsed)
+			speed := int64(float64(totalBytesCopied) / elapsed)
 			eta := (100 / (float64(percent) / elapsed)) - elapsed
 			if eta < 0 || eta > (60*60*24*365) {
 				eta = 0
 			}
 
 			elapsedH := utils.SecondsToTime(elapsed)
-			bytesH := utils.BytesToHuman(totalBytesDownloaded)
+			bytesH := utils.BytesToHuman(totalBytesCopied)
 			filesH := fmt.Sprintf("%d/%d", filesCopied, len(c.ab.Parts))
 			speedH := utils.SpeedToHuman(speed)
 			etaH := utils.SecondsToTime(eta)

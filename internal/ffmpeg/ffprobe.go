@@ -2,9 +2,11 @@ package ffmpeg
 
 import (
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 type FFProbe struct {
@@ -77,4 +79,16 @@ func (p *FFProbe) Size() int64 {
 	} else {
 		return 0
 	}
+}
+
+func (p *FFProbe) Format() string {
+	bitRate, err := strconv.Atoi(p.BitRate())
+	if err != nil {
+		return p.metadata.Format.FormatName
+	}
+	return fmt.Sprintf("%s %d kb/s", strings.ToUpper(p.metadata.Format.FormatName), int(bitRate/1000))
+}
+
+func (p *FFProbe) BitRate() string {
+	return p.metadata.Format.BitRate
 }

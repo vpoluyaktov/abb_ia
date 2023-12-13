@@ -1,6 +1,6 @@
 package utils
 
-import ()
+import "os/exec"
 
 // Check if a map contains a given key
 func HasKey(m map[string]interface{}, key string) bool {
@@ -28,10 +28,20 @@ func GetIndex(s []string, str string) int {
 	return -1
 }
 
+// Remove an element from a slice 
+func RemoveElement(slice []interface{}, index int) []interface{} {
+	return append(slice[:index], slice[index+1:]...)
+}
+
 func AddSpaces(list []string) []string {
 	var output []string
 	for _, v := range list {
 		output = append(output, " "+v+" ")
 	}
 	return output
+}
+
+func CommandExists(cmd string) bool {
+	_, err := exec.LookPath(cmd)
+	return err == nil
 }
