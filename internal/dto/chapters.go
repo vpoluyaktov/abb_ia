@@ -77,3 +77,12 @@ type RefreshChaptersCommand struct {
 func (c *RefreshChaptersCommand) String() string {
 	return fmt.Sprintf("RefreshChaptersCommand: %s", c.Audiobook.String())
 }
+
+
+type RecalculatePartsCommand struct {
+	Audiobook *Audiobook
+}
+
+func (c *RecalculatePartsCommand) String() string {
+	return fmt.Sprintf("RecalculatePartsCommand: %s", c.Audiobook.String())
+}

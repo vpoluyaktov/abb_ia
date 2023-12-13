@@ -154,8 +154,6 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 		p.tmpDir,
 		p.logFileNameField,
 		p.logLevelField,
-		p.saveConfigButton,
-		p.cancelButton,
 		p.concurrentDownloaders,
 		p.concurrentEncoders,
 		p.reEncodeFiles,
@@ -169,6 +167,8 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 		p.audiobookshelfPassword,
 		p.audiobookshelfLibrary,
 		p.scanAudiobookshelf,
+		p.saveConfigButton,
+		p.cancelButton,
 	)
 
 	return p

@@ -226,17 +226,20 @@ func (p *BuildPage) stopBuild() {
 }
 
 func (p *BuildPage) updateFileBuildProgress(dp *dto.BuildFileProgress) {
-	// update file progress
 	col := 5
-	w := p.buildTable.getColumnWidth(col) - 4
+	w := p.buildTable.getColumnWidth(col)
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+	if barWidth < 0 {
+		barWidth = 0
+	}
+	fillerWidth := w - len(progressText) - barWidth
+	if fillerWidth < 0 {
+		fillerWidth = 0
+	}
+	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
 	cell := p.buildTable.GetCell(dp.FileId+1, col)
-	// cell.SetExpansion(0)
-	// cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	// p.buildTable.t.Select(dp.FileId+1, col)
 	ui.Draw()
 }
 
@@ -264,15 +267,19 @@ func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
 func (p *BuildPage) updateFileCopyProgress(dp *dto.CopyFileProgress) {
 	// update file progress
 	col := 5
-	w := p.copyTable.getColumnWidth(col) - 3
+	w := p.copyTable.getColumnWidth(col)
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+	if barWidth < 0 {
+		barWidth = 0
+	}
+	fillerWidth := w - len(progressText) - barWidth
+	if fillerWidth < 0 {
+		fillerWidth = 0
+	}
+	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
 	cell := p.copyTable.GetCell(dp.FileId+1, col)
-	// cell.SetExpansion(0)
-	// cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	// p.copyTable.t.Select(dp.FileId+1, col)
 	ui.Draw()
 }
 
@@ -299,17 +306,20 @@ func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
 }
 
 func (p *BuildPage) updateFileUploadProgress(dp *dto.UploadFileProgress) {
-	// update file progress
 	col := 5
-	w := p.uploadTable.getColumnWidth(col) - 3
+	w := p.uploadTable.getColumnWidth(col)
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+	if barWidth < 0 {
+		barWidth = 0
+	}
+	fillerWidth := w - len(progressText) - barWidth
+	if fillerWidth < 0 {
+		fillerWidth = 0
+	}
+	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
 	cell := p.uploadTable.GetCell(dp.FileId+1, col)
-	// cell.SetExpansion(0)
-	// cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	// p.uploadTable.t.Select(dp.FileId+1, col)
 	ui.Draw()
 }
 
