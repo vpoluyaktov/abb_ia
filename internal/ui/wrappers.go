@@ -135,7 +135,7 @@ func newTable() *table {
 	// t.Table.ShowFocus(true)
 	t.Table.SetBorder(false)
 	t.Table.Clear()
-	// t.Table.SetEvaluateAllRows(true)
+	t.Table.SetEvaluateAllRows(true)
 	return t
 }
 
@@ -177,7 +177,7 @@ func (t *table) showHeader() {
 		cell.SetBackgroundColor(blue)
 		cell.SetAlign(tview.AlignCenter)
 		cell.SetExpansion(t.colWeight[c])
-		cell.SetMaxWidth(t.colWidth[c])
+		// cell.SetMaxWidth(t.colWidth[c])
 		cell.NotSelectable = true
 		t.SetCell(0, c, cell)
 	}
@@ -191,7 +191,7 @@ func (t *table) appendRow(cols ...string) {
 		cell := tview.NewTableCell(val)
 		cell.SetAlign(int(t.aligns[col]))
 		cell.SetExpansion(t.colWeight[col])
-		cell.SetMaxWidth(t.colWidth[col])
+		// cell.SetMaxWidth(t.colWidth[col])
 		t.SetCell(row, col, cell)
 	}
 }
@@ -219,12 +219,13 @@ func (t *table) recalculateColumnWidths() {
 	for _, w := range t.colWeight {
 		allWeights += w
 	}
-	_, _, tw, _ := t.Table.GetInnerRect()                       // table weight
-	m := (float64(tw-len(t.colWeight)-1) / float64(allWeights)) // multiplier
+	_, _, tw, _ := t.Table.GetInnerRect()    // table weight
+	m := (float64(tw) / float64(allWeights)) // multiplier
 
 	t.colWidth = make([]int, len(t.colWeight))
 	for c := range t.colWidth {
-		t.colWidth[c] = int(math.Round(m * float64(t.colWeight[c])))
+		width := int(math.Round(m * float64(t.colWeight[c])))
+		t.colWidth[c] = width
 	}
 }
 

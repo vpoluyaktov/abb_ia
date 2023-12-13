@@ -37,13 +37,16 @@ type ChaptersPage struct {
 	chaptersTable            *table
 	inputSearchChapters      *tview.InputField
 	inputReplaceChapters     *tview.InputField
+	inputPartSize            *tview.InputField
 	buttonChaptersReplace    *tview.Button
 	buttonChaptersUndo       *tview.Button
 	buttonChaptersJoin       *tview.Button
+	buttonRecalculateParts   *tview.Button
 	searchDescription        string
 	replaceDescription       string
 	searchChapters           string
 	replaceChapters          string
+	partSize                 string
 	chaptersUndoStack        *UndoStack
 	descriptionUndoStack     *UndoStack
 }
@@ -154,8 +157,14 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.chaptersTable.SetSelectedFunc(p.updateChapterEntry)
 	p.chaptersTable.SetMouseDblClickFunc(p.updateChapterEntry)
 	p.chaptersSection.AddItem(p.chaptersTable.Table, 0, 0, 1, 1, 0, 0, true)
+
+	chaptersControls := newGrid()
+	chaptersControls.SetColumns(-1)
+	chaptersControls.SetRows(-2, -1)
+	chaptersControls.SetBorder(true)
+
 	f6 := newForm()
-	f6.SetBorder(true)
+	f6.SetBorder(false)
 	f6.SetHorizontal(true)
 	p.inputSearchChapters = f6.AddInputField("Search: ", "", 30, nil, func(s string) { p.searchChapters = s })
 	p.inputReplaceChapters = f6.AddInputField("Replace:", "", 30, nil, func(s string) { p.replaceChapters = s })
@@ -164,7 +173,17 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.buttonChaptersJoin = f6.AddButton(" Join Similar Chapters ", p.joinChapters)
 	f6.SetButtonsAlign(tview.AlignRight)
 	f6.SetMouseDblClickFunc(func() {})
-	p.chaptersSection.AddItem(f6.Form, 0, 1, 1, 1, 0, 0, false)
+	chaptersControls.AddItem(f6.Form, 0, 0, 1, 1, 0, 0, false)
+
+	f7 := newForm()
+	f7.SetBorder(false)
+	f7.SetHorizontal(true)
+	p.inputPartSize = f7.AddInputField("Part size (Mb): ", "", 6, acceptInt, func(s string) { p.partSize = s })
+	p.buttonRecalculateParts = f7.AddButton(" Recalculate Parts ", p.recalculateParts)
+	f7.SetButtonsAlign(tview.AlignRight)
+	chaptersControls.AddItem(f7.Form, 1, 0, 1, 1, 0, 0, false)
+
+	p.chaptersSection.AddItem(chaptersControls.Grid, 0, 1, 1, 1, 0, 0, false)
 	p.mainGrid.AddItem(p.chaptersSection.Grid, 2, 0, 1, 1, 0, 0, true)
 
 	p.chaptersUndoStack = NewUndoStack()
@@ -192,6 +211,8 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 		p.buttonChaptersReplace,
 		p.buttonChaptersUndo,
 		p.buttonChaptersJoin,
+		p.inputPartSize,
+		p.buttonRecalculateParts,
 	)
 
 	return p
@@ -233,6 +254,7 @@ func (p *ChaptersPage) displayBookInfo(ab *dto.Audiobook) {
 	p.chaptersTable.Clear()
 	p.chaptersTable.showHeader()
 	p.chaptersTable.ScrollToBeginning()
+	p.inputPartSize.SetText(strconv.Itoa(ab.Config.GetMaxFileSizeMb()))
 	ui.SetFocus(p.chaptersSection.Grid)
 }
 
@@ -348,6 +370,17 @@ func (p *ChaptersPage) joinChapters() {
 	}
 }
 
+func (p *ChaptersPage) recalculateParts() {
+	p.ab.Config.SetMaxFileSizeMb(utils.ToInt(p.partSize)) 
+	abCopy, err := p.ab.GetCopy()
+	if err != nil {
+		logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
+	} else {
+		p.chaptersUndoStack.Push(abCopy)
+		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.RecalculatePartsCommand{Audiobook: p.ab}, true)
+	}
+}
+
 func (p *ChaptersPage) undoChapters() {
 	ab, err := p.chaptersUndoStack.Pop()
 	if err == nil {
@@ -359,6 +392,8 @@ func (p *ChaptersPage) undoChapters() {
 func (p *ChaptersPage) refreshChapters(ab *dto.Audiobook) {
 	go p.displayParts(ab)
 }
+
+
 
 func (p *ChaptersPage) stopConfirmation() {
 	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop editing chapters?", p.chaptersSection.Grid, p.stopChapters, func() {})

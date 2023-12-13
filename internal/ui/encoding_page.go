@@ -56,7 +56,7 @@ func newEncodingPage(dispatcher *mq.Dispatcher) *EncodingPage {
 	p.filesSection.SetBorder(true)
 
 	p.filesTable = newTable()
-	p.filesTable.setHeaders("  # ", "File name", "Format", "Duration", "Total Size", "Encoding progress")
+	p.filesTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Encoding progress")
 	p.filesTable.setWeights(1, 2, 1, 1, 1, 5)
 	p.filesTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	p.filesSection.AddItem(p.filesTable.Table, 0, 0, 1, 1, 0, 0, true)
@@ -138,15 +138,19 @@ func (p *EncodingPage) stopEncoding() {
 
 func (p *EncodingPage) updateFileProgress(dp *dto.EncodingFileProgress) {
 	col := 5
-	w := p.filesTable.getColumnWidth(col) - 4
+	w := p.filesTable.getColumnWidth(col)
 	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+	if barWidth < 0 {
+		barWidth = 0
+	}
+	fillerWidth := w - len(progressText) - barWidth
+	if fillerWidth < 0 {
+		fillerWidth = 0
+	}
+	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
 	cell := p.filesTable.GetCell(dp.FileId+1, col)
-	cell.SetExpansion(0)
-	cell.SetMaxWidth(50)
 	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	// p.encodingTable.t.Select(dp.FileId+1, col)
 	ui.Draw()
 }
 

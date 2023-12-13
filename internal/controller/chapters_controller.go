@@ -41,6 +41,8 @@ func (c *ChaptersController) dispatchMessage(m *mq.Message) {
 		go c.searchReplaceChapters(dto)
 	case *dto.JoinChaptersCommand:
 		go c.joinChapters(dto)
+	case *dto.RecalculatePartsCommand:
+		go c.recalculateParts(dto)
 	case *dto.StopCommand:
 		go c.stopChapters(dto)
 	default:
@@ -76,6 +78,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	var chapterNo int = 1
 	var offset float64 = 0
 	var abSize int64 = 0
+	var abDuration float64 = 0
 	var partSize int64 = 0
 	var partDuration float64 = 0
 	var partChapters []dto.Chapter = []dto.Chapter{}
@@ -87,6 +90,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		chapterFiles = append(chapterFiles, dto.Mp3File{Number: fileNo, FileName: file.FileName, Size: mp3.Size(), Duration: mp3.Duration()})
 		fileNo++
 		abSize += mp3.Size()
+		abDuration += mp3.Duration()
 		partSize += mp3.Size()
 		partDuration += mp3.Duration()
 		chapter := dto.Chapter{Number: chapterNo, Name: mp3.Title(), Size: mp3.Size(), Duration: mp3.Duration(), Start: offset, End: offset + mp3.Duration(), Files: chapterFiles}
@@ -106,6 +110,10 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 			partChapters = []dto.Chapter{}
 		}
 	}
+
+	// update the audiobook size and duration
+	c.ab.TotalSize = abSize
+	c.ab.TotalDuration = abDuration
 
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
@@ -191,4 +199,10 @@ func (c *ChaptersController) joinChapters(cmd *dto.JoinChaptersCommand) {
 		part.Chapters = chapters
 	}
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
+}
+
+// Recalculate Parts using new PartSize
+func (c *ChaptersController) recalculateParts(cmd *dto.RecalculatePartsCommand) {
+	ab := cmd.Audiobook
+	c.createChapters(&dto.ChaptersCreate{Audiobook: ab})
 }

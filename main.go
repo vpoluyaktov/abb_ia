@@ -10,6 +10,7 @@ import (
 	"abb_ia/internal/utils"
 )
 
+// Min screen size for comfortable layout 45x125 characters
 func main() {
 	config.Load()
 

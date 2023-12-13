@@ -39,7 +39,7 @@ func SecondsToTime(sec float64) string {
 	sec /= 60
 	hh := int(sec)
 	time := fmt.Sprintf("%2d:%02d:%02d", hh, mm, ss)
-	return time
+	return strings.TrimSpace(time)
 }
 
 // Convert bytes to Gb, Kb, Mb, string format
@@ -113,7 +113,7 @@ func separateNumberAndSuffix(size string) (string, string) {
 // Convert download speed to Gb/s, Kb/s, Mb/s, string format
 func SpeedToHuman(b int64) string {
 	bytesH := BytesToHuman(b)
-	return fmt.Sprintf("%s%s", bytesH, "/s")
+	return fmt.Sprintf("%s/s", bytesH)
 }
 
 func FirstN(s string, n int) string {
