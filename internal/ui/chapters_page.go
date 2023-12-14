@@ -124,7 +124,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 
 	// description section
 	descriptionSection := newGrid()
-	descriptionSection.SetColumns(-1, 40)
+	descriptionSection.SetColumns(-1, 45)
 	descriptionSection.SetBorder(false)
 	p.textAreaDescription = newTextArea("")
 	p.textAreaDescription.SetChangedFunc(p.updateDescription)
@@ -146,7 +146,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 
 	// chapters section
 	p.chaptersSection = newGrid()
-	p.chaptersSection.SetColumns(-1, 40)
+	p.chaptersSection.SetColumns(-1, 45)
 	p.chaptersTable = newTable()
 	p.chaptersTable.SetBorder(true)
 	p.chaptersTable.SetTitle(" Book chapters: ")
@@ -302,7 +302,7 @@ func (p *ChaptersPage) updateChapterEntry(row int, col int) {
 
 	chapter, _ := p.ab.GetChapter(chapterNo)
 	durationH := utils.SecondsToTime(chapter.Duration)
-	d := newDialogWindow(p.mq, 11, 80, p.chaptersSection.Grid)
+	d := newDialogWindow(p.mq, 11, 78, p.chaptersSection.Grid)
 	f := newForm()
 	f.SetTitle("Update Chapter Name:")
 	f.AddTextView("Chapter #:  ", strconv.Itoa(chapter.Number), 5, 1, true, false)

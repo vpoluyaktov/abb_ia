@@ -9,13 +9,14 @@ import (
 )
 
 type dialogWindow struct {
-	mq     *mq.Dispatcher
-	grid   *tview.Grid
-	form   *tview.Form
-	shadow *tview.Grid
-	height int
-	width  int
-	focus  tview.Primitive // set focus after the form close
+	mq         *mq.Dispatcher
+	grid       *tview.Grid
+	form       *tview.Form
+	shadow     *tview.Grid
+	background *tview.Grid
+	height     int
+	width      int
+	focus      tview.Primitive // set focus after the form close
 }
 
 func newDialogWindow(dispatcher *mq.Dispatcher, height int, width int, focus tview.Primitive) *dialogWindow {
@@ -30,6 +31,12 @@ func newDialogWindow(dispatcher *mq.Dispatcher, height int, width int, focus tvi
 	d.shadow.SetRows(2, -1, d.height, -1)
 	d.shadow.SetColumns(4, -1, d.width, -1)
 	d.shadow.AddItem(tview.NewBox().SetBackgroundColor(black), 2, 2, 1, 1, 0, 0, false)
+
+	// gray background
+	d.background = tview.NewGrid()
+	d.background.SetRows(-1, d.height, -1)
+	d.background.SetColumns(-1, d.width, -1)
+	d.background.AddItem(tview.NewBox().SetBackgroundColor(gray), 1, 1, 1, 1, 0, 0, false)
 
 	// transparent background
 	d.grid = tview.NewGrid()
@@ -55,6 +62,7 @@ func newDialogWindow(dispatcher *mq.Dispatcher, height int, width int, focus tvi
 
 func (d *dialogWindow) Show() {
 	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.AddPageCommand{Name: "Shadow", Grid: d.shadow}, false)
+	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.AddPageCommand{Name: "Background", Grid: d.background}, false)
 	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.AddPageCommand{Name: "DialogWindow", Grid: d.grid}, false)
 	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.ShowPageCommand{Name: "DialogWindow"}, false)
 	d.mq.SendMessage(mq.DialogWindow, mq.TUI, &dto.SetFocusCommand{Primitive: d.form}, false)
@@ -63,6 +71,7 @@ func (d *dialogWindow) Show() {
 
 func (d *dialogWindow) Close() {
 	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.RemovePageCommand{Name: "DialogWindow"}, false)
+	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.RemovePageCommand{Name: "Background"}, false)
 	d.mq.SendMessage(mq.DialogWindow, mq.Frame, &dto.RemovePageCommand{Name: "Shadow"}, false)
 	if d.focus != nil {
 		ui.SetFocus(d.focus)

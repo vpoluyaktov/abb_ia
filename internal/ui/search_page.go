@@ -217,12 +217,12 @@ func (p *SearchPage) createBook() {
 		d := newDialogWindow(p.mq, 17, 55, p.resultSection.Grid)
 		f := newForm()
 		f.SetTitle("Create Audiobook")
-		f.AddInputField("Concurrent Downloaders:", utils.ToString(ab.Config.GetConcurrentDownloaders()), 4, acceptInt, func(t string) { ab.Config.SetConcurrentDownloaders(utils.ToInt(t)) })
-		f.AddInputField("Concurrent Encoders:", utils.ToString(ab.Config.GetConcurrentEncoders()), 4, acceptInt, func(t string) { ab.Config.SetConcurrentEncoders(utils.ToInt(t)) })
+		f.AddInputField("Concurrent Downloaders:", utils.ToString(ab.Config.GetConcurrentDownloaders()), 8, acceptInt, func(t string) { ab.Config.SetConcurrentDownloaders(utils.ToInt(t)) })
+		f.AddInputField("Concurrent Encoders:", utils.ToString(ab.Config.GetConcurrentEncoders()), 8, acceptInt, func(t string) { ab.Config.SetConcurrentEncoders(utils.ToInt(t)) })
 		f.AddCheckbox("Re-encode .mp3 files to the same Bit Rate?", ab.Config.IsReEncodeFiles(), func(t bool) { ab.Config.SetReEncodeFiles(t) })
-		f.AddInputField("Bit Rate (Kbps):", utils.ToString(ab.Config.GetBitRate()), 4, acceptInt, func(t string) { ab.Config.SetBitRate(utils.ToInt(t)) })
-		f.AddInputField("Sample Rate (Hz):", utils.ToString(ab.Config.GetSampleRate()), 6, acceptInt, func(t string) { ab.Config.SetSampleRate(utils.ToInt(t)) })
-		f.AddInputField("Audiobook part max file size (Mb):", utils.ToString(ab.Config.GetMaxFileSizeMb()), 6, acceptInt, func(t string) { ab.Config.SetMaxFileSizeMb(utils.ToInt(t)) })
+		f.AddInputField("Bit Rate (Kbps):", utils.ToString(ab.Config.GetBitRate()), 8, acceptInt, func(t string) { ab.Config.SetBitRate(utils.ToInt(t)) })
+		f.AddInputField("Sample Rate (Hz):", utils.ToString(ab.Config.GetSampleRate()), 8, acceptInt, func(t string) { ab.Config.SetSampleRate(utils.ToInt(t)) })
+		f.AddInputField("Audiobook part max file size (Mb):", utils.ToString(ab.Config.GetMaxFileSizeMb()), 8, acceptInt, func(t string) { ab.Config.SetMaxFileSizeMb(utils.ToInt(t)) })
 
 		f.AddButton("Create Audiobook", func() {
 			p.startDownload(ab)
