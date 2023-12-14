@@ -240,6 +240,7 @@ func (p *BuildPage) updateFileBuildProgress(dp *dto.BuildFileProgress) {
 		}
 		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
 		cell := p.buildTable.GetCell(dp.FileId+1, col)
+		cell.SetExpansion(p.buildTable.colWeight[col])
 		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 		ui.Draw()
 	}
@@ -282,6 +283,7 @@ func (p *BuildPage) updateFileCopyProgress(dp *dto.CopyFileProgress) {
 		}
 		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
 		cell := p.copyTable.GetCell(dp.FileId+1, col)
+		cell.SetExpansion(p.copyTable.colWeight[col])
 		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 		ui.Draw()
 	}
@@ -326,6 +328,7 @@ func (p *BuildPage) updateFileUploadProgress(dp *dto.UploadFileProgress) {
 		}
 		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
 		cell := p.uploadTable.GetCell(dp.FileId+1, col)
+		cell.SetExpansion(p.uploadTable.colWeight[col])
 		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 		ui.Draw()
 	}

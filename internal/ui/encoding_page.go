@@ -151,6 +151,7 @@ func (p *EncodingPage) updateFileProgress(dp *dto.EncodingFileProgress) {
 		}
 		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
 		cell := p.filesTable.GetCell(dp.FileId+1, col)
+		cell.SetExpansion(p.filesTable.colWeight[col])
 		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 		ui.Draw()
 	}
