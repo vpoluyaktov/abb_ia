@@ -8,7 +8,7 @@ import (
 	"abb_ia/internal/logger"
 	"abb_ia/internal/utils"
 
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 
 	"abb_ia/internal/mq"
 )

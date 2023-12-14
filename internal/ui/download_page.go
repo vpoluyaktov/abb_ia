@@ -9,7 +9,7 @@ import (
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
 
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 )
 
 type DownloadPage struct {
@@ -139,20 +139,22 @@ func (p *DownloadPage) stopDownload() {
 
 func (p *DownloadPage) updateFileProgress(dp *dto.DownloadFileProgress) {
 	col := 5
-	w := p.filesTable.getColumnWidth(col)
-	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
-	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	if barWidth < 0 {
-		barWidth = 0
+	w := p.filesTable.GetColumnWidth(col) - 5
+	if w > 0 {
+		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
+		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
+		if barWidth < 0 {
+			barWidth = 0
+		}
+		fillerWidth := w - len(progressText) - barWidth
+		if fillerWidth < 0 {
+			fillerWidth = 0
+		}
+		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
+		cell := p.filesTable.GetCell(dp.FileId+1, col)
+		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
+		ui.Draw()
 	}
-	fillerWidth := w - len(progressText) - barWidth
-	if fillerWidth < 0 {
-		fillerWidth = 0
-	}
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
-	cell := p.filesTable.GetCell(dp.FileId+1, col)
-	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	ui.Draw()
 }
 
 func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
@@ -166,14 +168,14 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Downloaded: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
-	w := p.progressTable.getColumnWidth(col) - 5
-	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
-	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
-	// progressCell.SetExpansion(0)
-	// progressCell.SetMaxWidth(0)
-	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	ui.Draw()
+	w := p.progressTable.GetColumnWidth(col) - 5
+	if w > 0 {
+		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
+		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
+		progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+		progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
+		ui.Draw()
+	}
 }
 
 func (p *DownloadPage) downloadComplete(c *dto.DownloadComplete) {

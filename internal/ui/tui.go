@@ -8,7 +8,7 @@ import (
 	"abb_ia/internal/dto"
 	"abb_ia/internal/mq"
 
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 )
 
 type components interface {
@@ -112,7 +112,7 @@ func (ui *TUI) GetFocus() tview.Primitive {
 	return ui.app.GetFocus()
 }
 
-func (ui *TUI) Draw()  {
+func (ui *TUI) Draw() {
 	go ui.app.Draw()
 }
 

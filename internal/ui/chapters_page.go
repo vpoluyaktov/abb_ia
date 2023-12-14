@@ -12,7 +12,7 @@ import (
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
 
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 )
 
 type ChaptersPage struct {
@@ -371,7 +371,7 @@ func (p *ChaptersPage) joinChapters() {
 }
 
 func (p *ChaptersPage) recalculateParts() {
-	p.ab.Config.SetMaxFileSizeMb(utils.ToInt(p.partSize)) 
+	p.ab.Config.SetMaxFileSizeMb(utils.ToInt(p.partSize))
 	abCopy, err := p.ab.GetCopy()
 	if err != nil {
 		logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
@@ -392,8 +392,6 @@ func (p *ChaptersPage) undoChapters() {
 func (p *ChaptersPage) refreshChapters(ab *dto.Audiobook) {
 	go p.displayParts(ab)
 }
-
-
 
 func (p *ChaptersPage) stopConfirmation() {
 	newYesNoDialog(p.mq, "Stop Confirmation", "Are you sure you want to stop editing chapters?", p.chaptersSection.Grid, p.stopChapters, func() {})

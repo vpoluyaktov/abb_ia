@@ -5,7 +5,7 @@ import (
 	"abb_ia/internal/mq"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 )
 
 type dialogWindow struct {

@@ -10,7 +10,7 @@ import (
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
 
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 )
 
 type BuildPage struct {
@@ -227,20 +227,22 @@ func (p *BuildPage) stopBuild() {
 
 func (p *BuildPage) updateFileBuildProgress(dp *dto.BuildFileProgress) {
 	col := 5
-	w := p.buildTable.getColumnWidth(col)
-	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
-	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	if barWidth < 0 {
-		barWidth = 0
+	w := p.buildTable.GetColumnWidth(col) - 5
+	if w > 0 {
+		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
+		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
+		if barWidth < 0 {
+			barWidth = 0
+		}
+		fillerWidth := w - len(progressText) - barWidth
+		if fillerWidth < 0 {
+			fillerWidth = 0
+		}
+		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
+		cell := p.buildTable.GetCell(dp.FileId+1, col)
+		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
+		ui.Draw()
 	}
-	fillerWidth := w - len(progressText) - barWidth
-	if fillerWidth < 0 {
-		fillerWidth = 0
-	}
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
-	cell := p.buildTable.GetCell(dp.FileId+1, col)
-	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	ui.Draw()
 }
 
 func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
@@ -254,33 +256,35 @@ func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%10s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
-	w := p.progressTable.getColumnWidth(col) - 4
-	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
-	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
-	// progressCell.SetExpansion(0)
-	// progressCell.SetMaxWidth(0)
-	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	ui.Draw()
+	w := p.progressTable.GetColumnWidth(col) - 4
+	if w > 0 {
+		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
+		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
+		progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+		progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
+		ui.Draw()
+	}
 }
 
 func (p *BuildPage) updateFileCopyProgress(dp *dto.CopyFileProgress) {
 	// update file progress
 	col := 5
-	w := p.copyTable.getColumnWidth(col)
-	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
-	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	if barWidth < 0 {
-		barWidth = 0
+	w := p.copyTable.GetColumnWidth(col) - 5
+	if w > 0 {
+		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
+		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
+		if barWidth < 0 {
+			barWidth = 0
+		}
+		fillerWidth := w - len(progressText) - barWidth
+		if fillerWidth < 0 {
+			fillerWidth = 0
+		}
+		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
+		cell := p.copyTable.GetCell(dp.FileId+1, col)
+		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
+		ui.Draw()
 	}
-	fillerWidth := w - len(progressText) - barWidth
-	if fillerWidth < 0 {
-		fillerWidth = 0
-	}
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
-	cell := p.copyTable.GetCell(dp.FileId+1, col)
-	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	ui.Draw()
 }
 
 func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
@@ -295,32 +299,36 @@ func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
-	w := p.progressTable.getColumnWidth(col) - 5
-	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
-	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
-	// progressCell.SetExpansion(0)
-	// progressCell.SetMaxWidth(0)
-	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	ui.Draw()
+	w := p.progressTable.GetColumnWidth(col) - 5
+	if w > 0 {
+		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
+		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
+		progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+		// progressCell.SetExpansion(0)
+		// progressCell.SetMaxWidth(0)
+		progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
+		ui.Draw()
+	}
 }
 
 func (p *BuildPage) updateFileUploadProgress(dp *dto.UploadFileProgress) {
 	col := 5
-	w := p.uploadTable.getColumnWidth(col)
-	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
-	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	if barWidth < 0 {
-		barWidth = 0
+	w := p.uploadTable.GetColumnWidth(col) - 5
+	if w > 0 {
+		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
+		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
+		if barWidth < 0 {
+			barWidth = 0
+		}
+		fillerWidth := w - len(progressText) - barWidth
+		if fillerWidth < 0 {
+			fillerWidth = 0
+		}
+		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
+		cell := p.uploadTable.GetCell(dp.FileId+1, col)
+		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
+		ui.Draw()
 	}
-	fillerWidth := w - len(progressText) - barWidth
-	if fillerWidth < 0 {
-		fillerWidth = 0
-	}
-	progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
-	cell := p.uploadTable.GetCell(dp.FileId+1, col)
-	cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	ui.Draw()
 }
 
 func (p *BuildPage) updateTotalUploadProgress(dp *dto.UploadProgress) {
@@ -335,14 +343,16 @@ func (p *BuildPage) updateTotalUploadProgress(dp *dto.UploadProgress) {
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
-	w := p.progressTable.getColumnWidth(col) - 5
-	progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
-	barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-	progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
-	// progressCell.SetExpansion(0)
-	// progressCell.SetMaxWidth(0)
-	progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
-	ui.Draw()
+	w := p.progressTable.GetColumnWidth(col) - 5
+	if w > 0 {
+		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
+		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
+		progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+		// progressCell.SetExpansion(0)
+		// progressCell.SetMaxWidth(0)
+		progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
+		ui.Draw()
+	}
 }
 
 /*

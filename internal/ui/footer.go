@@ -5,7 +5,7 @@ import (
 	"abb_ia/internal/dto"
 	"abb_ia/internal/mq"
 
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 )
 
 type footer struct {

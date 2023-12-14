@@ -2,12 +2,11 @@ package ui
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 )
 
 // // //////////////////////////////////////////////////////////////
@@ -127,7 +126,7 @@ type table struct {
 func newTable() *table {
 	t := &table{}
 	t.Table = tview.NewTable()
-	t.Table.SetDrawFunc(t.draw)
+	// t.Table.SetDrawFunc(t.draw)
 	t.Table.SetSelectable(true, false)
 	t.Table.SetSeparator(tview.Borders.Vertical)
 	// t.Table.SetSortClicked(false)
@@ -152,10 +151,10 @@ func (t *table) SetMouseDblClickFunc(f func(row, column int)) {
 	})
 }
 
-func (t *table) draw(screen tcell.Screen, x int, y int, width int, height int) (int, int, int, int) {
-	t.recalculateColumnWidths()
-	return t.Table.GetInnerRect()
-}
+// func (t *table) draw(screen tcell.Screen, x int, y int, width int, height int) (int, int, int, int) {
+// 	t.recalculateColumnWidths()
+// 	return t.Table.GetInnerRect()
+// }
 
 func (t *table) setHeaders(headers ...string) {
 	t.headers = headers
@@ -163,7 +162,7 @@ func (t *table) setHeaders(headers ...string) {
 
 func (t *table) setWeights(weights ...int) {
 	t.colWeight = weights
-	t.recalculateColumnWidths()
+	// t.recalculateColumnWidths()
 }
 
 func (t *table) setAlign(aligns ...uint) {
@@ -210,31 +209,31 @@ func (t *table) appendSeparator(cols ...string) {
 	}
 }
 
-// TODO - implement more accurate calculation
-func (t *table) recalculateColumnWidths() {
-	if len(t.colWeight) == 0 {
-		return
-	}
-	allWeights := 0
-	for _, w := range t.colWeight {
-		allWeights += w
-	}
-	_, _, tw, _ := t.Table.GetInnerRect()    // table weight
-	m := (float64(tw) / float64(allWeights)) // multiplier
+// // TODO - implement more accurate calculation
+// func (t *table) recalculateColumnWidths() {
+// 	if len(t.colWeight) == 0 {
+// 		return
+// 	}
+// 	allWeights := 0
+// 	for _, w := range t.colWeight {
+// 		allWeights += w
+// 	}
+// 	_, _, tw, _ := t.Table.GetInnerRect()    // table weight
+// 	m := (float64(tw) / float64(allWeights)) // multiplier
 
-	t.colWidth = make([]int, len(t.colWeight))
-	for c := range t.colWidth {
-		width := int(math.Round(m * float64(t.colWeight[c])))
-		t.colWidth[c] = width
-	}
-}
+// 	t.colWidth = make([]int, len(t.colWeight))
+// 	for c := range t.colWidth {
+// 		width := int(math.Round(m * float64(t.colWeight[c])))
+// 		t.colWidth[c] = width
+// 	}
+// }
 
-func (t *table) getColumnWidth(col int) int {
-	if len(t.colWidth) == 0 {
-		t.recalculateColumnWidths()
-	}
-	return t.colWidth[col]
-}
+// func (t *table) getColumnWidth(col int) int {
+// 	if len(t.colWidth) == 0 {
+// 		t.recalculateColumnWidths()
+// 	}
+// 	return t.colWidth[col]
+// }
 
 // //////////////////////////////////////////////////////////////
 // tview.Table wrapper (vertical layout)

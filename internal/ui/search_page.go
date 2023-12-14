@@ -10,7 +10,7 @@ import (
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
 
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 )
 
 type SearchPage struct {

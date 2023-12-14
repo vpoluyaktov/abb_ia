@@ -1,9 +1,9 @@
 package ui
 
 import (
-	"abb_ia/internal/dto"
 	"abb_ia/internal/mq"
-	"github.com/rivo/tview"
+	"abb_ia/internal/dto"
+	"github.com/vpoluyaktov/tview"
 )
 
 type header struct {

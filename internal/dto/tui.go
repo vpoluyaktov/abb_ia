@@ -3,7 +3,7 @@ package dto
 import (
 	"fmt"
 
-	"github.com/rivo/tview"
+	"github.com/vpoluyaktov/tview"
 )
 
 type DrawCommand struct {
