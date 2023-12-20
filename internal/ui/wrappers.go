@@ -163,7 +163,7 @@ func (t *table) setHeaders(headers ...string) {
 
 func (t *table) setWeights(weights ...int) {
 	t.colWeight = weights
-	// t.recalculateColumnWidths()
+	t.recalculateColumnWidths()
 }
 
 func (t *table) setAlign(aligns ...uint) {
@@ -171,6 +171,9 @@ func (t *table) setAlign(aligns ...uint) {
 }
 
 func (t *table) showHeader() {
+	if len(t.colWeight) == 0 || len(t.colWeight) != len(t.headers) {
+		return 
+	}
 	for col, h := range t.headers {
 		cell := tview.NewTableCell(h)
 		cell.SetTextColor(yellow)
@@ -186,6 +189,9 @@ func (t *table) showHeader() {
 }
 
 func (t *table) appendRow(cols ...string) {
+	if len(t.colWeight) == 0  {
+		return 
+	}
 	row := t.GetRowCount()
 	for col, val := range cols {
 		cell := tview.NewTableCell(val)
@@ -197,6 +203,9 @@ func (t *table) appendRow(cols ...string) {
 }
 
 func (t *table) appendSeparator(cols ...string) {
+	if len(t.colWeight) == 0  {
+		return 
+	}
 	row := t.GetRowCount()
 	for col, val := range cols {
 		cell := tview.NewTableCell(val)

@@ -42,7 +42,7 @@ func (c *AudiobookshelfClient) Login(userName string, password string) error {
 
 	requestBodyBytes, err := json.Marshal(requestBody)
 	if err != nil {
-		return fmt.Errorf("failed to marshal login response body: %v", err)
+		return fmt.Errorf("failed to marshal login request body: %v", err)
 	}
 
 	resp, err := http.Post(c.url+"/login", "application/json", bytes.NewBuffer(requestBodyBytes))
