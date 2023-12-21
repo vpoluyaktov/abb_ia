@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/url"
 	"sort"
 	"strconv"
@@ -16,8 +17,17 @@ import (
 	"github.com/vpoluyaktov/tview"
 )
 
+var (
+	// mp3 format list ranged by priority
+	Mp3Formats = []string{"16Kbps MP3", "24Kbps MP3", "32Kbps MP3", "40Kbps MP3", "48Kbps MP3", "56Kbps MP3", "64Kbps MP3", "80Kbps MP3", "96Kbps MP3", "112Kbps MP3", "128Kbps MP3", "144Kbps MP3", "160Kbps MP3", "224Kbps MP3", "256Kbps MP3", "320Kbps MP3", "VBR MP3"}
+	// audiobook cover formats
+	CoverFormats = []string{"JPEG", "JPEG Thumb"}
+)
+
 type SearchController struct {
-	mq *mq.Dispatcher
+	mq                *mq.Dispatcher
+	ia                *ia_client.IAClient
+	totalItemsFetched int
 }
 
 func NewSearchController(dispatcher *mq.Dispatcher) *SearchController {
@@ -37,22 +47,57 @@ func (c *SearchController) checkMQ() {
 func (c *SearchController) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.SearchCommand:
-		go c.performSearch(dto)
+		go c.search(dto)
+	case *dto.GetNextPageCommand:
+		go c.getGetNextPage(dto)
 	default:
 		m.UnsupportedTypeError(mq.SearchController)
 	}
 }
 
-func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
+func (c *SearchController) search(cmd *dto.SearchCommand) {
 	logger.Info(mq.SearchController + " received " + cmd.String())
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
-	ia := ia_client.New(config.Instance().GetSearchRowsMax(), config.Instance().IsUseMock(), config.Instance().IsSaveMock())
-	resp := ia.Search(cmd.SearchCondition, "audio")
+	c.totalItemsFetched = 0
+	c.ia = ia_client.New(config.Instance().GetRowsPerPage(), config.Instance().IsUseMock(), config.Instance().IsSaveMock())
+	resp := c.ia.Search(cmd.SearchCondition, "audio")
 	if resp == nil {
 		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.SearchCondition)
 	}
+	itemsFetched, err := c.fetchDetails(resp)
+	if err != nil {
+		logger.Error(mq.SearchController + ": Failed to fetch item details: " + err.Error())
+	}
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{SearchCondition: cmd.SearchCondition}, false)
+	if itemsFetched == 0 {
+		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.NothingFoundError{SearchCondition: cmd.SearchCondition}, false)
+	}
+}
 
+func (c *SearchController) getGetNextPage(cmd *dto.GetNextPageCommand) {
+	logger.Info(mq.SearchController + " received " + cmd.String())
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	resp := c.ia.GetNextPage(cmd.SearchCondition, "audio")
+	if resp == nil {
+		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.SearchCondition)
+	}
+	itemsFetched, err := c.fetchDetails(resp)
+	if err != nil {
+		logger.Error(mq.SearchController + ": Failed to fetch item details: " + err.Error())
+	}
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{SearchCondition: cmd.SearchCondition}, false)
+	if itemsFetched == 0 {
+		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.LastPageMessage{SearchCondition: cmd.SearchCondition}, false)
+	}
+}
+
+func (c *SearchController) fetchDetails(resp *ia_client.SearchResponse) (int, error) {
 	itemsTotal := resp.Response.NumFound
 	itemsFetched := 0
 
@@ -67,7 +112,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 		item.AudioFiles = make([]dto.AudioFile, 0)
 		var totalSize int64 = 0
 		var totalLength float64 = 0.0
-		d := ia.GetItemDetails(doc.Identifier)
+		d := c.ia.GetItemDetails(doc.Identifier)
 		if d != nil {
 			item.Server = d.Server
 			item.Dir = d.Dir
@@ -82,18 +127,19 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 			}
 
 			if len(d.Metadata.Description) > 0 {
-				item.Description = tview.Escape(ia.Html2Text(d.Metadata.Description[0]))
+				item.Description = tview.Escape(c.ia.Html2Text(d.Metadata.Description[0]))
 			}
 
 			for name, metadata := range d.Files {
 				format := metadata.Format
 				// collect mp3 files
 
-				if utils.Contains(dto.Mp3Formats, format) {
+				if utils.Contains(Mp3Formats, format) {
 					size, sErr := strconv.ParseInt(metadata.Size, 10, 64)
 					length, lErr := utils.TimeToSeconds(metadata.Length)
 					if sErr != nil || lErr != nil {
 						logger.Error("Can't parse the file metadata: " + name)
+						return 0, fmt.Errorf("can't parse file metadata: " + name)
 					} else {
 						file := dto.AudioFile{}
 						file.Name = strings.TrimPrefix(name, "/")
@@ -110,8 +156,8 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 						addNewFile := true
 						for i, oldFile := range item.AudioFiles {
 							if file.Title == oldFile.Title {
-								oldFilePriority := utils.GetIndex(dto.Mp3Formats, oldFile.Format)
-								newFilePriority := utils.GetIndex(dto.Mp3Formats, file.Format)
+								oldFilePriority := utils.GetIndex(Mp3Formats, oldFile.Format)
+								newFilePriority := utils.GetIndex(Mp3Formats, file.Format)
 								if newFilePriority > oldFilePriority {
 									// remove old file from the list
 									item.AudioFiles = append(item.AudioFiles[:i], item.AudioFiles[i+1:]...)
@@ -137,7 +183,7 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 				}
 
 				// collect image files
-				if utils.Contains(dto.CoverFormats, format) {
+				if utils.Contains(CoverFormats, format) {
 					size, err := strconv.ParseInt(metadata.Size, 10, 64)
 					if err == nil {
 						file := dto.ImageFile{}
@@ -172,17 +218,13 @@ func (c *SearchController) performSearch(cmd *dto.SearchCommand) {
 
 			if len(item.AudioFiles) > 0 {
 				itemsFetched++
-				sp := &dto.SearchProgress{ItemsTotal: itemsTotal, ItemsFetched: itemsFetched}
+				c.totalItemsFetched++
+				sp := &dto.SearchProgress{ItemsTotal: itemsTotal, ItemsFetched: c.totalItemsFetched}
 				c.mq.SendMessage(mq.SearchController, mq.SearchPage, sp, false)
 				c.mq.SendMessage(mq.SearchController, mq.SearchPage, item, false)
 			}
 		}
-		logger.Debug(mq.SearchController + " fetched first " + strconv.Itoa(itemsFetched) + " items from " + strconv.Itoa(itemsTotal) + " total")
+		logger.Debug(mq.SearchController + " fetched first " + strconv.Itoa(c.totalItemsFetched) + " items from " + strconv.Itoa(itemsTotal) + " total")
 	}
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-
-	if itemsFetched == 0 {
-		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.NothingFoundError{SearchCondition: cmd.SearchCondition}, false)
-	}
+	return itemsFetched, nil
 }

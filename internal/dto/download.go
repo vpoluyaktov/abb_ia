@@ -18,17 +18,17 @@ func (c *DisplayBookInfoCommand) String() string {
 	return fmt.Sprintf("DisplayBookInfoCommand: %s", c.Audiobook.String())
 }
 
-type DownloadFileProgress struct {
+type FileDownloadProgress struct {
 	FileId   int
 	FileName string
 	Percent  int
 }
 
-func (c *DownloadFileProgress) String() string {
-	return fmt.Sprintf("DownloadFileProgress: %d, %s, %d", c.FileId, c.FileName, c.Percent)
+func (c *FileDownloadProgress) String() string {
+	return fmt.Sprintf("FileDownloadProgress: %d, %s, %d", c.FileId, c.FileName, c.Percent)
 }
 
-type DownloadProgress struct {
+type TotalDownloadProgress struct {
 	Elapsed string // time since started
 	Percent int
 	Files   string // files downloaded
@@ -37,8 +37,8 @@ type DownloadProgress struct {
 	ETA     string // ETA in seconds
 }
 
-func (c *DownloadProgress) String() string {
-	return fmt.Sprintf("DownloadProgress: %d", c.Percent)
+func (c *TotalDownloadProgress) String() string {
+	return fmt.Sprintf("TotalDownloadProgress: %d", c.Percent)
 }
 
 type DownloadComplete struct {

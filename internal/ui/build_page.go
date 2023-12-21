@@ -127,9 +127,9 @@ func (p *BuildPage) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.DisplayBookInfoCommand:
 		p.displayBookInfo(dto.Audiobook)
-	case *dto.BuildFileProgress:
+	case *dto.FileBuildProgress:
 		p.updateFileBuildProgress(dto)
-	case *dto.BuildProgress:
+	case *dto.TotalBuildProgress:
 		p.updateTotalBuildProgress(dto)
 	case *dto.BuildComplete:
 		p.buildComplete(dto)
@@ -225,7 +225,7 @@ func (p *BuildPage) stopBuild() {
 	p.switchToSearch()
 }
 
-func (p *BuildPage) updateFileBuildProgress(dp *dto.BuildFileProgress) {
+func (p *BuildPage) updateFileBuildProgress(dp *dto.FileBuildProgress) {
 	col := 5
 	w := p.buildTable.GetColumnWidth(col) - 5
 	if w > 0 {
@@ -246,12 +246,13 @@ func (p *BuildPage) updateFileBuildProgress(dp *dto.BuildFileProgress) {
 	}
 }
 
-func (p *BuildPage) updateTotalBuildProgress(dp *dto.BuildProgress) {
+func (p *BuildPage) updateTotalBuildProgress(dp *dto.TotalBuildProgress) {
 	if p.progressTable.GetRowCount() == 0 {
 		for i := 0; i < 2; i++ {
 			p.progressTable.appendRow("")
 		}
 	}
+	p.progressSection.SetTitle(" Build progress: ")
 	infoCell := p.progressTable.GetCell(0, 0)
 	progressCell := p.progressTable.GetCell(1, 0)
 	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%10s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Files, dp.Speed, dp.ETA)

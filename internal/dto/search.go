@@ -2,12 +2,6 @@ package dto
 
 import "fmt"
 
-// format list ranged by priority
-var Mp3Formats = []string{"16Kbps MP3", "24Kbps MP3", "32Kbps MP3", "40Kbps MP3", "48Kbps MP3", "56Kbps MP3", "64Kbps MP3", "80Kbps MP3", "96Kbps MP3", "112Kbps MP3", "128Kbps MP3", "144Kbps MP3", "160Kbps MP3", "224Kbps MP3", "256Kbps MP3", "320Kbps MP3", "VBR MP3"}
-
-//
-var CoverFormats = []string{"JPEG", "JPEG Thumb"}
-
 type SearchCommand struct {
 	SearchCondition string
 }
@@ -16,12 +10,36 @@ func (c *SearchCommand) String() string {
 	return fmt.Sprintf("SearchCommand: %s", c.SearchCondition)
 }
 
+type GetNextPageCommand struct {
+	SearchCondition string
+}
+
+func (c *GetNextPageCommand) String() string {
+	return fmt.Sprintf("GetNextPageCommand: %s", c.SearchCondition)
+}
+
+type SearchComplete struct {
+	SearchCondition string
+}
+
+func (c *SearchComplete) String() string {
+	return fmt.Sprintf("SearchComplete: %s", c.SearchCondition)
+}
+
 type NothingFoundError struct {
 	SearchCondition string
 }
 
 func (c *NothingFoundError) String() string {
 	return fmt.Sprintf("NothingFoundError: %s", c.SearchCondition)
+}
+
+type LastPageMessage struct {
+	SearchCondition string
+}
+
+func (c *LastPageMessage) String() string {
+	return fmt.Sprintf("LastPageMessage: %s", c.SearchCondition)
 }
 
 type SearchProgress struct {

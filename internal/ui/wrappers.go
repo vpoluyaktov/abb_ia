@@ -118,10 +118,12 @@ func (g *grid) getFocusIndex() (int, error) {
 // //////////////////////////////////////////////////////////////
 type table struct {
 	*tview.Table
-	headers   []string
-	colWeight []int
-	colWidth  []int
-	aligns    []uint
+	mu           sync.Mutex
+	headers      []string
+	colWeight    []int
+	colWidth     []int
+	aligns       []uint
+	lastRowEvent func()
 }
 
 func newTable() *table {
@@ -136,7 +138,22 @@ func newTable() *table {
 	t.Table.SetBorder(false)
 	t.Table.Clear()
 	t.Table.SetEvaluateAllRows(true)
+	t.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyDown {
+			row, _ := t.GetSelection()
+			if row == t.GetRowCount()-1 {
+				if t.lastRowEvent != nil {
+					t.lastRowEvent()
+				}
+			}
+		}
+		return event
+	})
 	return t
+}
+
+func (t *table) setLastRowEvent(fn func()) {
+	t.lastRowEvent = fn
 }
 
 // Mouse Double Click
@@ -172,8 +189,10 @@ func (t *table) setAlign(aligns ...uint) {
 
 func (t *table) showHeader() {
 	if len(t.colWeight) == 0 || len(t.colWeight) != len(t.headers) {
-		return 
+		return
 	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	for col, h := range t.headers {
 		cell := tview.NewTableCell(h)
 		cell.SetTextColor(yellow)
@@ -189,9 +208,11 @@ func (t *table) showHeader() {
 }
 
 func (t *table) appendRow(cols ...string) {
-	if len(t.colWeight) == 0  {
-		return 
+	if len(t.colWeight) == 0 {
+		return
 	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	row := t.GetRowCount()
 	for col, val := range cols {
 		cell := tview.NewTableCell(val)
@@ -203,9 +224,11 @@ func (t *table) appendRow(cols ...string) {
 }
 
 func (t *table) appendSeparator(cols ...string) {
-	if len(t.colWeight) == 0  {
-		return 
+	if len(t.colWeight) == 0 {
+		return
 	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	row := t.GetRowCount()
 	for col, val := range cols {
 		cell := tview.NewTableCell(val)
@@ -224,6 +247,8 @@ func (t *table) recalculateColumnWidths() {
 	if len(t.colWeight) == 0 {
 		return
 	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	allWeights := 0
 	for _, w := range t.colWeight {
 		allWeights += w

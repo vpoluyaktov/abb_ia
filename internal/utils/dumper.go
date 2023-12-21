@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-var lock sync.Mutex
+var mu sync.Mutex
 
 var Marshal = func(obj interface{}) (io.Reader, error) {
   b, err := json.MarshalIndent(obj, "", "  ")
@@ -24,8 +24,8 @@ var Unmarshal = func(r io.Reader, obj interface{}) error {
 
 // Save saves a representation of object to the file at path.
 func DumpJson(file string, obj interface{}) error {
-  lock.Lock()
-  defer lock.Unlock()
+  mu.Lock()
+  defer mu.Unlock()
   f, err := os.Create(file)
   if err != nil {
     return err
@@ -41,8 +41,8 @@ func DumpJson(file string, obj interface{}) error {
 
 // loads the file at path into obj.
 func LoadJson(file string, obj interface{}) error {
-  lock.Lock()
-  defer lock.Unlock()
+  mu.Lock()
+  defer mu.Unlock()
   f, err := os.Open(file)
   if err != nil {
     return err

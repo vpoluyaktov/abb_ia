@@ -96,9 +96,9 @@ func (p *DownloadPage) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.DisplayBookInfoCommand:
 		p.displayBookInfo(dto.Audiobook)
-	case *dto.DownloadFileProgress:
+	case *dto.FileDownloadProgress:
 		p.updateFileProgress(dto)
-	case *dto.DownloadProgress:
+	case *dto.TotalDownloadProgress:
 		p.updateTotalProgress(dto)
 	case *dto.DownloadComplete:
 		p.downloadComplete(dto)
@@ -137,7 +137,7 @@ func (p *DownloadPage) stopDownload() {
 	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 }
 
-func (p *DownloadPage) updateFileProgress(dp *dto.DownloadFileProgress) {
+func (p *DownloadPage) updateFileProgress(dp *dto.FileDownloadProgress) {
 	col := 5
 	w := p.filesTable.GetColumnWidth(col) - 5
 	if w > 0 {
@@ -158,7 +158,7 @@ func (p *DownloadPage) updateFileProgress(dp *dto.DownloadFileProgress) {
 	}
 }
 
-func (p *DownloadPage) updateTotalProgress(dp *dto.DownloadProgress) {
+func (p *DownloadPage) updateTotalProgress(dp *dto.TotalDownloadProgress) {
 	if p.progressTable.GetRowCount() == 0 {
 		for i := 0; i < 2; i++ {
 			p.progressTable.appendRow("")
