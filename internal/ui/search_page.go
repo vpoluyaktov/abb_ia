@@ -14,10 +14,11 @@ import (
 )
 
 type SearchPage struct {
-	mq             *mq.Dispatcher
-	mainGrid       *grid
-	searchCriteria string
-	searchResult   []*dto.IAItem
+	mq              *mq.Dispatcher
+	mainGrid        *grid
+	searchCriteria  string
+	isSearchRunning bool
+	searchResult    []*dto.IAItem
 
 	searchSection         *grid
 	inputField            *tview.InputField
@@ -74,10 +75,11 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.resultSection.SetBorder(true)
 
 	p.resultTable = newTable()
-	p.resultTable.setHeaders("Author", "Title", "Files", "Duration (hh:mm:ss)", "Total Size")
-	p.resultTable.setWeights(3, 6, 2, 1, 1)
-	p.resultTable.setAlign(tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
+	p.resultTable.setHeaders(" # ", "Author", "Title", "Files", "Duration (hh:mm:ss)", "Total Size")
+	p.resultTable.setWeights(1, 3, 6, 2, 1, 1)
+	p.resultTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.resultTable.SetSelectionChangedFunc(p.updateDetails)
+	p.resultTable.setLastRowEvent(p.lastRowEvent)
 	p.resultSection.AddItem(p.resultTable.Table, 0, 0, 1, 1, 0, 0, true)
 	p.mainGrid.AddItem(p.resultSection.Grid, 1, 0, 1, 1, 0, 0, true)
 
@@ -137,11 +139,15 @@ func (p *SearchPage) checkMQ() {
 func (p *SearchPage) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
 	case *dto.IAItem:
-		go p.updateResult(dto)
+		p.updateResult(dto)
 	case *dto.SearchProgress:
 		p.updateTitle(dto)
+	case *dto.SearchComplete:
+		p.isSearchRunning = false
 	case *dto.NothingFoundError:
 		p.showNothingFoundError(dto)
+	case *dto.LastPageMessage:
+		p.showLastPageMessage(dto)	
 	case *dto.NewAppVersionFound:
 		p.showNewVersionMessage(dto)
 	case *dto.FFMPEGNotFoundError:
@@ -152,9 +158,12 @@ func (p *SearchPage) dispatchMessage(m *mq.Message) {
 }
 
 func (p *SearchPage) runSearch() {
+	if p.isSearchRunning {
+		return
+	}
+	p.isSearchRunning = true
 	p.clearSearchResults()
 	p.resultTable.showHeader()
-	// Disable Search Button here
 	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.SearchCommand{SearchCondition: p.searchCriteria}, false)
 	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.resultTable.Table}, true)
 }
@@ -172,17 +181,25 @@ func (p *SearchPage) clearEverything() {
 	p.clearSearchResults()
 }
 
+func (p *SearchPage) lastRowEvent() {
+	if p.isSearchRunning {
+		return
+	}
+	p.isSearchRunning = true
+	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.GetNextPageCommand{SearchCondition: p.searchCriteria}, false)
+}
+
 func (p *SearchPage) updateResult(i *dto.IAItem) {
 	logger.Debug(mq.SearchPage + ": Got AI Item: " + i.Title)
 	p.searchResult = append(p.searchResult, i)
-	p.resultTable.appendRow(i.Creator, i.Title, strconv.Itoa(len(i.AudioFiles)), utils.SecondsToTime(i.TotalLength), utils.BytesToHuman(i.TotalSize))
-	p.resultTable.ScrollToBeginning()
-	p.updateDetails(1, 0)
+	row, col := p.resultTable.GetSelection()
+	p.resultTable.appendRow(strconv.Itoa(p.resultTable.GetRowCount()), i.Creator, i.Title, strconv.Itoa(len(i.AudioFiles)), utils.SecondsToTime(i.TotalLength), utils.BytesToHuman(i.TotalSize))
+	p.resultTable.Select(row, col)
 	ui.Draw()
 }
 
 func (p *SearchPage) updateTitle(sp *dto.SearchProgress) {
-	p.resultSection.SetTitle(fmt.Sprintf(" Search result (first %d items from %d total): ", sp.ItemsFetched, sp.ItemsTotal))
+	p.resultSection.SetTitle(fmt.Sprintf(" Search result (fetched %d items from %d total): ", sp.ItemsFetched, sp.ItemsTotal))
 }
 
 func (p *SearchPage) updateDetails(row int, col int) {
@@ -251,6 +268,14 @@ func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
 		"No results were found for your search term: [darkblue]'"+dto.SearchCondition+"'[black].\n"+
 			"Please revise your search criteria.",
 		p.searchSection.Grid, func() {})
+}
+
+func (p *SearchPage) showLastPageMessage(dto *dto.LastPageMessage) {
+	newMessageDialog(p.mq, "Notification",
+		"No more items were found for \n"+
+		"your search term: [darkblue]'"+dto.SearchCondition+"'[black].\n"+
+		"This is the last page.\n",
+		p.resultSection.Grid, func() {})
 }
 
 func (p *SearchPage) showFFMPEGNotFoundError(dto *dto.FFMPEGNotFoundError) {

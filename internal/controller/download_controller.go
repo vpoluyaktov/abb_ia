@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"abb_ia/internal/dto"
-	"abb_ia/internal/ia"
+	ia_client "abb_ia/internal/ia"
 	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
@@ -79,7 +79,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 
 	// download files
-	ia := ia_client.New(c.ab.Config.GetSearchRowsMax(), c.ab.Config.IsUseMock(), c.ab.Config.IsSaveMock())
+	ia := ia_client.New(c.ab.Config.GetRowsPerPage(), c.ab.Config.IsUseMock(), c.ab.Config.IsSaveMock())
 	c.stopFlag = false
 	c.files = make([]fileDownload, len(item.AudioFiles))
 	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentDownloaders())
@@ -111,7 +111,7 @@ func (c *DownloadController) updateFileProgress(fileId int, fileName string, siz
 		}
 
 		// sent a message only if progress changed
-		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
+		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.FileDownloadProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
 	}
 	c.files[fileId].fileId = fileId
 	c.files[fileId].fileSize = size
@@ -169,7 +169,7 @@ func (c *DownloadController) updateTotalProgress() {
 			speedH := utils.SpeedToHuman(speed)
 			etaH := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
+			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.TotalDownloadProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
 		}
 		time.Sleep(mq.PullFrequency)
 	}

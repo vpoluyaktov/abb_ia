@@ -10,17 +10,17 @@ func (c *BuildCommand) String() string {
 	return fmt.Sprintf("BuildCommand: %s", c.Audiobook.String())
 }
 
-type BuildFileProgress struct {
+type FileBuildProgress struct {
 	FileId   int
 	FileName string
 	Percent  int
 }
 
-func (c *BuildFileProgress) String() string {
-	return fmt.Sprintf("BuildFileProgress: %d, %s, %d", c.FileId, c.FileName, c.Percent)
+func (c *FileBuildProgress) String() string {
+	return fmt.Sprintf("FileBuildProgress: %d, %s, %d", c.FileId, c.FileName, c.Percent)
 }
 
-type BuildProgress struct {
+type TotalBuildProgress struct {
 	Elapsed string // time since started
 	Percent int
 	Files   string // files encoded
@@ -28,10 +28,9 @@ type BuildProgress struct {
 	ETA     string // ETA in seconds
 }
 
-func (c *BuildProgress) String() string {
-	return fmt.Sprintf("BuildProgress: %d", c.Percent)
+func (c *TotalBuildProgress) String() string {
+	return fmt.Sprintf("TotalBuildProgress: %d", c.Percent)
 }
-
 
 type BuildComplete struct {
 	Audiobook *Audiobook

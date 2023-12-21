@@ -5,4 +5,4 @@ dist/
 output/
 __debug_bin*
 abb_ia.log
-config.yaml
+abb_ia.config.yaml

@@ -26,7 +26,7 @@ type ConfigPage struct {
 	logFileNameField *tview.InputField
 	logLevelField    *tview.DropDown
 	searchCondition  *tview.InputField
-	maxSearchRows    *tview.InputField
+	rowsPerPage      *tview.InputField
 	useMockField     *tview.Checkbox
 	saveMockField    *tview.Checkbox
 	outputDir        *tview.InputField
@@ -73,7 +73,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	configFormLeft := newForm()
 	configFormLeft.SetHorizontal(false)
 	p.searchCondition = configFormLeft.AddInputField("Default Search condition:", "", 40, nil, func(t string) { p.configCopy.SetSearchCondition(t) })
-	p.maxSearchRows = configFormLeft.AddInputField("Maximum rows in the search result:", "", 4, acceptInt, func(t string) { p.configCopy.SetSearchRowsMax(utils.ToInt(t)) })
+	p.rowsPerPage = configFormLeft.AddInputField("Rows per a page in the search result:", "", 4, acceptInt, func(t string) { p.configCopy.SetRowsPerPage(utils.ToInt(t)) })
 	p.useMockField = configFormLeft.AddCheckbox("Use mock?", false, func(t bool) { p.configCopy.SetUseMock(t) })
 	p.saveMockField = configFormLeft.AddCheckbox("Save mock?", false, func(t bool) { p.configCopy.SetSaveMock(t) })
 	p.configSection.AddItem(configFormLeft.Form, 0, 0, 1, 1, 0, 0, true)
@@ -146,7 +146,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	// screen navigation order
 	p.mainGrid.SetNavigationOrder(
 		p.searchCondition,
-		p.maxSearchRows,
+		p.rowsPerPage,
 		p.useMockField,
 		p.saveMockField,
 		p.outputDir,
@@ -199,7 +199,7 @@ func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 	p.logFileNameField.SetText(p.configCopy.GetLogFileName())
 	p.logLevelField.SetCurrentOption(utils.GetIndex(logger.LogLeves(), p.configCopy.GetLogLevel()))
 	p.searchCondition.SetText(p.configCopy.GetSearchCondition())
-	p.maxSearchRows.SetText(utils.ToString(p.configCopy.GetSearchRowsMax()))
+	p.rowsPerPage.SetText(utils.ToString(p.configCopy.GetRowsPerPage()))
 	p.useMockField.SetChecked(p.configCopy.IsUseMock())
 	p.saveMockField.SetChecked(p.configCopy.IsSaveMock())
 

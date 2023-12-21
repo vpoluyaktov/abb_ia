@@ -230,7 +230,7 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 		return
 	}
 
-	// clean up 
+	// clean up
 	os.Remove(part.AACFile)
 
 	// add tags and cover image
@@ -312,7 +312,7 @@ func (c *BuildController) updateFileProgress(fileId int, l net.Listener) {
 			c.files[fileId].encodingSpeed = encodingSpeed
 			c.files[fileId].progress = percent
 			c.files[fileId].complete = complete
-			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildFileProgress{FileId: fileId, FileName: c.files[fileId].fileName, Percent: percent}, true)
+			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.FileBuildProgress{FileId: fileId, FileName: c.files[fileId].fileName, Percent: percent}, true)
 		}
 	}
 }
@@ -361,7 +361,7 @@ func (c *BuildController) updateTotalProgress() {
 			speedH := fmt.Sprintf("%.0fx", speed)
 			etaH := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, true)
+			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.TotalBuildProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, true)
 		}
 		time.Sleep(mq.PullFrequency)
 	}

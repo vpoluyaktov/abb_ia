@@ -7,6 +7,7 @@ import (
 
 	"abb_ia/internal/logger"
 	"abb_ia/internal/utils"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -17,7 +18,7 @@ var (
 
 // global vars
 var (
-	configFile            = "config.yaml"
+	configFile            = "abb_ia.config.yaml"
 	appVersion, buildDate string
 	repoOwner             string = "vpoluyaktov"
 	repoName              string = "abb_ia"
@@ -26,7 +27,7 @@ var (
 // Fields of this stuct should to be private but I have to make them public because yaml.Marshal/Unmarshal can't work with private fields
 type Config struct {
 	SearchCondition        string        `yaml:"SearchCondition"`
-	SearchRowsMax          int           `yaml:"SearchRowsMax"`
+	RowsPerPage            int           `yaml:"RowsPerPage"`
 	LogFileName            string        `yaml:"LogFileName"`
 	OutputDir              string        `yaml:"Outputdir"`
 	CopyToOutputDir        bool          `yaml:"CopyToOutputDir"`
@@ -73,7 +74,7 @@ func Load() {
 	config.CopyToOutputDir = true
 	config.OutputDir = "/mnt/NAS/Audiobooks/Internet Archive"
 	config.LogLevel = "INFO"
-	config.SearchRowsMax = 25
+	config.RowsPerPage = 25
 	config.UseMock = false
 	config.SaveMock = false
 	config.SearchCondition = ""
@@ -181,12 +182,12 @@ func (c *Config) GetLogLevel() string {
 	return c.LogLevel
 }
 
-func (c *Config) SetSearchRowsMax(r int) {
-	c.SearchRowsMax = r
+func (c *Config) SetRowsPerPage(r int) {
+	c.RowsPerPage = r
 }
 
-func (c *Config) GetSearchRowsMax() int {
-	return c.SearchRowsMax
+func (c *Config) GetRowsPerPage() int {
+	return c.RowsPerPage
 }
 
 func (c *Config) SetUseMock(b bool) {

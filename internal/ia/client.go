@@ -24,6 +24,7 @@ const (
 type IAClient struct {
 	restyClient    *resty.Client
 	maxSearchRows  int
+	page           int
 	loadMockResult bool
 	saveMockResult bool
 }
@@ -48,7 +49,18 @@ func (client *IAClient) Search(searchCondition string, mediaType string) *Search
 		item_id := strings.Split(searchCondition, "/")[4]
 		return client.searchByID(item_id, mediaType)
 	} else {
+		client.page = 1
 		return client.searchByTitle(searchCondition, mediaType)
+	}
+}
+
+func (client *IAClient) GetNextPage(searchCondition string, mediaType string) *SearchResponse {
+	if strings.Contains(searchCondition, IA_BASE_URL+"/details/") {
+		return &SearchResponse{}
+	} else {
+		client.page += 1
+		resp := client.searchByTitle(searchCondition, mediaType)
+		return resp
 	}
 }
 
@@ -60,8 +72,8 @@ func (client *IAClient) searchByTitle(title string, mediaType string) *SearchRes
 			logger.Error("IA Client SearchByTitle() mock load error: " + err.Error())
 		}
 	} else {
-		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=1",
-			url.QueryEscape(title), mediaType, client.maxSearchRows)
+		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=%d",
+			url.QueryEscape(title), mediaType, client.maxSearchRows, client.page)
 		logger.Debug("IA request: " + searchURL)
 		_, err := client.restyClient.R().SetResult(result).Get(searchURL)
 		if err != nil {
