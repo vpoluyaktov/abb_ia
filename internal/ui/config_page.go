@@ -25,7 +25,8 @@ type ConfigPage struct {
 	// Audobookbuilder config section
 	logFileNameField *tview.InputField
 	logLevelField    *tview.DropDown
-	searchCondition  *tview.InputField
+	defaultAuthor    *tview.InputField
+	defaultTitle     *tview.InputField
 	rowsPerPage      *tview.InputField
 	useMockField     *tview.Checkbox
 	saveMockField    *tview.Checkbox
@@ -60,7 +61,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.mq.RegisterListener(mq.ConfigPage, p.dispatchMessage)
 
 	p.mainGrid = newGrid()
-	p.mainGrid.SetRows(-1, -1, -1)
+	p.mainGrid.SetRows(13, 13, -1)
 	p.mainGrid.SetColumns(0)
 
 	// Audobookbuilder config section
@@ -72,8 +73,9 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 
 	configFormLeft := newForm()
 	configFormLeft.SetHorizontal(false)
-	p.searchCondition = configFormLeft.AddInputField("Default Search condition:", "", 40, nil, func(t string) { p.configCopy.SetSearchCondition(t) })
-	p.rowsPerPage = configFormLeft.AddInputField("Rows per a page in the search result:", "", 4, acceptInt, func(t string) { p.configCopy.SetRowsPerPage(utils.ToInt(t)) })
+	p.defaultAuthor = configFormLeft.AddInputField("Creator:", "", 40, nil, func(t string) { p.configCopy.SetDefaultAuthor(t) })
+	p.defaultTitle = configFormLeft.AddInputField("Title:", "", 40, nil, func(t string) { p.configCopy.SetDefaultTitle(t) })
+	p.rowsPerPage = configFormLeft.AddInputField("Page size:", "", 4, acceptInt, func(t string) { p.configCopy.SetRowsPerPage(utils.ToInt(t)) })
 	p.useMockField = configFormLeft.AddCheckbox("Use mock?", false, func(t bool) { p.configCopy.SetUseMock(t) })
 	p.saveMockField = configFormLeft.AddCheckbox("Save mock?", false, func(t bool) { p.configCopy.SetSaveMock(t) })
 	p.configSection.AddItem(configFormLeft.Form, 0, 0, 1, 1, 0, 0, true)
@@ -81,19 +83,26 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	configFormRight := newForm()
 	configFormRight.SetHorizontal(false)
 	p.outputDir = configFormRight.AddInputField("Output directory:", "", 40, nil, func(t string) { p.configCopy.SetOutputdDir(t) })
-	p.copyToOutputDir = configFormRight.AddCheckbox("Copy audiobook to the output directory?", false, func(t bool) { p.configCopy.SetCopyToOutputDir(t) })
-	p.tmpDir = configFormRight.AddInputField("Temporary (working) directory:", "", 40, nil, func(t string) { p.configCopy.SetTmpDir(t) })
+	p.copyToOutputDir = configFormRight.AddCheckbox("Copy to output directory?", false, func(t bool) { p.configCopy.SetCopyToOutputDir(t) })
+	p.tmpDir = configFormRight.AddInputField("Working directory:", "", 40, nil, func(t string) { p.configCopy.SetTmpDir(t) })
 	p.logFileNameField = configFormRight.AddInputField("Log file name:", "", 40, nil, func(t string) { p.configCopy.SetLogfileName(t) })
 	p.logLevelField = configFormRight.AddDropdown("Log level:", utils.AddSpaces(logger.LogLeves()), 1, func(o string, i int) { p.configCopy.SetLogLevel(strings.TrimSpace(o)) })
 	p.configSection.AddItem(configFormRight.Form, 0, 1, 1, 1, 0, 0, true)
 
+	buttonsGrid := newGrid()
+	buttonsGrid.SetRows(3, 3, -1)
+	buttonsGrid.SetColumns(0)
 	buttonsForm := newForm()
 	buttonsForm.SetHorizontal(false)
 	buttonsForm.SetButtonsAlign(tview.AlignRight)
 	p.saveConfigButton = buttonsForm.AddButton("Save Settings", p.SaveConfig)
+	buttonsGrid.AddItem(buttonsForm, 0, 0, 1, 1, 0, 0, true)
+	buttonsForm = newForm()
+	buttonsForm.SetHorizontal(false)
+	buttonsForm.SetButtonsAlign(tview.AlignRight)
 	p.cancelButton = buttonsForm.AddButton("Cancel", p.Cancel)
-	p.configSection.AddItem(buttonsForm.Form, 0, 2, 1, 1, 0, 0, false)
-
+	buttonsGrid.AddItem(buttonsForm, 1, 0, 1, 1, 0, 0, true)
+	p.configSection.AddItem(buttonsGrid, 0, 2, 1, 1, 0, 0, true)
 	p.mainGrid.AddItem(p.configSection.Grid, 0, 0, 1, 1, 0, 0, true)
 
 	// audiobook build configuration section
@@ -145,7 +154,8 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 
 	// screen navigation order
 	p.mainGrid.SetNavigationOrder(
-		p.searchCondition,
+		p.defaultAuthor,
+		p.defaultTitle,
 		p.rowsPerPage,
 		p.useMockField,
 		p.saveMockField,
@@ -198,7 +208,8 @@ func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 
 	p.logFileNameField.SetText(p.configCopy.GetLogFileName())
 	p.logLevelField.SetCurrentOption(utils.GetIndex(logger.LogLeves(), p.configCopy.GetLogLevel()))
-	p.searchCondition.SetText(p.configCopy.GetSearchCondition())
+	p.defaultAuthor.SetText(p.configCopy.GetDefaultAuthor())
+	p.defaultTitle.SetText(p.configCopy.GetDefaultTitle())
 	p.rowsPerPage.SetText(utils.ToString(p.configCopy.GetRowsPerPage()))
 	p.useMockField.SetChecked(p.configCopy.IsUseMock())
 	p.saveMockField.SetChecked(p.configCopy.IsSaveMock())

@@ -75,12 +75,12 @@ func (d *Dispatcher) SendMessage(from string, to string, dto dto.Dto, async bool
 	m.Async = async
 
 	if async {
+		d.mu.Lock()
 		// push message to queue
 		if _, ok := d.recipients[m.To]; !ok {
 			d.recipients[m.To] = messageQueue{list.New()}
 		}
 		// check if such message is already in queue
-		d.mu.Lock()
 		if !d.messageExists(m) {
 			d.recipients[m.To].messages.PushBack(m)
 			logger.Debug("MQ <-- async " + m.String())

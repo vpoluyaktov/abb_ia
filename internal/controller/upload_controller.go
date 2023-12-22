@@ -65,12 +65,12 @@ func (c *UploadController) absScan(cmd *dto.AbsScanCommand) {
 		absClient := audiobookshelf.NewClient(url)
 		err := absClient.Login(username, password)
 		if err != nil {
-			logger.Error("Can't login to audiobookshlf server: " + err.Error())
+			logger.Error("Can't login to audiobookshelf server: " + err.Error())
 			return
 		}
 		libraries, err := absClient.GetLibraries()
 		if err != nil {
-			logger.Error("Can't get a list of libraries from audiobookshlf server: " + err.Error())
+			logger.Error("Can't get a list of libraries from audiobookshelf server: " + err.Error())
 			return
 		}
 		libraryID, err := absClient.GetLibraryId(libraries, libraryName)
@@ -80,14 +80,14 @@ func (c *UploadController) absScan(cmd *dto.AbsScanCommand) {
 		}
 		err = absClient.ScanLibrary(libraryID)
 		if err != nil {
-			logger.Error("Can't launch library scan on audiobookshlf server: " + err.Error())
+			logger.Error("Can't launch library scan on audiobookshelf server: " + err.Error())
 			return
 		}
 		if err != nil {
-			logger.Error("Can't launch library scan on audiobookshlf server: " + err.Error())
+			logger.Error("Can't launch library scan on audiobookshelf server: " + err.Error())
 			return
 		}
-		logger.Info("A scan launched for library " + libraryName + " on audiobookshlf server")
+		logger.Info("A scan launched for library " + libraryName + " on audiobookshelf server")
 	}
 	c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.ScanComplete{Audiobook: cmd.Audiobook}, true)
 }

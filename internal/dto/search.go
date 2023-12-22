@@ -2,44 +2,49 @@ package dto
 
 import "fmt"
 
+type SearchCondition struct {
+	Author string
+	Title string
+}
+
 type SearchCommand struct {
-	SearchCondition string
+	Condition SearchCondition
 }
 
 func (c *SearchCommand) String() string {
-	return fmt.Sprintf("SearchCommand: %s", c.SearchCondition)
+	return fmt.Sprintf("SearchCommand: Author: %s, Title: %s", c.Condition.Author, c.Condition.Title)
 }
 
 type GetNextPageCommand struct {
-	SearchCondition string
+	Condition SearchCondition
 }
 
 func (c *GetNextPageCommand) String() string {
-	return fmt.Sprintf("GetNextPageCommand: %s", c.SearchCondition)
+	return fmt.Sprintf("GetNextPageCommand: Author: %s, Title: %s", c.Condition.Author, c.Condition.Title)
 }
 
 type SearchComplete struct {
-	SearchCondition string
+	Condition SearchCondition
 }
 
 func (c *SearchComplete) String() string {
-	return fmt.Sprintf("SearchComplete: %s", c.SearchCondition)
+	return fmt.Sprintf("SearchComplete: Author: %s, Title: %s", c.Condition.Author, c.Condition.Title)
 }
 
 type NothingFoundError struct {
-	SearchCondition string
+	Condition SearchCondition
 }
 
 func (c *NothingFoundError) String() string {
-	return fmt.Sprintf("NothingFoundError: %s", c.SearchCondition)
+	return fmt.Sprintf("NothingFoundError: Author: %s, Title: %s", c.Condition.Author, c.Condition.Title)
 }
 
 type LastPageMessage struct {
-	SearchCondition string
+	Condition SearchCondition
 }
 
 func (c *LastPageMessage) String() string {
-	return fmt.Sprintf("LastPageMessage: %s", c.SearchCondition)
+	return fmt.Sprintf("LastPageMessage: Author: %s, Title: %s", c.Condition.Author, c.Condition.Title)
 }
 
 type SearchProgress struct {

@@ -21,6 +21,8 @@ type SearchResponse struct {
 		NumFound int `json:"numFound"`
 		Start    int `json:"start"`
 		Docs     []struct {
+			AvgRating          float64     `json:"avg_rating"`
+			Btih               strArray    `json:"btih"`
 			Collection         []string    `json:"collection"`
 			Creator            strArray    `json:"creator,omitempty"`
 			Date               time.Time   `json:"date,omitempty"`
@@ -34,6 +36,7 @@ type SearchResponse struct {
 			Month              int         `json:"month"`
 			OaiUpdatedate      []time.Time `json:"oai_updatedate"`
 			Publicdate         time.Time   `json:"publicdate"`
+			Reviewdate         time.Time   `json:"reviewdate"`
 			Subject            strArray    `json:"subject,omitempty"`
 			Title              string      `json:"title"`
 			Week               int         `json:"week"`
@@ -52,28 +55,44 @@ type ItemDetails struct {
 	Server   string `json:"server"`
 	Dir      string `json:"dir"`
 	Metadata struct {
-		Identifier           []string `json:"identifier"`
-		Creator              []string `json:"creator"`
-		Artist               []string `json:"artist"`
-		Date                 []string `json:"date"`
-		Description          []string `json:"description"`
-		GUID                 []string `json:"guid"`
-		Mediatype            []string `json:"mediatype"`
-		Rssfeed              []string `json:"rssfeed"`
-		Scanner              []string `json:"scanner"`
-		Sessionid            []string `json:"sessionid"`
-		Subject              []string `json:"subject"`
-		Title                []string `json:"title"`
-		Uploadsoftware       []string `json:"uploadsoftware"`
-		Collection           []string `json:"collection"`
-		Publicdate           []string `json:"publicdate"`
-		Addeddate            []string `json:"addeddate"`
-		Curation             []string `json:"curation"`
-		AccessRestrictedItem []string `json:"access-restricted-item"`
+		Identifier             []string `json:"identifier"`
+		Creator                []string `json:"creator"`
+		Artist                 []string `json:"artist"`
+		Date                   []string `json:"date"`
+		Description            []string `json:"description"`
+		GUID                   []string `json:"guid"`
+		Mediatype              []string `json:"mediatype"`
+		Rssfeed                []string `json:"rssfeed"`
+		Scanner                []string `json:"scanner"`
+		Sessionid              []string `json:"sessionid"`
+		Subject                []string `json:"subject"`
+		Title                  []string `json:"title"`
+		Uploadsoftware         []string `json:"uploadsoftware"`
+		Collection             []string `json:"collection"`
+		Licenseurl             []string `json:"licenseurl"`
+		Notes                  []string `json:"notes"`
+		Publicdate             []string `json:"publicdate"`
+		Addeddate              []string `json:"addeddate"`
+		Curation               []string `json:"curation"`
+		BackupLocation         []string `json:"backup_location"`
+		AccessRestrictedItem   []string `json:"access-restricted-item"`
+		ExternalMetadataUpdate []string `json:"external_metadata_update"`
+		Reviews                struct {
+			Info    map[string]string `json:"info"`
+			Reviews []struct {
+				ReviewBody       string `json:"reviewbody"`
+				ReviewTitle      string `json:"reviewtitle"`
+				Reviewer         string `json:"reviewer"`
+				ReviewerItemname string `json:"reviewer_itemname"`
+				ReviewDate       string `json:"reviewdate"`
+				Stars            string `json:"stars"`
+			} `json:"reviews"`
+		} `json:"reviews"`
 	} `json:"metadata"`
 	Files map[string]struct {
 		Source             string   `json:"source"`
 		Format             string   `json:"format"`
+		Original           string   `json:"original"`
 		Length             string   `json:"length"`
 		Mtime              string   `json:"mtime"`
 		Size               string   `json:"size"`

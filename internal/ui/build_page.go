@@ -56,7 +56,7 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	// audiobook build section
 	p.buildSection = newGrid()
 	p.buildSection.SetColumns(-1)
-	p.buildSection.SetTitle(" Building audiobook... ")
+	p.buildSection.SetTitle(" Building audiobook: ")
 	p.buildSection.SetTitleAlign(tview.AlignLeft)
 	p.buildSection.SetBorder(true)
 	p.buildTable = newTable()

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"strings"
 
 	"abb_ia/cmd"
 	"abb_ia/internal/config"
@@ -32,7 +33,11 @@ func main() {
 
 	// save runtime configuration
 	if searchCondition != "" {
-		config.Instance().SetSearchCondition(searchCondition)
+		condition := strings.Split(searchCondition, " - ")
+		if len(condition) == 2 {
+			config.Instance().SetDefaultAuthor(condition[0])
+			config.Instance().SetDefaultTitle(condition[1])
+		}
 	}
 	if utils.IsFlagPassed("log-level") {
 		config.Instance().SetLogLevel(*logLevel)

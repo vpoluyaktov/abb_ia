@@ -16,12 +16,13 @@ import (
 type SearchPage struct {
 	mq              *mq.Dispatcher
 	mainGrid        *grid
-	searchCriteria  string
+	searchCondition dto.SearchCondition
 	isSearchRunning bool
 	searchResult    []*dto.IAItem
 
 	searchSection         *grid
-	inputField            *tview.InputField
+	author                *tview.InputField
+	title                 *tview.InputField
 	searchButton          *tview.Button
 	clearButton           *tview.Button
 	createAudioBookButton *tview.Button
@@ -40,30 +41,41 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.mq = dispatcher
 	p.mq.RegisterListener(mq.SearchPage, p.dispatchMessage)
 
-	p.searchCriteria = config.Instance().GetSearchCondition()
+	p.searchCondition.Author = config.Instance().GetDefaultAuthor()
+	p.searchCondition.Title = config.Instance().GetDefaultTitle()
 
 	p.mainGrid = newGrid()
-	p.mainGrid.SetRows(5, -1, -1)
+	p.mainGrid.SetRows(9, -1, -1)
 	p.mainGrid.SetColumns(0)
 
 	// search section
 	p.searchSection = newGrid()
-	p.searchSection.SetColumns(-2, -1)
+	p.searchSection.SetColumns(50, -1)
 	p.searchSection.SetBorder(true)
 	p.searchSection.SetTitle(" Internet Archive Search ")
 	p.searchSection.SetTitleAlign(tview.AlignLeft)
 	f := newForm()
-	f.SetHorizontal(true)
-	p.inputField = f.AddInputField("Search criteria", config.Instance().GetSearchCondition(), 40, nil, func(t string) { p.searchCriteria = t })
+	f.SetHorizontal(false)
+	p.author = f.AddInputField("Creator", config.Instance().GetDefaultAuthor(), 40, nil, func(t string) { p.searchCondition.Author = t })
+	p.title = f.AddInputField("Title", config.Instance().GetDefaultTitle(), 40, nil, func(t string) { p.searchCondition.Title = t })
 	p.searchButton = f.AddButton("Search", p.runSearch)
 	p.clearButton = f.AddButton("Clear", p.clearEverything)
-	p.searchSection.AddItem(f.Form, 0, 0, 1, 1, 0, 0, true)
+	f.SetButtonsAlign(tview.AlignRight)
+	p.searchSection.AddItem(f, 0, 0, 1, 1, 0, 0, true)
+	g := newGrid()
+	g.SetRows(-1, -1)
+	g.SetColumns(0)
 	f = newForm()
 	f.SetHorizontal(false)
 	f.SetButtonsAlign(tview.AlignRight)
 	p.createAudioBookButton = f.AddButton("Create Audiobook", p.createBook)
+	g.AddItem(f, 0, 0, 1, 1, 1, 1, true)
+	f = newForm()
+	f.SetHorizontal(false)
+	f.SetButtonsAlign(tview.AlignRight)
+	g.AddItem(f, 1, 0, 1, 1, 1, 1, true)
 	p.SettingsButton = f.AddButton("Settings", p.updateConfig)
-	p.searchSection.AddItem(f.Form, 0, 1, 1, 1, 0, 0, true)
+	p.searchSection.AddItem(g, 0, 1, 1, 1, 0, 0, true)
 
 	p.mainGrid.AddItem(p.searchSection.Grid, 0, 0, 1, 1, 0, 0, true)
 
@@ -75,8 +87,8 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.resultSection.SetBorder(true)
 
 	p.resultTable = newTable()
-	p.resultTable.setHeaders(" # ", "Author", "Title", "Files", "Duration (hh:mm:ss)", "Total Size")
-	p.resultTable.setWeights(1, 3, 6, 2, 1, 1)
+	p.resultTable.setHeaders(" # ", "Author", "Title", "Files", "Duration", "Size")
+	p.resultTable.setWeights(1, 3, 6, 1, 2, 2)
 	p.resultTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.resultTable.SetSelectionChangedFunc(p.updateDetails)
 	p.resultTable.setLastRowEvent(p.lastRowEvent)
@@ -101,7 +113,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.filesTable.SetTitle(" Files: ")
 	p.filesTable.SetTitleAlign(tview.AlignLeft)
 	p.filesTable.setHeaders("File name", "Format", "Duration", "Size")
-	p.filesTable.setWeights(3, 1, 1, 1)
+	p.filesTable.setWeights(3, 2, 2, 2)
 	p.filesTable.setAlign(tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.detailsSection.AddItem(p.filesTable.Table, 0, 2, 1, 1, 0, 0, true)
 
@@ -116,7 +128,8 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 
 	// screen navigation order
 	p.mainGrid.SetNavigationOrder(
-		p.inputField,
+		p.author,
+		p.title,
 		p.searchButton,
 		p.clearButton,
 		p.createAudioBookButton,
@@ -147,7 +160,7 @@ func (p *SearchPage) dispatchMessage(m *mq.Message) {
 	case *dto.NothingFoundError:
 		p.showNothingFoundError(dto)
 	case *dto.LastPageMessage:
-		p.showLastPageMessage(dto)	
+		p.showLastPageMessage(dto)
 	case *dto.NewAppVersionFound:
 		p.showNewVersionMessage(dto)
 	case *dto.FFMPEGNotFoundError:
@@ -164,7 +177,7 @@ func (p *SearchPage) runSearch() {
 	p.isSearchRunning = true
 	p.clearSearchResults()
 	p.resultTable.showHeader()
-	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.SearchCommand{SearchCondition: p.searchCriteria}, false)
+	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.SearchCommand{Condition: p.searchCondition}, false)
 	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.resultTable.Table}, true)
 }
 
@@ -177,7 +190,8 @@ func (p *SearchPage) clearSearchResults() {
 }
 
 func (p *SearchPage) clearEverything() {
-	p.inputField.SetText("")
+	p.author.SetText("")
+	p.title.SetText("")
 	p.clearSearchResults()
 }
 
@@ -186,7 +200,7 @@ func (p *SearchPage) lastRowEvent() {
 		return
 	}
 	p.isSearchRunning = true
-	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.GetNextPageCommand{SearchCondition: p.searchCriteria}, false)
+	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.GetNextPageCommand{Condition: p.searchCondition}, false)
 }
 
 func (p *SearchPage) updateResult(i *dto.IAItem) {
@@ -265,7 +279,7 @@ func (p *SearchPage) updateConfig() {
 
 func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
 	newMessageDialog(p.mq, "Error",
-		"No results were found for your search term: [darkblue]'"+dto.SearchCondition+"'[black].\n"+
+		"No results were found for your search term: [darkblue]'"+dto.Condition.Author+" - "+dto.Condition.Title+"'[black].\n"+
 			"Please revise your search criteria.",
 		p.searchSection.Grid, func() {})
 }
@@ -273,8 +287,8 @@ func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
 func (p *SearchPage) showLastPageMessage(dto *dto.LastPageMessage) {
 	newMessageDialog(p.mq, "Notification",
 		"No more items were found for \n"+
-		"your search term: [darkblue]'"+dto.SearchCondition+"'[black].\n"+
-		"This is the last page.\n",
+			"your search term: [darkblue]'"+dto.Condition.Author+" - "+dto.Condition.Title+"'[black]\n"+
+			"This is the last page.\n",
 		p.resultSection.Grid, func() {})
 }
 

@@ -56,7 +56,7 @@ func newEncodingPage(dispatcher *mq.Dispatcher) *EncodingPage {
 	p.filesSection.SetBorder(true)
 
 	p.filesTable = newTable()
-	p.filesTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Encoding progress")
+	p.filesTable.setHeaders(" # ", "File name", "Format", "Duration", "Size", "Encoding progress")
 	p.filesTable.setWeights(1, 2, 1, 1, 1, 5)
 	p.filesTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	p.filesSection.AddItem(p.filesTable.Table, 0, 0, 1, 1, 0, 0, true)
