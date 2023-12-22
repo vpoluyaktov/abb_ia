@@ -73,13 +73,13 @@ func Load() {
 	config.LogFileName = "abb_ia.log"
 	config.TmpDir = "tmp"
 	config.CopyToOutputDir = true
-	config.OutputDir = "/mnt/NAS/Audiobooks/Internet Archive"
+	config.OutputDir = "output"
 	config.LogLevel = "INFO"
 	config.RowsPerPage = 25
 	config.UseMock = false
 	config.SaveMock = false
-	config.DefaultAuthor = ""
-	config.DefaultTitle = ""
+	config.DefaultAuthor = "Old Time Radio Researchers Group"
+	config.DefaultTitle = "Single Episodes"
 	config.ConcurrentDownloaders = 5
 	config.ConcurrentEncoders = 5
 	config.ReEncodeFiles = true
@@ -87,8 +87,8 @@ func Load() {
 	config.BitRateKbs = 128
 	config.SampleRateHz = 44100
 	config.MaxFileSizeMb = 250
-	config.UploadToAudiobookshef = true
-	config.ScanAudiobookshef = true
+	config.UploadToAudiobookshef = false
+	config.ScanAudiobookshef = false
 	config.AudiobookshelfUser = "admin"
 	config.AudiobookshelfPassword = ""
 	config.AudiobookshelfLibrary = "Internet Archive"
@@ -104,6 +104,7 @@ func Load() {
 		"History",
 		"Podcast",
 		"Nonfiction",
+		"News",
 		"Speech",
 	}
 

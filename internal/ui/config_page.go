@@ -124,7 +124,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	buildFormRight := newForm()
 	buildFormRight.SetHorizontal(false)
 	p.maxFileSize = buildFormRight.AddInputField("Audiobook part max file size (Mb):", "", 6, acceptInt, func(t string) { p.configCopy.SetMaxFileSizeMb(utils.ToInt(t)) })
-	p.shortenTitles = buildFormRight.AddCheckbox("Shorten titles?", false, func(t bool) { p.configCopy.SetShortenTitles(t) })
+	p.shortenTitles = buildFormRight.AddCheckbox("Shorten titles (-> OTRR for ex.)?", false, func(t bool) { p.configCopy.SetShortenTitles(t) })
 	p.buildSection.AddItem(buildFormRight.Form, 0, 1, 1, 1, 0, 0, true)
 
 	p.mainGrid.AddItem(p.buildSection.Grid, 1, 0, 1, 1, 0, 0, true)
