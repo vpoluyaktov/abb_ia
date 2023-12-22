@@ -56,7 +56,7 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	p.filesSection.SetBorder(true)
 
 	p.filesTable = newTable()
-	p.filesTable.setHeaders(" # ", "File name", "Format", "Duration", "Total Size", "Download progress")
+	p.filesTable.setHeaders(" # ", "File name", "Format", "Duration", "Size", "Download progress")
 	p.filesTable.setWeights(1, 2, 1, 1, 1, 5)
 	p.filesTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	p.filesSection.AddItem(p.filesTable.Table, 0, 0, 1, 1, 0, 0, true)
@@ -166,7 +166,7 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.TotalDownloadProgress) {
 	}
 	infoCell := p.progressTable.GetCell(0, 0)
 	progressCell := p.progressTable.GetCell(1, 0)
-	infoCell.Text = fmt.Sprintf("  [yellow]Time elapsed: [white]%10s | [yellow]Downloaded: [white]%10s | [yellow]Files: [white]%10s | [yellow]Speed: [white]%12s | [yellow]ETA: [white]%10s", dp.Elapsed, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
+	infoCell.Text = fmt.Sprintf("  [yellow]Elapsed: [white]%7s | [yellow]Done: [white]%8s | [yellow]Files: [white]%6s | [yellow]Speed: [white]%6s | [yellow]ETA: [white]%7s", dp.Elapsed, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
 	w := p.progressTable.GetColumnWidth(col) - 5
