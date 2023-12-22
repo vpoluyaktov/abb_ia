@@ -292,7 +292,7 @@ func (p *infoPanel) appendRow(label string, value string) {
 	labelCell.SetTextColor(yellow)
 	p.SetCell(row, 0, labelCell)
 	// value
-	valueCell := tview.NewTableCell(" " + value)
+	valueCell := tview.NewTableCell(" [white]" + value)
 	p.SetCell(row, 1, valueCell)
 }
 

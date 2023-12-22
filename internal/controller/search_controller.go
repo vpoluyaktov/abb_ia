@@ -9,7 +9,7 @@ import (
 
 	"abb_ia/internal/config"
 	"abb_ia/internal/dto"
-	ia_client "abb_ia/internal/ia"
+	"abb_ia/internal/ia"
 	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
@@ -61,9 +61,9 @@ func (c *SearchController) search(cmd *dto.SearchCommand) {
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 	c.totalItemsFetched = 0
 	c.ia = ia_client.New(config.Instance().GetRowsPerPage(), config.Instance().IsUseMock(), config.Instance().IsSaveMock())
-	resp := c.ia.Search(cmd.SearchCondition, "audio")
+	resp := c.ia.Search(cmd.Condition.Author, cmd.Condition.Title, "audio")
 	if resp == nil {
-		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.SearchCondition)
+		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.Condition.Author + " - " + cmd.Condition.Title)
 	}
 	itemsFetched, err := c.fetchDetails(resp)
 	if err != nil {
@@ -71,9 +71,9 @@ func (c *SearchController) search(cmd *dto.SearchCommand) {
 	}
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{SearchCondition: cmd.SearchCondition}, false)
+	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{Condition: cmd.Condition}, false)
 	if itemsFetched == 0 {
-		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.NothingFoundError{SearchCondition: cmd.SearchCondition}, false)
+		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.NothingFoundError{Condition: cmd.Condition}, false)
 	}
 }
 
@@ -81,9 +81,9 @@ func (c *SearchController) getGetNextPage(cmd *dto.GetNextPageCommand) {
 	logger.Info(mq.SearchController + " received " + cmd.String())
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
-	resp := c.ia.GetNextPage(cmd.SearchCondition, "audio")
+	resp := c.ia.GetNextPage(cmd.Condition.Author, cmd.Condition.Title, "audio")
 	if resp == nil {
-		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.SearchCondition)
+		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.Condition.Author + " - " + cmd.Condition.Title)
 	}
 	itemsFetched, err := c.fetchDetails(resp)
 	if err != nil {
@@ -91,9 +91,9 @@ func (c *SearchController) getGetNextPage(cmd *dto.GetNextPageCommand) {
 	}
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{SearchCondition: cmd.SearchCondition}, false)
+	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{Condition: cmd.Condition}, false)
 	if itemsFetched == 0 {
-		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.LastPageMessage{SearchCondition: cmd.SearchCondition}, false)
+		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.LastPageMessage{Condition: cmd.Condition}, false)
 	}
 }
 

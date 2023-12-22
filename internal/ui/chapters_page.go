@@ -62,19 +62,19 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 
 	// book info section
 	infoSection := newGrid()
-	infoSection.SetColumns(50, 50, -1, 30)
+	infoSection.SetColumns(40, 30, -1, 30)
 	infoSection.SetRows(5, 2)
 	infoSection.SetBorder(true)
 	infoSection.SetTitle(" Audiobook information: ")
 	infoSection.SetTitleAlign(tview.AlignLeft)
 	f0 := newForm()
 	f0.SetBorderPadding(1, 0, 1, 2)
-	p.inputAuthor = f0.AddInputField("Author:", "", 40, nil, func(s string) {
+	p.inputAuthor = f0.AddInputField("Author:", "", 30, nil, func(s string) {
 		if p.ab != nil {
 			p.ab.Author = s
 		}
 	})
-	p.inputTitle = f0.AddInputField("Title:", "", 40, nil, func(s string) {
+	p.inputTitle = f0.AddInputField("Title:", "", 30, nil, func(s string) {
 		if p.ab != nil {
 			p.ab.Title = s
 		}
@@ -82,7 +82,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	infoSection.AddItem(f0.Form, 0, 0, 1, 1, 0, 0, true)
 	f1 := newForm()
 	f1.SetBorderPadding(1, 0, 2, 2)
-	p.inputSeries = f1.AddInputField("Series:", "", 40, nil, func(s string) {
+	p.inputSeries = f1.AddInputField("Series:", "", 20, nil, func(s string) {
 		if p.ab != nil {
 			p.ab.Series = s
 		}
@@ -100,7 +100,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 			p.ab.Genre = strings.TrimSpace(s)
 		}
 	})
-	p.inputNarator = f2.AddInputField("Narator:", "", 40, nil, func(s string) {
+	p.inputNarator = f2.AddInputField("Narator:", "", 20, nil, func(s string) {
 		if p.ab != nil {
 			p.ab.Narator = s
 		}
@@ -115,7 +115,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	})
 	infoSection.AddItem(f3.Form, 1, 0, 1, 4, 0, 0, true)
 	f4 := newForm()
-	f4.SetHorizontal(false)
+	f4.SetHorizontal(true)
 	f4.SetButtonsAlign(tview.AlignRight)
 	p.buttonCreateBook = f4.AddButton("Create Book", p.buildBook)
 	p.buttonCancel = f4.AddButton("Cancel", p.stopConfirmation)
@@ -124,7 +124,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 
 	// description section
 	descriptionSection := newGrid()
-	descriptionSection.SetColumns(-1, 45)
+	descriptionSection.SetColumns(-1, 33)
 	descriptionSection.SetBorder(false)
 	p.textAreaDescription = newTextArea("")
 	p.textAreaDescription.SetChangedFunc(p.updateDescription)
@@ -136,8 +136,8 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	f5.SetBorder(true)
 	f5.SetHorizontal(true)
 
-	p.inputSearchDescription = f5.AddInputField("Search: ", "", 30, nil, func(s string) { p.searchDescription = s })
-	p.inputReplaceDescription = f5.AddInputField("Replace:", "", 30, nil, func(s string) { p.replaceDescription = s })
+	p.inputSearchDescription = f5.AddInputField("Search: ", "", 20, nil, func(s string) { p.searchDescription = s })
+	p.inputReplaceDescription = f5.AddInputField("Replace:", "", 20, nil, func(s string) { p.replaceDescription = s })
 	p.buttonDescriptionReplace = f5.AddButton("Replace", p.searchReplaceDescription)
 	p.buttonDescriptionUndo = f5.AddButton(" Undo  ", p.undoDescription)
 	f5.SetButtonsAlign(tview.AlignRight)
@@ -146,13 +146,13 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 
 	// chapters section
 	p.chaptersSection = newGrid()
-	p.chaptersSection.SetColumns(-1, 45)
+	p.chaptersSection.SetColumns(-1, 33)
 	p.chaptersTable = newTable()
 	p.chaptersTable.SetBorder(true)
 	p.chaptersTable.SetTitle(" Book chapters: ")
 	p.chaptersTable.SetTitleAlign(tview.AlignLeft)
 	p.chaptersTable.setHeaders("  # ", "Start", "End", "Duration", "Chapter name")
-	p.chaptersTable.setWeights(1, 1, 1, 1, 20)
+	p.chaptersTable.setWeights(1, 1, 1, 2, 10)
 	p.chaptersTable.setAlign(tview.AlignRight, tview.AlignRight, tview.AlignRight, tview.AlignRight, tview.AlignLeft)
 	p.chaptersTable.SetSelectedFunc(p.updateChapterEntry)
 	p.chaptersTable.SetMouseDblClickFunc(p.updateChapterEntry)
@@ -166,8 +166,8 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	f6 := newForm()
 	f6.SetBorder(false)
 	f6.SetHorizontal(true)
-	p.inputSearchChapters = f6.AddInputField("Search: ", "", 30, nil, func(s string) { p.searchChapters = s })
-	p.inputReplaceChapters = f6.AddInputField("Replace:", "", 30, nil, func(s string) { p.replaceChapters = s })
+	p.inputSearchChapters = f6.AddInputField("Search: ", "", 20, nil, func(s string) { p.searchChapters = s })
+	p.inputReplaceChapters = f6.AddInputField("Replace:", "", 20, nil, func(s string) { p.replaceChapters = s })
 	p.buttonChaptersReplace = f6.AddButton("Replace", p.searchReplaceChapters)
 	p.buttonChaptersUndo = f6.AddButton(" Undo  ", p.undoChapters)
 	p.buttonChaptersJoin = f6.AddButton(" Join Similar Chapters ", p.joinChapters)

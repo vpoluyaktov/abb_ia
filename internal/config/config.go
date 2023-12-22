@@ -26,7 +26,8 @@ var (
 
 // Fields of this stuct should to be private but I have to make them public because yaml.Marshal/Unmarshal can't work with private fields
 type Config struct {
-	SearchCondition        string        `yaml:"SearchCondition"`
+	DefaultAuthor          string        `yaml:"DefaultAuthor"`
+	DefaultTitle           string        `yaml:"DefaultTitle"`
 	RowsPerPage            int           `yaml:"RowsPerPage"`
 	LogFileName            string        `yaml:"LogFileName"`
 	OutputDir              string        `yaml:"Outputdir"`
@@ -72,12 +73,13 @@ func Load() {
 	config.LogFileName = "abb_ia.log"
 	config.TmpDir = "tmp"
 	config.CopyToOutputDir = true
-	config.OutputDir = "/mnt/NAS/Audiobooks/Internet Archive"
+	config.OutputDir = "output"
 	config.LogLevel = "INFO"
 	config.RowsPerPage = 25
 	config.UseMock = false
 	config.SaveMock = false
-	config.SearchCondition = ""
+	config.DefaultAuthor = "Old Time Radio Researchers Group"
+	config.DefaultTitle = "Single Episodes"
 	config.ConcurrentDownloaders = 5
 	config.ConcurrentEncoders = 5
 	config.ReEncodeFiles = true
@@ -85,8 +87,8 @@ func Load() {
 	config.BitRateKbs = 128
 	config.SampleRateHz = 44100
 	config.MaxFileSizeMb = 250
-	config.UploadToAudiobookshef = true
-	config.ScanAudiobookshef = true
+	config.UploadToAudiobookshef = false
+	config.ScanAudiobookshef = false
 	config.AudiobookshelfUser = "admin"
 	config.AudiobookshelfPassword = ""
 	config.AudiobookshelfLibrary = "Internet Archive"
@@ -102,6 +104,7 @@ func Load() {
 		"History",
 		"Podcast",
 		"Nonfiction",
+		"News",
 		"Speech",
 	}
 
@@ -206,12 +209,20 @@ func (c *Config) IsSaveMock() bool {
 	return c.SaveMock
 }
 
-func (c *Config) SetSearchCondition(s string) {
-	c.SearchCondition = s
+func (c *Config) SetDefaultAuthor(s string) {
+	c.DefaultAuthor = s
 }
 
-func (c *Config) GetSearchCondition() string {
-	return c.SearchCondition
+func (c *Config) GetDefaultAuthor() string {
+	return c.DefaultAuthor
+}
+
+func (c *Config) SetDefaultTitle(s string) {
+	c.DefaultTitle = s
+}
+
+func (c *Config) GetDefaultTitle() string {
+	return c.DefaultTitle
 }
 
 func (c *Config) SetConcurrentDownloaders(n int) {

@@ -44,36 +44,44 @@ func New(maxSearchRows int, useMock bool, saveMock bool) *IAClient {
 	return client
 }
 
-func (client *IAClient) Search(searchCondition string, mediaType string) *SearchResponse {
-	if strings.Contains(searchCondition, IA_BASE_URL+"/details/") {
-		item_id := strings.Split(searchCondition, "/")[4]
+func (client *IAClient) Search(author string, title string, mediaType string) *SearchResponse {
+	if strings.Contains(title, IA_BASE_URL+"/details/") {
+		item_id := strings.Split(title, "/")[4]
 		return client.searchByID(item_id, mediaType)
 	} else {
 		client.page = 1
-		return client.searchByTitle(searchCondition, mediaType)
+		return client.searchByTitle(author, title, mediaType)
 	}
 }
 
-func (client *IAClient) GetNextPage(searchCondition string, mediaType string) *SearchResponse {
-	if strings.Contains(searchCondition, IA_BASE_URL+"/details/") {
+func (client *IAClient) GetNextPage(author string, title string, mediaType string) *SearchResponse {
+	if strings.Contains(title, IA_BASE_URL+"/details/") {
 		return &SearchResponse{}
 	} else {
 		client.page += 1
-		resp := client.searchByTitle(searchCondition, mediaType)
+		resp := client.searchByTitle(author, title, mediaType)
 		return resp
 	}
 }
 
-func (client *IAClient) searchByTitle(title string, mediaType string) *SearchResponse {
-	mockFile := MOCK_DIR + "/SearchByTitle.json"
+func (client *IAClient) searchByTitle(author string, title string, mediaType string) *SearchResponse {
+	mockFile := MOCK_DIR + "/SearchByAuthorAndTitle.json"
 	result := &SearchResponse{}
 	if client.loadMockResult {
 		if err := utils.LoadJson(mockFile, result); err != nil {
-			logger.Error("IA Client SearchByTitle() mock load error: " + err.Error())
+			logger.Error("IA Client SearchByAuthorAndTitle() mock load error: " + err.Error())
 		}
 	} else {
-		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=title:(%s)+AND+mediatype:(%s)&output=json&rows=%d&page=%d",
-			url.QueryEscape(title), mediaType, client.maxSearchRows, client.page)
+		searchCondition := ""
+		if author != "" && title != "" {
+			searchCondition = fmt.Sprintf("creator:(%s)+AND+title:(%s)", url.QueryEscape(author), url.QueryEscape(title))
+		} else if author != "" {
+			searchCondition = fmt.Sprintf("creator:(%s)", url.QueryEscape(author))
+		} else if title != "" {
+			searchCondition = fmt.Sprintf("title:(%s)", url.QueryEscape(title))
+		}
+		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=%s+AND+mediatype:(%s)&output=json&rows=%d&page=%d",
+			searchCondition, mediaType, client.maxSearchRows, client.page)
 		logger.Debug("IA request: " + searchURL)
 		_, err := client.restyClient.R().SetResult(result).Get(searchURL)
 		if err != nil {

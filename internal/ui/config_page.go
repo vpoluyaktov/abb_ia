@@ -25,7 +25,8 @@ type ConfigPage struct {
 	// Audobookbuilder config section
 	logFileNameField *tview.InputField
 	logLevelField    *tview.DropDown
-	searchCondition  *tview.InputField
+	defaultAuthor    *tview.InputField
+	defaultTitle     *tview.InputField
 	rowsPerPage      *tview.InputField
 	useMockField     *tview.Checkbox
 	saveMockField    *tview.Checkbox
@@ -60,7 +61,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.mq.RegisterListener(mq.ConfigPage, p.dispatchMessage)
 
 	p.mainGrid = newGrid()
-	p.mainGrid.SetRows(-1, -1, -1)
+	p.mainGrid.SetRows(13, 13, -1)
 	p.mainGrid.SetColumns(0)
 
 	// Audobookbuilder config section
@@ -72,28 +73,36 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 
 	configFormLeft := newForm()
 	configFormLeft.SetHorizontal(false)
-	p.searchCondition = configFormLeft.AddInputField("Default Search condition:", "", 40, nil, func(t string) { p.configCopy.SetSearchCondition(t) })
-	p.rowsPerPage = configFormLeft.AddInputField("Rows per a page in the search result:", "", 4, acceptInt, func(t string) { p.configCopy.SetRowsPerPage(utils.ToInt(t)) })
+	p.defaultAuthor = configFormLeft.AddInputField("Creator:", "", 20, nil, func(t string) { p.configCopy.SetDefaultAuthor(t) })
+	p.defaultTitle = configFormLeft.AddInputField("Title:", "", 20, nil, func(t string) { p.configCopy.SetDefaultTitle(t) })
+	p.rowsPerPage = configFormLeft.AddInputField("Page size:", "", 4, acceptInt, func(t string) { p.configCopy.SetRowsPerPage(utils.ToInt(t)) })
 	p.useMockField = configFormLeft.AddCheckbox("Use mock?", false, func(t bool) { p.configCopy.SetUseMock(t) })
 	p.saveMockField = configFormLeft.AddCheckbox("Save mock?", false, func(t bool) { p.configCopy.SetSaveMock(t) })
 	p.configSection.AddItem(configFormLeft.Form, 0, 0, 1, 1, 0, 0, true)
 
 	configFormRight := newForm()
 	configFormRight.SetHorizontal(false)
-	p.outputDir = configFormRight.AddInputField("Output directory:", "", 40, nil, func(t string) { p.configCopy.SetOutputdDir(t) })
-	p.copyToOutputDir = configFormRight.AddCheckbox("Copy audiobook to the output directory?", false, func(t bool) { p.configCopy.SetCopyToOutputDir(t) })
-	p.tmpDir = configFormRight.AddInputField("Temporary (working) directory:", "", 40, nil, func(t string) { p.configCopy.SetTmpDir(t) })
-	p.logFileNameField = configFormRight.AddInputField("Log file name:", "", 40, nil, func(t string) { p.configCopy.SetLogfileName(t) })
+	p.outputDir = configFormRight.AddInputField("Output directory:", "", 25, nil, func(t string) { p.configCopy.SetOutputdDir(t) })
+	p.copyToOutputDir = configFormRight.AddCheckbox("Copy to output dir?", false, func(t bool) { p.configCopy.SetCopyToOutputDir(t) })
+	p.tmpDir = configFormRight.AddInputField("Work directory:", "", 25, nil, func(t string) { p.configCopy.SetTmpDir(t) })
+	p.logFileNameField = configFormRight.AddInputField("Log name:", "", 25, nil, func(t string) { p.configCopy.SetLogfileName(t) })
 	p.logLevelField = configFormRight.AddDropdown("Log level:", utils.AddSpaces(logger.LogLeves()), 1, func(o string, i int) { p.configCopy.SetLogLevel(strings.TrimSpace(o)) })
 	p.configSection.AddItem(configFormRight.Form, 0, 1, 1, 1, 0, 0, true)
 
+	buttonsGrid := newGrid()
+	buttonsGrid.SetRows(3, 3, -1)
+	buttonsGrid.SetColumns(0)
 	buttonsForm := newForm()
 	buttonsForm.SetHorizontal(false)
 	buttonsForm.SetButtonsAlign(tview.AlignRight)
-	p.saveConfigButton = buttonsForm.AddButton("Save Settings", p.SaveConfig)
+	p.saveConfigButton = buttonsForm.AddButton(" Save  ", p.SaveConfig)
+	buttonsGrid.AddItem(buttonsForm, 0, 0, 1, 1, 0, 0, true)
+	buttonsForm = newForm()
+	buttonsForm.SetHorizontal(false)
+	buttonsForm.SetButtonsAlign(tview.AlignRight)
 	p.cancelButton = buttonsForm.AddButton("Cancel", p.Cancel)
-	p.configSection.AddItem(buttonsForm.Form, 0, 2, 1, 1, 0, 0, false)
-
+	buttonsGrid.AddItem(buttonsForm, 1, 0, 1, 1, 0, 0, true)
+	p.configSection.AddItem(buttonsGrid, 0, 2, 1, 1, 0, 0, true)
 	p.mainGrid.AddItem(p.configSection.Grid, 0, 0, 1, 1, 0, 0, true)
 
 	// audiobook build configuration section
@@ -107,7 +116,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	buildFormLeft.SetHorizontal(false)
 	p.concurrentDownloaders = buildFormLeft.AddInputField("Concurrent Downloaders:", "", 4, acceptInt, func(t string) { p.configCopy.SetConcurrentDownloaders(utils.ToInt(t)) })
 	p.concurrentEncoders = buildFormLeft.AddInputField("Concurrent Encoders:", "", 4, acceptInt, func(t string) { p.configCopy.SetConcurrentEncoders(utils.ToInt(t)) })
-	p.reEncodeFiles = buildFormLeft.AddCheckbox("Re-encode .mp3 files to the same Bit Rate?", false, func(t bool) { p.configCopy.SetReEncodeFiles(t) })
+	p.reEncodeFiles = buildFormLeft.AddCheckbox("Re-encode .mp3 files?", false, func(t bool) { p.configCopy.SetReEncodeFiles(t) })
 	p.bitRate = buildFormLeft.AddInputField("Bit Rate (Kbps):", "", 4, acceptInt, func(t string) { p.configCopy.SetBitRate(utils.ToInt(t)) })
 	p.sampleRate = buildFormLeft.AddInputField("Sample Rate (Hz):", "", 6, acceptInt, func(t string) { p.configCopy.SetSampleRate(utils.ToInt(t)) })
 	p.buildSection.AddItem(buildFormLeft.Form, 0, 0, 1, 1, 0, 0, true)
@@ -115,7 +124,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	buildFormRight := newForm()
 	buildFormRight.SetHorizontal(false)
 	p.maxFileSize = buildFormRight.AddInputField("Audiobook part max file size (Mb):", "", 6, acceptInt, func(t string) { p.configCopy.SetMaxFileSizeMb(utils.ToInt(t)) })
-	p.shortenTitles = buildFormRight.AddCheckbox("Shorten titles (for ex. Old Time Radio -> OTRR)?", false, func(t bool) { p.configCopy.SetShortenTitles(t) })
+	p.shortenTitles = buildFormRight.AddCheckbox("Shorten titles (-> OTRR for ex.)?", false, func(t bool) { p.configCopy.SetShortenTitles(t) })
 	p.buildSection.AddItem(buildFormRight.Form, 0, 1, 1, 1, 0, 0, true)
 
 	p.mainGrid.AddItem(p.buildSection.Grid, 1, 0, 1, 1, 0, 0, true)
@@ -130,10 +139,10 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	absFormLeft := newForm()
 	absFormLeft.SetHorizontal(false)
 	p.uploadToAudiobookshelf = absFormLeft.AddCheckbox("Upload the audiobook to Audiobookshelf server?", false, func(t bool) { p.configCopy.SetUploadToAudiobookshelf(t) })
-	p.audiobookshelfUrl = absFormLeft.AddInputField("Audiobookshelf Server URL:", "", 40, nil, func(t string) { p.configCopy.SetAudiobookshelfUrl(t) })
-	p.audiobookshelfUser = absFormLeft.AddInputField("Audiobookshelf Server User:", "", 40, nil, func(t string) { p.configCopy.SetAudiobookshelfUser(t) })
-	p.audiobookshelfPassword = absFormLeft.AddPasswordField("Audiobookshelf Server Password:", "", 40, 0, func(t string) { p.configCopy.SetAudiobookshelfPassword(t) })
-	p.audiobookshelfLibrary = absFormLeft.AddInputField("Audiobookshelf destination Library:", "", 40, nil, func(t string) { p.configCopy.SetAudiobookshelfLibrary(t) })
+	p.audiobookshelfUrl = absFormLeft.AddInputField("Audiobookshelf Server URL:", "", 30, nil, func(t string) { p.configCopy.SetAudiobookshelfUrl(t) })
+	p.audiobookshelfUser = absFormLeft.AddInputField("Audiobookshelf Server User:", "", 30, nil, func(t string) { p.configCopy.SetAudiobookshelfUser(t) })
+	p.audiobookshelfPassword = absFormLeft.AddPasswordField("Audiobookshelf Server Password:", "", 30, 0, func(t string) { p.configCopy.SetAudiobookshelfPassword(t) })
+	p.audiobookshelfLibrary = absFormLeft.AddInputField("Audiobookshelf destination Library:", "", 30, nil, func(t string) { p.configCopy.SetAudiobookshelfLibrary(t) })
 	p.scanAudiobookshelf = absFormLeft.AddCheckbox("Scan the Audiobookshelf library after copy/upload?", false, func(t bool) { p.configCopy.SetScanAudiobookshelf(t) })
 	p.absSection.AddItem(absFormLeft.Form, 0, 0, 1, 1, 0, 0, true)
 
@@ -145,7 +154,8 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 
 	// screen navigation order
 	p.mainGrid.SetNavigationOrder(
-		p.searchCondition,
+		p.defaultAuthor,
+		p.defaultTitle,
 		p.rowsPerPage,
 		p.useMockField,
 		p.saveMockField,
@@ -198,7 +208,8 @@ func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 
 	p.logFileNameField.SetText(p.configCopy.GetLogFileName())
 	p.logLevelField.SetCurrentOption(utils.GetIndex(logger.LogLeves(), p.configCopy.GetLogLevel()))
-	p.searchCondition.SetText(p.configCopy.GetSearchCondition())
+	p.defaultAuthor.SetText(p.configCopy.GetDefaultAuthor())
+	p.defaultTitle.SetText(p.configCopy.GetDefaultTitle())
 	p.rowsPerPage.SetText(utils.ToString(p.configCopy.GetRowsPerPage()))
 	p.useMockField.SetChecked(p.configCopy.IsUseMock())
 	p.saveMockField.SetChecked(p.configCopy.IsSaveMock())

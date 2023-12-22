@@ -16,6 +16,9 @@ var (
 	cyan      = tcell.NewRGBColor(80, 176, 189)
 	red       = tcell.ColorRed
 
+	labelsColor = yellow
+	valuesColor = white
+
 	footerFgColor = black
 	footerBgColor = cyan
 
