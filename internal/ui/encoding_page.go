@@ -149,7 +149,7 @@ func (p *EncodingPage) updateFileProgress(dp *dto.EncodingFileProgress) {
 		if fillerWidth < 0 {
 			fillerWidth = 0
 		}
-		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
+		progressBar := strings.Repeat(fileProgressChar, barWidth) + strings.Repeat(" ", fillerWidth)
 		cell := p.filesTable.GetCell(dp.FileId+1, col)
 		cell.SetExpansion(p.filesTable.colWeight[col])
 		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
@@ -172,7 +172,7 @@ func (p *EncodingPage) updateTotalProgress(dp *dto.EncodingProgress) {
 	if w > 0 {
 		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-		progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+		progressBar := strings.Repeat(totalProgressChar, barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 		progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 		ui.Draw()
 	}

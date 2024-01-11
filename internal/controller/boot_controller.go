@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"runtime"
 	"time"
 
 	"abb_ia/internal/config"
@@ -40,6 +41,18 @@ func (c *BootController) dispatchMessage(m *mq.Message) {
 }
 
 func (c *BootController) bootStrap(cmd *dto.BootstrapCommand) {
+
+	// detect operation system
+	os := runtime.GOOS
+	logger.Debug("Operation system detected: " + os)
+	switch os {
+	case "windows":
+	case "darwin":
+	case "linux":
+	default:
+		logger.Error("Unknown operation system detected: " + os)
+	}
+
 	// wait for all components to initialize
 	time.Sleep(3 * time.Second)
 	if c.checkFFmpeg() {

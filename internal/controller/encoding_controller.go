@@ -119,7 +119,7 @@ func (c *EncodingController) encodeFile(fileId int, outputDir string) {
 		Input(filePath, "-f mp3").
 		Output(tmpFile, fmt.Sprintf("-f mp3 -ab %dk -ar %d -vn", c.ab.Config.GetBitRate(), c.ab.Config.GetSampleRate())).
 		Overwrite(true).
-		Params("-hide_banner -nostdin -nostats -loglevel fatal").
+		Params("-hide_banner -nostdin -nostats -loglevel error").
 		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port))
 
 	go c.killSwitch(ffmpeg)

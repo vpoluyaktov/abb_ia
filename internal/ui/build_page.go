@@ -56,7 +56,7 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	// audiobook build section
 	p.buildSection = newGrid()
 	p.buildSection.SetColumns(-1)
-	p.buildSection.SetTitle(" Building audiobook: ")
+	p.buildSection.SetTitle(" Audiobook build: ")
 	p.buildSection.SetTitleAlign(tview.AlignLeft)
 	p.buildSection.SetBorder(true)
 	p.buildTable = newTable()
@@ -69,7 +69,7 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	// copy section
 	p.copySection = newGrid()
 	p.copySection.SetColumns(-1)
-	p.copySection.SetTitle(" Copying the book to the output directory: ")
+	p.copySection.SetTitle(" Copy to the output directory: ")
 	p.copySection.SetTitleAlign(tview.AlignLeft)
 	p.copySection.SetBorder(true)
 	p.copyTable = newTable()
@@ -82,7 +82,7 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	// upload section
 	p.uploadSection = newGrid()
 	p.uploadSection.SetColumns(-1)
-	p.uploadSection.SetTitle(" Uploading the book to Audiobookshelf server: ")
+	p.uploadSection.SetTitle(" Upload to Audiobookshelf server: ")
 	p.uploadSection.SetTitleAlign(tview.AlignLeft)
 	p.uploadSection.SetBorder(true)
 	p.uploadTable = newTable()
@@ -238,7 +238,7 @@ func (p *BuildPage) updateFileBuildProgress(dp *dto.FileBuildProgress) {
 		if fillerWidth < 0 {
 			fillerWidth = 0
 		}
-		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
+		progressBar := strings.Repeat(fileProgressChar, barWidth) + strings.Repeat(" ", fillerWidth)
 		cell := p.buildTable.GetCell(dp.FileId+1, col)
 		cell.SetExpansion(p.buildTable.colWeight[col])
 		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
@@ -262,7 +262,7 @@ func (p *BuildPage) updateTotalBuildProgress(dp *dto.TotalBuildProgress) {
 	if w > 0 {
 		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-		progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+		progressBar := strings.Repeat(totalProgressChar, barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 		progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 		ui.Draw()
 	}
@@ -282,7 +282,7 @@ func (p *BuildPage) updateFileCopyProgress(dp *dto.CopyFileProgress) {
 		if fillerWidth < 0 {
 			fillerWidth = 0
 		}
-		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
+		progressBar := strings.Repeat(fileProgressChar, barWidth) + strings.Repeat(" ", fillerWidth)
 		cell := p.copyTable.GetCell(dp.FileId+1, col)
 		cell.SetExpansion(p.copyTable.colWeight[col])
 		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
@@ -306,7 +306,7 @@ func (p *BuildPage) updateTotalCopyProgress(dp *dto.CopyProgress) {
 	if w > 0 {
 		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-		progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+		progressBar := strings.Repeat(totalProgressChar, barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 		// progressCell.SetExpansion(0)
 		// progressCell.SetMaxWidth(0)
 		progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
@@ -327,7 +327,7 @@ func (p *BuildPage) updateFileUploadProgress(dp *dto.UploadFileProgress) {
 		if fillerWidth < 0 {
 			fillerWidth = 0
 		}
-		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
+		progressBar := strings.Repeat(fileProgressChar, barWidth) + strings.Repeat(" ", fillerWidth)
 		cell := p.uploadTable.GetCell(dp.FileId+1, col)
 		cell.SetExpansion(p.uploadTable.colWeight[col])
 		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
@@ -351,7 +351,7 @@ func (p *BuildPage) updateTotalUploadProgress(dp *dto.UploadProgress) {
 	if w > 0 {
 		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-		progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+		progressBar := strings.Repeat(totalProgressChar, barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 		// progressCell.SetExpansion(0)
 		// progressCell.SetMaxWidth(0)
 		progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)

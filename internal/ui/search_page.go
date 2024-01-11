@@ -91,6 +91,8 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.resultTable.setWeights(1, 3, 6, 1, 2, 2)
 	p.resultTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.resultTable.SetSelectionChangedFunc(p.updateDetails)
+	p.resultTable.SetSelectedFunc(p.itemSelected)
+	p.resultTable.SetMouseDblClickFunc(p.itemSelected)
 	p.resultTable.setLastRowEvent(p.lastRowEvent)
 	p.resultSection.AddItem(p.resultTable.Table, 0, 0, 1, 1, 0, 0, true)
 	p.mainGrid.AddItem(p.resultSection.Grid, 1, 0, 1, 1, 0, 0, true)
@@ -229,6 +231,13 @@ func (p *SearchPage) updateDetails(row int, col int) {
 			p.filesTable.appendRow(f.Name, f.Format, utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size))
 		}
 		p.filesTable.ScrollToBeginning()
+	}
+}
+
+// process Enter and DoubleClick on the result table
+func (p *SearchPage) itemSelected(row int, col int) {
+	if row > 0 && len(p.searchResult) > 0 && row < len(p.searchResult) {
+		p.createBook()
 	}
 }
 

@@ -206,7 +206,7 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 		Input(part.FListFile, "-safe 0 -f concat").
 		Output(part.AACFile, "-acodec aac -vn").
 		Overwrite(true).
-		Params("-hide_banner -nostdin -nostats").
+		Params("-hide_banner -nostdin -nostats -loglevel error").
 		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port)).
 		Run()
 	if err != nil {
@@ -220,7 +220,7 @@ func (c *BuildController) buildAudiobookPart(ab *dto.Audiobook, partId int) {
 		Input(part.MetadataFile, "").
 		Output(part.M4BFile, "-map_metadata 1 -y -vn -y -acodec copy").
 		Overwrite(true).
-		Params("-hide_banner -nostdin -nostats").
+		Params("-hide_banner -nostdin -nostats -loglevel error").
 		SendProgressTo("http://127.0.0.1:" + strconv.Itoa(port))
 
 	go c.killSwitch(ffmpeg)

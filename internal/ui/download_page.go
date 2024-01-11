@@ -150,7 +150,7 @@ func (p *DownloadPage) updateFileProgress(dp *dto.FileDownloadProgress) {
 		if fillerWidth < 0 {
 			fillerWidth = 0
 		}
-		progressBar := strings.Repeat("━", barWidth) + strings.Repeat(" ", fillerWidth)
+		progressBar := strings.Repeat(fileProgressChar, barWidth) + strings.Repeat(" ", fillerWidth)
 		cell := p.filesTable.GetCell(dp.FileId+1, col)
 		cell.SetExpansion(p.filesTable.colWeight[col])
 		cell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
@@ -166,14 +166,14 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.TotalDownloadProgress) {
 	}
 	infoCell := p.progressTable.GetCell(0, 0)
 	progressCell := p.progressTable.GetCell(1, 0)
-	infoCell.Text = fmt.Sprintf("  [yellow]Elapsed: [white]%7s | [yellow]Done: [white]%8s | [yellow]Files: [white]%6s | [yellow]Speed: [white]%6s | [yellow]ETA: [white]%7s", dp.Elapsed, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
+	infoCell.Text = fmt.Sprintf("  [yellow]Elapsed: [white]%7s | [yellow]Downloaded: [white]%8s | [yellow]Files: [white]%7s | [yellow]Speed: [white]%6s | [yellow]ETA: [white]%7s", dp.Elapsed, dp.Bytes, dp.Files, dp.Speed, dp.ETA)
 
 	col := 0
 	w := p.progressTable.GetColumnWidth(col) - 5
 	if w > 0 {
 		progressText := fmt.Sprintf(" %3d%% ", dp.Percent)
 		barWidth := int((float32((w - len(progressText))) * float32(dp.Percent) / 100))
-		progressBar := strings.Repeat("▒", barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
+		progressBar := strings.Repeat(totalProgressChar, barWidth) + strings.Repeat(" ", w-len(progressText)-barWidth)
 		progressCell.Text = fmt.Sprintf("%s |%s|", progressText, progressBar)
 		ui.Draw()
 	}
