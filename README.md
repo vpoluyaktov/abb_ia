@@ -10,8 +10,12 @@ To make this process easier, I developed Audiobook Builder. With this app, all y
 ![Audiobook Builder in action](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/abb_ia.gif)
 
 Here is what the newly created book looks like in the **Audiobookshelf Web** browser and the **Audiobookshelf iOS app**:
-![Created book in Audiobookshelf browser](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/audiobookshelf_browser.png)
-![Created book in Audiobookshelf IOS app](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/audiobookshelf_ios.png)
+
+```html
+<div>
+<img src="https://github.com/vpoluyaktov/abb_ia/blob/master/assets/audiobookshelf_browser.png" width="1055px" height="773px" alt="Created book in Audiobookshelf browser" style="float: left; margin-right: 10px;" />
+<img src="https://github.com/vpoluyaktov/abb_ia/blob/master/assets/audiobookshelf_ios.png" width="1389px" height="642px" alt="Created book in Audiobookshelf IOS app" style="float: left;" />
+</div>
 
 ## Features
 
