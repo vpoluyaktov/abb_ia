@@ -9,6 +9,9 @@ To make this process easier, I developed Audiobook Builder. With this app, all y
 
 ![Audiobook Builder in action](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/abb_ia.gif)
 
+Here is what the newly created book looks like in the **Audiobookshelf Web** browser and the **Audiobookshelf iOS app**:
+![Created book in Audiobookshelf browser](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/audiobookshelf_browser.png)
+![Created book in Audiobookshelf IOS app](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/audiobookshelf_ios.png)
 
 ## Features
 
