@@ -9,16 +9,6 @@ To make this process easier, I developed Audiobook Builder. With this app, all y
 
 ![Audiobook Builder in action](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/abb_ia.gif)
 
-Here is what the newly created book looks like in the **Audiobookshelf Web** browser and the **Audiobookshelf iOS app**:
-
-<table border="0">
-  <tr>
-    <td><img src="https://github.com/vpoluyaktov/abb_ia/blob/master/assets/audiobookshelf_browser.png" width="1055px" height="773px" alt="Created book in Audiobookshelf browser"/></td>
-    <td><img src="https://github.com/vpoluyaktov/abb_ia/blob/master/assets/audiobookshelf_ios.png" width="1389px" height="642px" alt="Created book in Audiobookshelf IOS app"/></td>
-  </tr>
-</table>
-
-
 ## Features
 
 - Download a set of single .mp3 files from [archive.org](https://archive.org)
