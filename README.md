@@ -53,7 +53,14 @@ To install Audiobook Builder (`abb_ia`) on your system, follow these steps:
 2. Move the downloaded binary file to a directory in your system's `PATH`.
 3. Open a terminal and navigate to the directory where the binary file is located.
 4. Run the binary file by executing the command `./abb_ia`. The TUI interface will appear.
-5. Follow the instructions on the application interface to do a search, create an audiobook, and upload it to the [Audiobookshelf server](https://www.audiobookshelf.org) if necessary.
+5. Follow the instructions on the application interface to do a search, create an audiobook, and upload it to the [Audiobookshelf server](https://www.audiobookshelf.org) if necessary. You can try searching for:
+
+- **Old Time Radio Researches Group: Single Episodes**
+- **BBC Radio 4: Radio Drama** (make sure to check if the show is copyrighted).
+- **CBC: Radio Mystery Theater**  
+
+6. Enjoy listening to an audiobook on your favorite device.
+
 
 
 ## Build Instructions
