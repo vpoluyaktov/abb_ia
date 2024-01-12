@@ -246,6 +246,8 @@ func (p *SearchPage) createBook() {
 	row, _ := p.resultTable.GetSelection()
 	if row <= 0 || len(p.searchResult) <= 0 || len(p.searchResult) < row {
 		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection.Grid, func() {})
+	} else if !(utils.CommandExists("ffmpeg") && utils.CommandExists("ffprobe")) {
+		p.showFFMPEGNotFoundError(&dto.FFMPEGNotFoundError{})
 	} else {
 		item := p.searchResult[row-1]
 		// create new audiobook object

@@ -12,9 +12,6 @@
             "console": "integratedTerminal",
             "program": "${fileDirname}",
             // "args": ["--log-level", "DEBUG"]
-            // "args": ["--log-level", "DEBUG", "--mock-save", "Single Episodes"]
-            // "args": ["--log-level", "DEBUG", "--mock-load", "Single Episodes"]
-            // "args": ["--log-level", "DEBUG", "--mock-load", "BBC Radio Drama"]
         }
     ]
 }

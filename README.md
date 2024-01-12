@@ -22,13 +22,6 @@ To make this process easier, I developed Audiobook Builder. With this app, all y
 
 Audiobook Builder seamlessly integrates with **Audiobookshelf server** (https://www.audiobookshelf.org). This integration allows you to upload the created audiobooks directly to the Audiobook Shelf server for convenient listening.
 
-## How to Start
-
-1. Make sure you have ffmpeg and ffprobe command line utilities installed. If not, install them first.
-2. Download the ready-to-run binary files from the [Github Releases page](https://github.com/vpoluyaktov/abb_ia/releases) for your target platform.
-3. Open a terminal and navigate to the directory where the binary file is located.
-4. Run the binary file by executing the command `./abb_ia`. The TUI interface will appear.
-
 ## Installation Instructions
 
 To use Audiobook Builder, you need to have the following command line utilities installed:
@@ -36,13 +29,32 @@ To use Audiobook Builder, you need to have the following command line utilities 
 - **ffmpeg** (used for audio manipulation)
 - **ffprobe** (used for retrieving audio metadata)
 
+See ffmpeg website for more details: https://ffmpeg.org/
+
+The easiest way to install these utilities on a Linux computer is by running the following command:
+
+```bash
+sudo apt install ffmpeg
+```
+
+For MacOS, you can use the [Homebrew](https://brew.sh/) utility with the command:
+
+```bash
+brew install ffmpeg
+```
+
+If you are using Windows, you can find instructions for installation on the **ffmpeg** website: [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html)
+
 Make sure these utilities are properly installed and available in your system's PATH before running `abb_ia`.
 
-To install Audiobook Builder (abb_ia) on your system, follow these steps:
+To install Audiobook Builder (`abb_ia`) on your system, follow these steps:
 
 1. Download the ready-to-run binary file for your target platform from the [Github Releases page](https://github.com/vpoluyaktov/abb_ia/releases).
 2. Move the downloaded binary file to a directory in your system's `PATH`.
-3. Rename the binary file to a more convenient name, if desired.
+3. Open a terminal and navigate to the directory where the binary file is located.
+4. Run the binary file by executing the command `./abb_ia`. The TUI interface will appear.
+5. Follow the instructions on the application interface to do a search, create an audiobook, and upload it to the [Audiobookshelf server](https://www.audiobookshelf.org) if necessary.
+
 
 ## Build Instructions
 
@@ -109,7 +121,7 @@ If you are interested in contributing to the bug fixes for **Audiobook Builder**
 
 ## Author's Disclaimer
 
-Since the copyrights for the majority of old-time radio shows have expired and many of them are now in the Public Domain, you have the ability to freely download and listen to them. However, it's important to note that there is also copyrighted content available on the Internet Archive site. It is crucial that you respect the legal rights of others and refrain from engaging in any unlawful activities. This script serves as a tool solely for the purpose of creating an audiobook. The author holds no responsibility for how you choose to utilize this tool. It is your responsibility to adhere to the terms outlined in the copyright license of each item.
+Since the copyrights for the majority of old-time radio shows have expired and many of them are now in the Public Domain, you have the ability to freely download and listen to them. However, it's important to note that there is also copyrighted content available on the Internet Archive site. It is crucial that you respect the legal rights of others and refrain from engaging in any unlawful activities. This application serves as a tool solely for the purpose of creating an audiobook. The author holds no responsibility for how you choose to utilize this tool. It is your responsibility to adhere to the terms outlined in the copyright license of each item.
 
 ## Todo
 - The Text to Speech (**TTS**) version of Audiobook Builder is coming soon. It will allow you to create audiobooks from .epub, fb2, and other formats of electronic books.
