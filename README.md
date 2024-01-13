@@ -10,13 +10,13 @@ To make this process easier, I developed Audiobook Builder. With this app, all y
 ![Audiobook Builder in action](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/abb_ia.gif)
 
 ## Features
-
+- TUI interface. It allows you to run this application either on your own computer or on a remote server using ssh with tmux, screen, or byobu. This can be helpful when creating an audiobook that takes a long time.
 - Download a set of single .mp3 files from [archive.org](https://archive.org)
 - Create an audiobook in .m4b format
 - Re-encode mp3 files to the same bit rate, if necessary.
 - Modify audiobook metadata obtained from [archive.org](https://archive.org), including book title, author, series, genre, and art cover
-- Upload created audiobook to specified folder using [audiobookshelf compatible directory structure](https://www.audiobookshelf.org/docs/#book-directory-structure)
-- Upload created audiobook to remote Audiobookshelf server using [Audiobookshelf API](https://api.audiobookshelf.org/)
+- Copy created audiobook to specified folder located on the same server using [audiobookshelf compatible directory structure](https://www.audiobookshelf.org/docs/#book-directory-structure). This can be helpful when you run `abb_ia` on the same server where the [Audiobookshelf server](https://www.audiobookshelf.org) is hosted, or when you mount the Audiobookshelf library folder via NFS.
+- Upload your created audiobook to a personal [Audiobookshelf server](https://www.audiobookshelf.org) so that you can easily listen to it on your favorite device.
 
 ## Integrations
 
@@ -81,6 +81,13 @@ If you prefer to build the program from source, follow these instructions:
    go build -o bin/
    ```
 5. The binary file (`abb_ia`) will be generated in the bin/ directory.
+
+
+## Known Issues
+- On some systems, you may not see a cursor in the input fields. This is because the color of the cursor in your terminal application settings is the same as the background color of the input field. To solve this issue, you can adjust the settings of your terminal program. You can either change the cursor color (so that it is different from the color of the input fields) or make the cursor blink.
+- On some Windows systems, the Audiobook builder has a problem launching ffmpeg (there is an issue with the input file path). If you encounter this problem, please enable DEBUG mode in the application settings, replicate the error, and file a GitHub Bug report by attaching the application log file.
+- Sometimes, when the application crashes, the terminal window may be filled with random characters and you won't see a cursor anymore. This happens because of a problem with the TUI framework that was used to create the application. To solve this issue, you can either reopen the terminal window or try running the `reset` command.
+- Downloading audiobooks using `abb_id` is incredibly easy and fast. This means that over time, you might collect hundreds of audiobooks with thousands of hours of content. However, this can be a problem because it would be practically impossible to listen to all of them in your lifetime. :-)
 
 ## Reporting Bugs through GitHub Issues
 
