@@ -66,7 +66,7 @@ func newEncodingPage(dispatcher *mq.Dispatcher) *EncodingPage {
 	p.progressSection = newGrid()
 	p.progressSection.SetColumns(-1)
 	p.progressSection.SetBorder(true)
-	p.progressSection.SetTitle(" Encoding progress: ")
+	p.progressSection.SetTitle(" Total encoding progress: ")
 	p.progressSection.SetTitleAlign(tview.AlignLeft)
 	p.progressTable = newTable()
 	p.progressTable.setWeights(1)

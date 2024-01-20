@@ -24,7 +24,7 @@ type ChaptersPage struct {
 	inputSeries              *tview.InputField
 	inputSeriesNo            *tview.InputField
 	inputGenre               *tview.DropDown
-	inputNarator             *tview.InputField
+	inputNarrator            *tview.InputField
 	inputCover               *tview.InputField
 	buttonCreateBook         *tview.Button
 	buttonCancel             *tview.Button
@@ -100,9 +100,9 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 			p.ab.Genre = strings.TrimSpace(s)
 		}
 	})
-	p.inputNarator = f2.AddInputField("Narator:", "", 20, nil, func(s string) {
+	p.inputNarrator = f2.AddInputField("Narrator:", "", 20, nil, func(s string) {
 		if p.ab != nil {
-			p.ab.Narator = s
+			p.ab.Narrator = s
 		}
 	})
 	infoSection.AddItem(f2.Form, 0, 2, 1, 1, 0, 0, true)
@@ -196,7 +196,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 		p.inputSeries,
 		p.inputSeriesNo,
 		p.inputGenre,
-		p.inputNarator,
+		p.inputNarrator,
 		p.inputCover,
 		p.buttonCreateBook,
 		p.buttonCancel,
@@ -409,7 +409,7 @@ func (p *ChaptersPage) buildBook() {
 	p.ab.Title = p.inputTitle.GetText()
 	p.ab.Series = p.inputSeries.GetText()
 	p.ab.SeriesNo = p.inputSeriesNo.GetText()
-	p.ab.Narator = p.inputNarator.GetText()
+	p.ab.Narrator = p.inputNarrator.GetText()
 	_, p.ab.Genre = p.inputGenre.GetCurrentOption()
 
 	p.mq.SendMessage(mq.ChaptersPage, mq.BuildController, &dto.BuildCommand{Audiobook: p.ab}, true)

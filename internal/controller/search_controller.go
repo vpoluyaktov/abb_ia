@@ -56,7 +56,7 @@ func (c *SearchController) dispatchMessage(m *mq.Message) {
 }
 
 func (c *SearchController) search(cmd *dto.SearchCommand) {
-	logger.Info(mq.SearchController + " received " + cmd.String())
+	logger.Info(fmt.Sprintf("Searching for: %s - %s", cmd.Condition.Author, cmd.Condition.Title))
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 	c.totalItemsFetched = 0
@@ -73,12 +73,14 @@ func (c *SearchController) search(cmd *dto.SearchCommand) {
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{Condition: cmd.Condition}, false)
 	if itemsFetched == 0 {
+		logger.Info("Nothing found")
 		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.NothingFoundError{Condition: cmd.Condition}, false)
+	} else {
+		logger.Info(fmt.Sprintf("Items fetched: %d", c.totalItemsFetched))
 	}
 }
 
 func (c *SearchController) getGetNextPage(cmd *dto.GetNextPageCommand) {
-	logger.Info(mq.SearchController + " received " + cmd.String())
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 	resp := c.ia.GetNextPage(cmd.Condition.Author, cmd.Condition.Title, "audio")
@@ -93,7 +95,10 @@ func (c *SearchController) getGetNextPage(cmd *dto.GetNextPageCommand) {
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
 	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{Condition: cmd.Condition}, false)
 	if itemsFetched == 0 {
+		logger.Info("Last page reached")
 		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.LastPageMessage{Condition: cmd.Condition}, false)
+	} else {
+		logger.Info(fmt.Sprintf("Items fetched: %d", c.totalItemsFetched))
 	}
 }
 

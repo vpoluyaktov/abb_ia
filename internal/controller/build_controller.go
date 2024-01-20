@@ -67,11 +67,10 @@ func (c *BuildController) dispatchMessage(m *mq.Message) {
 
 func (c *BuildController) stopBuild(cmd *dto.StopCommand) {
 	c.stopFlag = true
-	logger.Debug(mq.BuildController + ": Received StopBuild command")
+	logger.Info(fmt.Sprintf("Building the audiobook: %s - %s...", c.ab.Author, c.ab.Title))
 }
 
 func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
-	logger.Info(mq.BuildController + " received " + cmd.String())
 	c.stopFlag = false
 	c.startTime = time.Now()
 	c.ab = cmd.Audiobook
@@ -93,6 +92,8 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: "Building audiobook..."}, false)
 	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+
+	logger.Info(fmt.Sprintf("Building the audiobook: %s - %s...", c.ab.Author, c.ab.Title))
 
 	// prepare .mp3 file list
 	c.createFilesLists(c.ab)

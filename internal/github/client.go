@@ -1,22 +1,44 @@
 package github
 
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
+
 type GithubClient struct {
-	token string
+	repoOwner string
+	repoName  string
 }
 
-func NewClient(token string) (*GithubClient, error) {
-	c := &GithubClient{token: token}
-	return c, nil
+func NewClient(repoOwner string, repoName string) (*GithubClient) {
+	c := &GithubClient{repoOwner: repoOwner, repoName: repoName}
+	return c
 }
 
-func (c *GithubClient) GetLatestVer(owner string, repo string) (string, error) {
-	ver := ""
-
-	// curl -L \
-	//   -H "Accept: application/vnd.github+json" \
-	//   -H "Authorization: Bearer <TOKEN>" \
-	//   -H "X-GitHub-Api-Version: 2022-11-28" \
-	//   https://api.github.com/repos/vpoluyaktov/abb_ia/releases/latest
-
-	return ver, nil
+type Release struct {
+	TagName string `json:"tag_name"`
 }
+
+func (c *GithubClient) GetLatestVersion() (string, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", c.repoOwner, c.repoName)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to fetch latest release: %s", resp.Status)
+	}
+
+	var release Release
+	err = json.NewDecoder(resp.Body).Decode(&release)
+	if err != nil {
+		return "", err
+	}
+
+	return release.TagName, nil
+}
+

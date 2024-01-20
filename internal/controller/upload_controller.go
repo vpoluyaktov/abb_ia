@@ -54,12 +54,13 @@ func (c *UploadController) dispatchMessage(m *mq.Message) {
 }
 
 func (c *UploadController) absScan(cmd *dto.AbsScanCommand) {
-	logger.Info(mq.UploadController + " received " + cmd.String())
+
 	ab := cmd.Audiobook
 	url := ab.Config.GetAudiobookshelfUrl()
 	username := ab.Config.GetAudiobookshelfUser()
 	password := ab.Config.GetAudiobookshelfPassword()
 	libraryName := ab.Config.GetAudiobookshelfLibrary()
+
 
 	if url != "" && username != "" && password != "" && libraryName != "" {
 		absClient := audiobookshelf.NewClient(url)
@@ -94,12 +95,14 @@ func (c *UploadController) absScan(cmd *dto.AbsScanCommand) {
 
 func (c *UploadController) absUpload(cmd *dto.AbsUploadCommand) {
 	c.startTime = time.Now()
-	logger.Info(mq.UploadController + " received " + cmd.String())
+
 	c.ab = cmd.Audiobook
 	url := c.ab.Config.GetAudiobookshelfUrl()
 	username := c.ab.Config.GetAudiobookshelfUser()
 	password := c.ab.Config.GetAudiobookshelfPassword()
 	libraryName := c.ab.Config.GetAudiobookshelfLibrary()
+
+	logger.Info(fmt.Sprintf("Uploading the audiobook: %s - %s to %s...", c.ab.Author, c.ab.Title, c.ab.Config.AudiobookshelfUrl))
 
 	if url != "" && username != "" && password != "" && libraryName != "" {
 		absClient := audiobookshelf.NewClient(url)

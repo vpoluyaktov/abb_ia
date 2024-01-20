@@ -69,7 +69,6 @@ func (c *EncodingController) stopEncoding(cmd *dto.StopCommand) {
 
 func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	c.startTime = time.Now()
-	logger.Info(mq.EncodingController + " received " + cmd.String())
 
 	c.ab = cmd.Audiobook
 	c.stopFlag = false
@@ -78,6 +77,8 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: "Re-encoding mp3 files..."}, false)
 	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+
+	logger.Info(fmt.Sprintf("Re-encoding mp3 files: %s - %s...", c.ab.Author, c.ab.Title))
 
 	// re-encode files
 	jd := utils.NewJobDispatcher(c.ab.Config.GetConcurrentEncoders())

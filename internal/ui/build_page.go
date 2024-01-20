@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"abb_ia/internal/audiobookshelf"
 	"abb_ia/internal/dto"
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
@@ -69,7 +70,7 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	// copy section
 	p.copySection = newGrid()
 	p.copySection.SetColumns(-1)
-	p.copySection.SetTitle(" Copy to the output directory: ")
+	p.copySection.SetTitle(" Output directory: ")
 	p.copySection.SetTitleAlign(tview.AlignLeft)
 	p.copySection.SetBorder(true)
 	p.copyTable = newTable()
@@ -82,7 +83,7 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 	// upload section
 	p.uploadSection = newGrid()
 	p.uploadSection.SetColumns(-1)
-	p.uploadSection.SetTitle(" Upload to Audiobookshelf server: ")
+	p.uploadSection.SetTitle(" Audiobookshelf server: ")
 	p.uploadSection.SetTitleAlign(tview.AlignLeft)
 	p.uploadSection.SetBorder(true)
 	p.uploadTable = newTable()
@@ -196,6 +197,10 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	}
 	p.buildTable.ScrollToBeginning()
 
+	destPath := audiobookshelf.GetDestignationPath(ab.Config.GetOutputDir(), ab.Series, ab.Author)
+	destDir := audiobookshelf.GetDestignationDir(ab.Series, ab.SeriesNo, ab.Title, ab.Narrator)
+	filePath := filepath.Clean(filepath.Join(destPath, destDir))
+	p.copySection.SetTitle(" Output directory " + filePath + "/: ")
 	p.copyTable.Clear()
 	p.copyTable.showHeader()
 	for i, part := range ab.Parts {
@@ -203,6 +208,7 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	}
 	p.copyTable.ScrollToBeginning()
 
+	p.uploadSection.SetTitle(" Audiobookshelf server " + ab.Config.AudiobookshelfUrl + ": ")
 	p.uploadTable.Clear()
 	p.uploadTable.showHeader()
 	for i, part := range ab.Parts {
