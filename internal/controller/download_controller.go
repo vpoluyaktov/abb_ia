@@ -59,7 +59,7 @@ func (c *DownloadController) stopDownload(cmd *dto.StopCommand) {
 
 func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.startTime = time.Now()
-	logger.Info(mq.DownloadController + " received " + cmd.String())
+
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: "Downloading mp3 files..."}, false)
 	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 
@@ -74,6 +74,8 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.ab.OutputDir = utils.SanitizeFilePath(filepath.Join(c.ab.Config.GetTmpDir(), item.ID))
 	c.ab.TotalSize = item.TotalSize
 	c.ab.TotalDuration = item.TotalLength
+
+	logger.Info(fmt.Sprintf("Downloading IA item: %s - %s...", c.ab.Author, c.ab.Title))
 
 	// update Book info on UI
 	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)

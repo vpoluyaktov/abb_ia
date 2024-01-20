@@ -104,6 +104,7 @@ func Load() {
 		"History",
 		"Podcast",
 		"Nonfiction",
+		"Education",
 		"News",
 		"Speech",
 	}

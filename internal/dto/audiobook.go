@@ -14,7 +14,7 @@ type Audiobook struct {
 	Genre         string
 	Series        string
 	SeriesNo      string
-	Narator       string
+	Narrator      string
 	Year          string
 	CoverURL      string
 	CoverFile     string

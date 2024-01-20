@@ -37,7 +37,7 @@ func (c *CleanupController) dispatchMessage(m *mq.Message) {
 }
 
 func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand, requestor string) {
-	logger.Info(mq.CleanupController + " received " + cmd.String())
+	logger.Debug(mq.CleanupController + " received " + cmd.String())
 	c.ab = cmd.Audiobook
 
 	if !(c.ab.Config.IsSaveMock() || c.ab.Config.IsUseMock()) {

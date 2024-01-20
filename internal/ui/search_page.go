@@ -245,7 +245,7 @@ func (p *SearchPage) createBook() {
 	// get selectet row from the results table
 	row, _ := p.resultTable.GetSelection()
 	if row <= 0 || len(p.searchResult) <= 0 || len(p.searchResult) < row {
-		newMessageDialog(p.mq, "Error", "Please perform a search first", p.searchSection.Grid, func() {})
+		newMessageDialog(p.mq, "Error", "\nPlease conduct a search beforehand.", p.searchSection.Grid, func() {})
 	} else if !(utils.CommandExists("ffmpeg") && utils.CommandExists("ffprobe")) {
 		p.showFFMPEGNotFoundError(&dto.FFMPEGNotFoundError{})
 	} else {
@@ -290,15 +290,16 @@ func (p *SearchPage) updateConfig() {
 
 func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
 	newMessageDialog(p.mq, "Error",
-		"No results were found for your search term: [darkblue]'"+dto.Condition.Author+" - "+dto.Condition.Title+"'[black].\n"+
+		"\nNo results were found for your search term:\n"+
+		"Creator: [darkblue]'"+dto.Condition.Author+"'[black] Title: [darkblue]'"+dto.Condition.Title+"'[black].\n"+
 			"Please revise your search criteria.",
 		p.searchSection.Grid, func() {})
 }
 
 func (p *SearchPage) showLastPageMessage(dto *dto.LastPageMessage) {
 	newMessageDialog(p.mq, "Notification",
-		"No more items were found for \n"+
-			"your search term: [darkblue]'"+dto.Condition.Author+" - "+dto.Condition.Title+"'[black]\n"+
+		"No more items were found for your search term: \n"+
+		"Creator: [darkblue]'"+dto.Condition.Author+"'[black] Title: [darkblue]'"+dto.Condition.Title+"'[black].\n"+
 			"This is the last page.\n",
 		p.resultSection.Grid, func() {})
 }
@@ -313,8 +314,8 @@ func (p *SearchPage) showFFMPEGNotFoundError(dto *dto.FFMPEGNotFoundError) {
 
 func (p *SearchPage) showNewVersionMessage(dto *dto.NewAppVersionFound) {
 	newMessageDialog(p.mq, "Notification",
-		"New version of the application has been released: [darkblue]"+dto.NewVersion+"[black]\n"+
-			"Your current version is [darkblue]"+dto.CurrentVersion+"[black]\n"+
-			"You can download the new version of the application from:\n[darkblue]https://abb_ia/releases",
+		"New version of the Audiobook Builder has been released: [darkblue]"+dto.NewVersion+"[black]\n"+
+			"Your current version is [darkblue]v"+dto.CurrentVersion+"[black]\n"+
+			"You can download the new version of the application from:\n[darkblue]https://github.com/"+config.Instance().GetRepoOwner()+"/"+config.Instance().GetRepoName()+"/releases",
 		p.searchSection.Grid, func() {})
 }

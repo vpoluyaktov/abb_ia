@@ -8,6 +8,12 @@ import (
 	"github.com/vpoluyaktov/tview"
 )
 
+const (
+	idleMessage          = " IDLE "
+	busyMessage          = " BUSY "
+	defaultStatusMessage = " [black]Keys and shortcuts: [yellow]Arrows, Tab, Shift+Tab[darkblue]: navigation,  [yellow]Enter[darkblue]: action,  [yellow]Ctrl+U[darkblue]: clear a field,  [yellow]Ctrl+C[darkblue]: exit"
+)
+
 type footer struct {
 	mq            *mq.Dispatcher
 	grid          *tview.Grid
@@ -23,18 +29,20 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f.mq.RegisterListener(mq.Footer, f.dispatchMessage)
 
 	f.busyIndicator = tview.NewTextView()
-	f.busyIndicator.SetText("")
+	f.busyIndicator.SetText(idleMessage)
 	f.busyIndicator.SetTextAlign(tview.AlignCenter)
 	f.busyIndicator.SetBorder(false)
-	f.busyIndicator.SetTextColor(busyIndicatorFgColor)
+	f.busyIndicator.SetTextColor(footerFgColor)
 	f.busyIndicator.SetBackgroundColor(busyIndicatorBgColor)
+	f.busyIndicator.SetDynamicColors(true)
 
 	f.statusMessage = tview.NewTextView()
-	f.statusMessage.SetText("")
+	f.statusMessage.SetText(defaultStatusMessage)
 	f.statusMessage.SetTextAlign(tview.AlignLeft)
 	f.statusMessage.SetBorder(false)
 	f.statusMessage.SetTextColor(footerFgColor)
 	f.statusMessage.SetBackgroundColor(footerBgColor)
+	f.statusMessage.SetDynamicColors(true)
 
 	f.version = tview.NewTextView()
 	f.version.SetText("v" + config.Instance().AppVersion() + " (" + config.Instance().GetBuildDate() + ") ")
@@ -44,7 +52,7 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f.version.SetBackgroundColor(footerBgColor)
 
 	f.grid = tview.NewGrid()
-	f.grid.SetColumns(8, -1)
+	f.grid.SetColumns(8, -1, 12)
 	f.grid.AddItem(f.busyIndicator, 0, 0, 1, 1, 0, 0, false)
 	f.grid.AddItem(f.statusMessage, 0, 1, 1, 1, 0, 0, false)
 	f.grid.AddItem(f.version, 0, 2, 1, 1, 0, 0, false)
@@ -71,20 +79,26 @@ func (f *footer) dispatchMessage(m *mq.Message) {
 }
 
 func (f *footer) updateStatus(s *dto.UpdateStatus) {
-	f.statusMessage.SetText(s.Message)
+	if s.Message != "" {
+		f.statusMessage.SetTextColor(black)
+		f.statusMessage.SetText(" " + s.Message)
+	} else {
+		f.statusMessage.SetTextColor(footerFgColor)
+		f.statusMessage.SetText(defaultStatusMessage)
+	}
 	ui.Draw()
 }
 
 func (f *footer) toggleBusyIndicator(c *dto.SetBusyIndicator) {
 	if c.Busy {
 		f.busyFlag = true
-		f.busyIndicator.SetTextColor(busyIndicatorFgColor)
-		f.busyIndicator.SetBackgroundColor(busyIndicatorBgColor)
-		f.busyIndicator.SetText(" Busy> ")
+		f.busyIndicator.SetTextColor(yellow)
+		f.busyIndicator.SetBackgroundColor(darkRed)
+		f.busyIndicator.SetText(busyMessage)
 		go f.updateBusyIndicator()
 	} else {
 		f.busyFlag = false
-		f.busyIndicator.SetText("")
+		f.busyIndicator.SetText(idleMessage)
 		f.busyIndicator.SetTextColor(footerFgColor)
 		f.busyIndicator.SetBackgroundColor(footerBgColor)
 		ui.Draw()

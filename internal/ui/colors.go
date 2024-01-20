@@ -7,6 +7,7 @@ import (
 
 var (
 	white     = tcell.NewRGBColor(255, 255, 255)
+	darkWhite = tcell.NewRGBColor(235, 235, 235)
 	gray      = tcell.NewRGBColor(202, 202, 202)
 	blue      = tcell.NewRGBColor(12, 34, 184)
 	lightBlue = tcell.ColorBlue
@@ -15,6 +16,7 @@ var (
 	black     = tcell.NewRGBColor(0, 0, 0)
 	cyan      = tcell.NewRGBColor(80, 176, 189)
 	red       = tcell.ColorRed
+	darkRed   = tcell.ColorDarkRed
 
 	labelsColor = yellow
 	valuesColor = white

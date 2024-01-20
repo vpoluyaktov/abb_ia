@@ -44,7 +44,7 @@ type SearchResponse struct {
 			BackupLocation     string      `json:"backup_location,omitempty"`
 			ExternalIdentifier strArray    `json:"external-identifier,omitempty"`
 			Genre              strArray    `json:"genre,omitempty"`
-			Language           string      `json:"language,omitempty"`
+			Language           strArray    `json:"language,omitempty"`
 			Licenseurl         string      `json:"licenseurl,omitempty"`
 			StrippedTags       strArray    `json:"stripped_tags,omitempty"`
 		} `json:"docs"`
@@ -92,7 +92,7 @@ type ItemDetails struct {
 	Files map[string]struct {
 		Source             string   `json:"source"`
 		Format             string   `json:"format"`
-		Original           string   `json:"original"`
+		Original           strArray `json:"original"`
 		Length             string   `json:"length"`
 		Mtime              string   `json:"mtime"`
 		Size               string   `json:"size"`

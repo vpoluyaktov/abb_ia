@@ -71,7 +71,12 @@ func (c *BootController) checkFFmpeg() bool {
 
 func (c *BootController) checkNewVersion() {
 
-	latestVersion, err := github.GetLatestVersion(config.Instance().GetRepoOwner(), config.Instance().GetRepoName())
+	if config.Instance().AppVersion() == "0.0.0" {
+		// this is local dev version. Don't check new version
+		return 
+	}
+	git := github.NewClient(config.Instance().GetRepoOwner(), config.Instance().GetRepoName())
+	latestVersion, err := git.GetLatestVersion()
 	if err != nil {
 		logger.Error("Can't check new version: " + err.Error())
 		return

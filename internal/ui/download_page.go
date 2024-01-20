@@ -66,7 +66,7 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 	p.progressSection = newGrid()
 	p.progressSection.SetColumns(-1)
 	p.progressSection.SetBorder(true)
-	p.progressSection.SetTitle(" Download progress: ")
+	p.progressSection.SetTitle(" Total download progress: ")
 	p.progressSection.SetTitleAlign(tview.AlignLeft)
 	p.progressTable = newTable()
 	p.progressTable.setWeights(1)

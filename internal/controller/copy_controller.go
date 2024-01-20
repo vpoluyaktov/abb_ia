@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"abb_ia/internal/audiobookshelf"
 	"abb_ia/internal/dto"
 	"abb_ia/internal/utils"
 
@@ -85,7 +86,6 @@ func (c *CopyController) dispatchMessage(m *mq.Message) {
 
 func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 	c.startTime = time.Now()
-	logger.Info(mq.CopyController + " received " + cmd.String())
 	c.ab = cmd.Audiobook
 
 	// update part size and whole audiobook size after re-encoding
@@ -105,6 +105,8 @@ func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 
 	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: "Copying audiobook files to Audiobookshelf..."}, false)
 	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+
+	logger.Info(fmt.Sprintf("Copying the audiobook: %s - %s to %s/...", c.ab.Author, c.ab.Title, c.ab.Config.OutputDir))
 
 	c.stopFlag = false
 	c.filesCopy = make([]fileCopy, len(c.ab.Parts))
@@ -141,27 +143,17 @@ func (c *CopyController) copyAudiobookPart(ab *dto.Audiobook, partId int) {
 	defer file.Close()
 
 	// Calculate Audiobookshelf directory structure (see: https://www.audiobookshelf.org/docs#book-directory-structure)
-	destPath := filepath.Join(ab.Config.GetOutputDir(), ab.Author)
-	if ab.Series != "" {
-		destPath = filepath.Join(destPath, ab.Author+" - "+ab.Series)
-	}
-	abTitle := ""
-	if ab.Series != "" && ab.SeriesNo != "" {
-		abTitle = ab.SeriesNo + ". "
-	}
-	abTitle += ab.Title
-	if ab.Narator != "" {
-		abTitle += " {" + ab.Narator + "}"
-	}
+	destPath := audiobookshelf.GetDestignationPath(ab.Config.GetOutputDir(), ab.Series, ab.Author)
+	destDir := audiobookshelf.GetDestignationDir(ab.Series, ab.SeriesNo, ab.Title, ab.Narrator)
 
-	destPath = filepath.Clean(filepath.Join(destPath, abTitle, filepath.Base(part.M4BFile)))
-	destDir := filepath.Dir(destPath)
+	filePath := filepath.Clean(filepath.Join(destPath, destDir, filepath.Base(part.M4BFile)))
+	fullPath := filepath.Dir(filePath)
 
-	if err := os.MkdirAll(destDir, 0750); err != nil {
+	if err := os.MkdirAll(fullPath, 0750); err != nil {
 		logger.Error("Can't create output directory: " + err.Error())
 		return
 	}
-	f, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		logger.Fatal("Can't create Audiobookshelf .m4b file: " + err.Error())
 		return
