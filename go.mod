@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/abema/go-mp4 v1.1.1
 	github.com/gdamore/tcell/v2 v2.6.1-0.20231203215052-2917c3801e73
-	github.com/go-resty/resty/v2 v2.10.0
+	github.com/go-resty/resty/v2 v2.11.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/stretchr/testify v1.8.4
 	github.com/sunfish-shogi/bufseekio v0.1.0
