@@ -200,7 +200,7 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	destPath := audiobookshelf.GetDestignationPath(ab.Config.GetOutputDir(), ab.Series, ab.Author)
 	destDir := audiobookshelf.GetDestignationDir(ab.Series, ab.SeriesNo, ab.Title, ab.Narrator)
 	filePath := filepath.Clean(filepath.Join(destPath, destDir))
-	p.copySection.SetTitle(" Output directory " + filePath + "/: ")
+	p.copySection.SetTitle(" Output directory: " + filePath + "/ ")
 	p.copyTable.Clear()
 	p.copyTable.showHeader()
 	for i, part := range ab.Parts {
@@ -208,7 +208,7 @@ func (p *BuildPage) displayBookInfo(ab *dto.Audiobook) {
 	}
 	p.copyTable.ScrollToBeginning()
 
-	p.uploadSection.SetTitle(" Audiobookshelf server " + ab.Config.AudiobookshelfUrl + ": ")
+	p.uploadSection.SetTitle(" Audiobookshelf server: " + ab.Config.AudiobookshelfUrl + " ")
 	p.uploadTable.Clear()
 	p.uploadTable.showHeader()
 	for i, part := range ab.Parts {

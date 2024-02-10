@@ -103,7 +103,7 @@ func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 	}
 	c.ab.TotalSize = abSize
 
-	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: "Copying audiobook files to Audiobookshelf..."}, false)
+	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: "Copying audiobook to the output directory..."}, false)
 	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 
 	logger.Info(fmt.Sprintf("Copying the audiobook: %s - %s to %s/...", c.ab.Author, c.ab.Title, c.ab.Config.OutputDir))

@@ -52,7 +52,7 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 	f.version.SetBackgroundColor(footerBgColor)
 
 	f.grid = tview.NewGrid()
-	f.grid.SetColumns(8, -1, 12)
+	f.grid.SetColumns(8, -1, 25)
 	f.grid.AddItem(f.busyIndicator, 0, 0, 1, 1, 0, 0, false)
 	f.grid.AddItem(f.statusMessage, 0, 1, 1, 1, 0, 0, false)
 	f.grid.AddItem(f.version, 0, 2, 1, 1, 0, 0, false)
