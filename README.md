@@ -7,7 +7,7 @@ The Internet Archive site offers a vast collection of free "old-time radio" show
 To make this process easier, I developed Audiobook Builder. With this app, all you need is the name of a show or book, or a direct link on archive.org. It will download the .mp3 files for the book, re-encode them with the same bit rate, generate a list of chapters (which can be edited during the process), and ultimately create an audiobook in .m4b format.
 
 
-![Audiobook Builder in action](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/abb_ia.gif)
+![Audiobook Builder in action](https://github.com/vpoluyaktov/abb_ia/blob/master/assets/abb_ia_v2.gif)
 
 ## Features
 - TUI interface. It allows you to run this application either on your own computer or on a remote server using ssh with tmux, screen, or byobu. This can be helpful when creating an audiobook that takes a long time.
@@ -145,4 +145,6 @@ Since the copyrights for the majority of old-time radio shows have expired and m
 ## Todo
 - The Text to Speech (**TTS**) version of Audiobook Builder is coming soon. It will allow you to create audiobooks from .epub, fb2, and other formats of electronic books.
 
+## Join us on Discord
+https://discord.gg/ntYyJ7xfzX
 

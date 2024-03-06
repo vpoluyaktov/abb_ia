@@ -44,27 +44,27 @@ func New(maxSearchRows int, useMock bool, saveMock bool) *IAClient {
 	return client
 }
 
-func (client *IAClient) Search(author string, title string, mediaType string) *SearchResponse {
+func (client *IAClient) Search(author string, title string, mediaType string, sortBy string, sortOrder string) *SearchResponse {
 	if strings.Contains(title, IA_BASE_URL+"/details/") {
 		item_id := strings.Split(title, "/")[4]
 		return client.searchByID(item_id, mediaType)
 	} else {
 		client.page = 1
-		return client.searchByTitle(author, title, mediaType)
+		return client.searchByTitle(author, title, mediaType, sortBy, sortOrder)
 	}
 }
 
-func (client *IAClient) GetNextPage(author string, title string, mediaType string) *SearchResponse {
+func (client *IAClient) GetNextPage(author string, title string, mediaType string, sortBy string, sortOrder string) *SearchResponse {
 	if strings.Contains(title, IA_BASE_URL+"/details/") {
 		return &SearchResponse{}
 	} else {
 		client.page += 1
-		resp := client.searchByTitle(author, title, mediaType)
+		resp := client.searchByTitle(author, title, mediaType, sortBy, sortOrder)
 		return resp
 	}
 }
 
-func (client *IAClient) searchByTitle(author string, title string, mediaType string) *SearchResponse {
+func (client *IAClient) searchByTitle(author string, title string, mediaType string, sortBy string, sortOrder string) *SearchResponse {
 	mockFile := MOCK_DIR + "/SearchByAuthorAndTitle.json"
 	result := &SearchResponse{}
 	if client.loadMockResult {
@@ -80,8 +80,8 @@ func (client *IAClient) searchByTitle(author string, title string, mediaType str
 		} else if title != "" {
 			searchCondition = fmt.Sprintf("title:(%s)", url.QueryEscape(title))
 		}
-		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=%s+AND+mediatype:(%s)&output=json&rows=%d&page=%d",
-			searchCondition, mediaType, client.maxSearchRows, client.page)
+		var searchURL = fmt.Sprintf(IA_BASE_URL+"/advancedsearch.php?q=%s+AND+mediatype:(%s)&sort=%s+%s&output=json&rows=%d&page=%d",
+			searchCondition, mediaType, sortBy, sortOrder, client.maxSearchRows, client.page)
 		logger.Debug("IA request: " + searchURL)
 		_, err := client.restyClient.R().SetResult(result).Get(searchURL)
 		if err != nil {

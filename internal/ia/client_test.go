@@ -26,19 +26,19 @@ func TestMain(m *testing.M) {
 func TestSearch(t *testing.T) {
 	ia := ia_client.New(5, false, false)
 
-	res := ia.Search("Old Time Radio Researchers", "Single Episodes", "audio") // search by author and title
+	res := ia.Search("Old Time Radio Researchers", "Single Episodes", "audio", "date", "asc") // search by author and title
 	assert.NotNil(t, res)
 	assert.Equal(t, 5, len(res.Response.Docs))
 
-	res = ia.Search("Old Time Radio Researchers", "", "audio") // search by author only
+	res = ia.Search("Old Time Radio Researchers", "", "audio", "date", "asc") // search by author only
 	assert.NotNil(t, res)
 	assert.Equal(t, 5, len(res.Response.Docs))
 
-	res = ia.Search("", "Single Episodes", "audio") // search by title only
+	res = ia.Search("", "Single Episodes", "audio", "date", "asc") // search by title only
 	assert.NotNil(t, res)
 	assert.Equal(t, 5, len(res.Response.Docs))
 
-	res = ia.Search("", "https://archive.org/details/OTRR_Frank_Race_Singles", "audio") // search by item ID
+	res = ia.Search("", "https://archive.org/details/OTRR_Frank_Race_Singles", "audio", "date", "asc") // search by item ID
 	assert.NotNil(t, res)
 	assert.Equal(t, 1, len(res.Response.Docs))
 }

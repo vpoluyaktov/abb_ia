@@ -3,8 +3,10 @@ package dto
 import "fmt"
 
 type SearchCondition struct {
-	Author string
-	Title string
+	Author    string
+	Title     string
+	SortBy    string
+	SortOrder string
 }
 
 type SearchCommand struct {
