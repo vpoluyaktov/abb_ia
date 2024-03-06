@@ -145,4 +145,6 @@ Since the copyrights for the majority of old-time radio shows have expired and m
 ## Todo
 - The Text to Speech (**TTS**) version of Audiobook Builder is coming soon. It will allow you to create audiobooks from .epub, fb2, and other formats of electronic books.
 
+## Join us on Discord
+https://discord.gg/ntYyJ7xfzX
 

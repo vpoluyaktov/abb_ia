@@ -61,7 +61,7 @@ func (c *SearchController) search(cmd *dto.SearchCommand) {
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 	c.totalItemsFetched = 0
 	c.ia = ia_client.New(config.Instance().GetRowsPerPage(), config.Instance().IsUseMock(), config.Instance().IsSaveMock())
-	resp := c.ia.Search(cmd.Condition.Author, cmd.Condition.Title, "audio")
+	resp := c.ia.Search(cmd.Condition.Author, cmd.Condition.Title, "audio", cmd.Condition.SortBy, cmd.Condition.SortOrder)
 	if resp == nil {
 		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.Condition.Author + " - " + cmd.Condition.Title)
 	}
@@ -83,7 +83,7 @@ func (c *SearchController) search(cmd *dto.SearchCommand) {
 func (c *SearchController) getGetNextPage(cmd *dto.GetNextPageCommand) {
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
 	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
-	resp := c.ia.GetNextPage(cmd.Condition.Author, cmd.Condition.Title, "audio")
+	resp := c.ia.GetNextPage(cmd.Condition.Author, cmd.Condition.Title, "audio", cmd.Condition.SortBy, cmd.Condition.SortOrder)
 	if resp == nil {
 		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.Condition.Author + " - " + cmd.Condition.Title)
 	}

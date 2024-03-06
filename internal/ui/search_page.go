@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"abb_ia/internal/config"
 	"abb_ia/internal/dto"
@@ -23,6 +24,8 @@ type SearchPage struct {
 	searchSection         *grid
 	author                *tview.InputField
 	title                 *tview.InputField
+	SortBy                *tview.DropDown
+	sortOrder             *tview.DropDown
 	searchButton          *tview.Button
 	clearButton           *tview.Button
 	createAudioBookButton *tview.Button
@@ -50,7 +53,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 
 	// search section
 	p.searchSection = newGrid()
-	p.searchSection.SetColumns(50, -1)
+	p.searchSection.SetColumns(50, -1, -1)
 	p.searchSection.SetBorder(true)
 	p.searchSection.SetTitle(" Internet Archive Search ")
 	p.searchSection.SetTitleAlign(tview.AlignLeft)
@@ -58,10 +61,15 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	f.SetHorizontal(false)
 	p.author = f.AddInputField("Creator", config.Instance().GetDefaultAuthor(), 40, nil, func(t string) { p.searchCondition.Author = t })
 	p.title = f.AddInputField("Title", config.Instance().GetDefaultTitle(), 40, nil, func(t string) { p.searchCondition.Title = t })
+
 	p.searchButton = f.AddButton("Search", p.runSearch)
 	p.clearButton = f.AddButton("Clear", p.clearEverything)
 	f.SetButtonsAlign(tview.AlignRight)
 	p.searchSection.AddItem(f, 0, 0, 1, 1, 0, 0, true)
+	f = newForm()
+	p.SortBy = f.AddDropdown("Sort by:", utils.AddSpaces([]string{"Creator", "Title", "Date", "Size      "}), 1, func(o string, i int) { p.searchCondition.SortBy = p.mapSortBy(o) })
+	p.sortOrder = f.AddDropdown("Sort order:", utils.AddSpaces([]string{"Ascending", "Descending"}), 1, func(o string, i int) { p.searchCondition.SortOrder = p.mapSortOrder(o) })
+	p.searchSection.AddItem(f, 0, 1, 1, 1, 0, 0, true)
 	g := newGrid()
 	g.SetRows(-1, -1)
 	g.SetColumns(0)
@@ -75,7 +83,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	f.SetButtonsAlign(tview.AlignRight)
 	g.AddItem(f, 1, 0, 1, 1, 1, 1, true)
 	p.SettingsButton = f.AddButton("Settings", p.updateConfig)
-	p.searchSection.AddItem(g, 0, 1, 1, 1, 0, 0, true)
+	p.searchSection.AddItem(g, 0, 2, 1, 1, 0, 0, true)
 
 	p.mainGrid.AddItem(p.searchSection.Grid, 0, 0, 1, 1, 0, 0, true)
 
@@ -87,7 +95,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.resultSection.SetBorder(true)
 
 	p.resultTable = newTable()
-	p.resultTable.setHeaders(" # ", "Author", "Title", "Files", "Duration", "Size")
+	p.resultTable.setHeaders(" # ", "Creator", "Title", "Files", "Duration", "Size")
 	p.resultTable.setWeights(1, 3, 6, 1, 2, 2)
 	p.resultTable.setAlign(tview.AlignRight, tview.AlignLeft, tview.AlignLeft, tview.AlignRight, tview.AlignRight, tview.AlignRight)
 	p.resultTable.SetSelectionChangedFunc(p.updateDetails)
@@ -134,6 +142,8 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 		p.title,
 		p.searchButton,
 		p.clearButton,
+		p.SortBy,
+		p.sortOrder,
 		p.createAudioBookButton,
 		p.SettingsButton,
 		p.resultTable.Table,
@@ -291,7 +301,7 @@ func (p *SearchPage) updateConfig() {
 func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
 	newMessageDialog(p.mq, "Error",
 		"\nNo results were found for your search term:\n"+
-		"Creator: [darkblue]'"+dto.Condition.Author+"'[black] Title: [darkblue]'"+dto.Condition.Title+"'[black].\n"+
+			"Creator: [darkblue]'"+dto.Condition.Author+"'[black] Title: [darkblue]'"+dto.Condition.Title+"'[black].\n"+
 			"Please revise your search criteria.",
 		p.searchSection.Grid, func() {})
 }
@@ -299,7 +309,7 @@ func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
 func (p *SearchPage) showLastPageMessage(dto *dto.LastPageMessage) {
 	newMessageDialog(p.mq, "Notification",
 		"No more items were found for your search term: \n"+
-		"Creator: [darkblue]'"+dto.Condition.Author+"'[black] Title: [darkblue]'"+dto.Condition.Title+"'[black].\n"+
+			"Creator: [darkblue]'"+dto.Condition.Author+"'[black] Title: [darkblue]'"+dto.Condition.Title+"'[black].\n"+
 			"This is the last page.\n",
 		p.resultSection.Grid, func() {})
 }
@@ -318,4 +328,30 @@ func (p *SearchPage) showNewVersionMessage(dto *dto.NewAppVersionFound) {
 			"Your current version is [darkblue]v"+dto.CurrentVersion+"[black]\n"+
 			"You can download the new version of the application from:\n[darkblue]https://github.com/"+config.Instance().GetRepoOwner()+"/"+config.Instance().GetRepoName()+"/releases",
 		p.searchSection.Grid, func() {})
+}
+
+func (p *SearchPage) mapSortBy(source string) string {
+	switch s := strings.TrimSpace(source); s {
+	case "Creator":
+		return "creator"
+	case "Title":
+		return "title"
+	case "Date":
+		return "date"
+	case "Size":
+		return "item_size"
+	default:
+		return source
+	}
+}
+
+func (p *SearchPage) mapSortOrder(source string) string {
+	switch s := strings.TrimSpace(source); s {
+	case "Ascending":
+		return "asc"
+	case "Descending":
+		return "desc"
+	default:
+		return source
+	}
 }
