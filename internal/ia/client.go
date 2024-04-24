@@ -172,8 +172,9 @@ func (client *IAClient) DownloadFile(localDir string, localFile string, iaServer
 
 	req, _ := http.NewRequest("GET", fileUrl, nil)
 	resp, _ := http.DefaultClient.Do(req)
-	if resp.StatusCode != 200 {
+	if resp == nil || resp.StatusCode != 200 {
 		logger.Fatal("Error while downloading: " + resp.Status)
+		return
 	}
 	defer resp.Body.Close()
 

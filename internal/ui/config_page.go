@@ -27,6 +27,8 @@ type ConfigPage struct {
 	logLevelField    *tview.DropDown
 	defaultAuthor    *tview.InputField
 	defaultTitle     *tview.InputField
+	sortByField      *tview.DropDown
+	sortOrderField   *tview.DropDown
 	rowsPerPage      *tview.InputField
 	useMockField     *tview.Checkbox
 	saveMockField    *tview.Checkbox
@@ -66,18 +68,20 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 
 	// Audobookbuilder config section
 	p.configSection = newGrid()
-	p.configSection.SetColumns(-2, -2, -1)
+	p.configSection.SetColumns(-2, -2, 15)
 	p.configSection.SetBorder(true)
 	p.configSection.SetTitle(" Audiobook Builder Configuration: ")
 	p.configSection.SetTitleAlign(tview.AlignLeft)
 
 	configFormLeft := newForm()
 	configFormLeft.SetHorizontal(false)
-	p.defaultAuthor = configFormLeft.AddInputField("Creator:", "", 20, nil, func(t string) { p.configCopy.SetDefaultAuthor(t) })
-	p.defaultTitle = configFormLeft.AddInputField("Title:", "", 20, nil, func(t string) { p.configCopy.SetDefaultTitle(t) })
+	p.defaultAuthor = configFormLeft.AddInputField("Creator:", "", 25, nil, func(t string) { p.configCopy.SetDefaultAuthor(t) })
+	p.defaultTitle = configFormLeft.AddInputField("Title:", "", 25, nil, func(t string) { p.configCopy.SetDefaultTitle(t) })
+	p.sortByField = configFormLeft.AddDropdown("Sort By:", utils.AddSpaces(p.configCopy.GetSortByOptions()), 1, func(o string, i int) { p.configCopy.SetSortBy(strings.TrimSpace(o)) })
+	p.sortOrderField = configFormLeft.AddDropdown("Sort Order:", utils.AddSpaces(p.configCopy.GetSortOrderOptions()), 1, func(o string, i int) { p.configCopy.SetSortOrder(strings.TrimSpace(o)) })
 	p.rowsPerPage = configFormLeft.AddInputField("Page size:", "", 4, acceptInt, func(t string) { p.configCopy.SetRowsPerPage(utils.ToInt(t)) })
-	p.useMockField = configFormLeft.AddCheckbox("Use mock?", false, func(t bool) { p.configCopy.SetUseMock(t) })
-	p.saveMockField = configFormLeft.AddCheckbox("Save mock?", false, func(t bool) { p.configCopy.SetSaveMock(t) })
+	// p.useMockField = configFormLeft.AddCheckbox("Use mock?", false, func(t bool) { p.configCopy.SetUseMock(t) })
+	// p.saveMockField = configFormLeft.AddCheckbox("Save mock?", false, func(t bool) { p.configCopy.SetSaveMock(t) })
 	p.configSection.AddItem(configFormLeft.Form, 0, 0, 1, 1, 0, 0, true)
 
 	configFormRight := newForm()
@@ -95,7 +99,7 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	buttonsForm := newForm()
 	buttonsForm.SetHorizontal(false)
 	buttonsForm.SetButtonsAlign(tview.AlignRight)
-	p.saveConfigButton = buttonsForm.AddButton(" Save  ", p.SaveConfig)
+	p.saveConfigButton = buttonsForm.AddButton(" Save ", p.SaveConfig)
 	buttonsGrid.AddItem(buttonsForm, 0, 0, 1, 1, 0, 0, true)
 	buttonsForm = newForm()
 	buttonsForm.SetHorizontal(false)
@@ -156,9 +160,9 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 	p.mainGrid.SetNavigationOrder(
 		p.defaultAuthor,
 		p.defaultTitle,
+		p.sortByField,
+		p.sortOrderField,
 		p.rowsPerPage,
-		p.useMockField,
-		p.saveMockField,
 		p.outputDir,
 		p.copyToOutputDir,
 		p.tmpDir,
@@ -210,9 +214,9 @@ func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 	p.logLevelField.SetCurrentOption(utils.GetIndex(logger.LogLeves(), p.configCopy.GetLogLevel()))
 	p.defaultAuthor.SetText(p.configCopy.GetDefaultAuthor())
 	p.defaultTitle.SetText(p.configCopy.GetDefaultTitle())
+	p.sortByField.SetCurrentOption(utils.GetIndex(config.Instance().GetSortByOptions(), p.configCopy.GetSortBy()))
+	p.sortOrderField.SetCurrentOption(utils.GetIndex(config.Instance().GetSortOrderOptions(), p.configCopy.GetSortOrder()))
 	p.rowsPerPage.SetText(utils.ToString(p.configCopy.GetRowsPerPage()))
-	p.useMockField.SetChecked(p.configCopy.IsUseMock())
-	p.saveMockField.SetChecked(p.configCopy.IsSaveMock())
 
 	p.concurrentDownloaders.SetText(utils.ToString(p.configCopy.GetConcurrentDownloaders()))
 	p.concurrentEncoders.SetText(utils.ToString(p.configCopy.GetConcurrentEncoders()))

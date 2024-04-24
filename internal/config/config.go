@@ -28,6 +28,8 @@ var (
 type Config struct {
 	DefaultAuthor          string        `yaml:"DefaultAuthor"`
 	DefaultTitle           string        `yaml:"DefaultTitle"`
+	SortBy                 string        `yaml:"SortBy"`
+	SortOrder              string        `yaml:"SortOrder"`
 	RowsPerPage            int           `yaml:"RowsPerPage"`
 	LogFileName            string        `yaml:"LogFileName"`
 	OutputDir              string        `yaml:"Outputdir"`
@@ -80,6 +82,8 @@ func Load() {
 	config.SaveMock = false
 	config.DefaultAuthor = "Old Time Radio Researchers Group"
 	config.DefaultTitle = "Single Episodes"
+	config.SortBy = "Date"
+	config.SortOrder = "Descending"
 	config.ConcurrentDownloaders = 5
 	config.ConcurrentEncoders = 5
 	config.ReEncodeFiles = true
@@ -224,6 +228,30 @@ func (c *Config) SetDefaultTitle(s string) {
 
 func (c *Config) GetDefaultTitle() string {
 	return c.DefaultTitle
+}
+
+func (c *Config) SetSortBy(s string) {
+	c.SortBy = s
+}
+
+func (c *Config) GetSortBy() string {
+	return c.SortBy
+}
+
+func (c *Config) GetSortByOptions() []string {
+	return []string{"Creator", "Title", "Date", "Size"}
+}
+
+func (c *Config) SetSortOrder(s string) {
+	c.SortOrder = s
+}
+
+func (c *Config) GetSortOrder() string {
+	return c.SortOrder
+}
+
+func (c *Config) GetSortOrderOptions() []string {
+	return []string{"Ascending", "Descending"}
 }
 
 func (c *Config) SetConcurrentDownloaders(n int) {

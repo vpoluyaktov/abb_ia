@@ -121,7 +121,7 @@ func (c *SearchController) fetchDetails(resp *ia_client.SearchResponse) (int, er
 		if d != nil {
 			item.Server = d.Server
 			item.Dir = d.Dir
-			if len(doc.Creator) > 0 && d.Metadata.Creator[0] != "" {
+			if len(doc.Creator) > 0 && doc.Creator[0] != "" {
 				item.Creator = doc.Creator[0]
 			} else if len(d.Metadata.Creator) > 0 && d.Metadata.Creator[0] != "" {
 				item.Creator = d.Metadata.Creator[0]
