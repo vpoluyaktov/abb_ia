@@ -53,16 +53,16 @@ To install Audiobook Builder (`abb_ia`) on your system, follow these steps:
 2. Move the downloaded binary file to a directory in your system's `PATH`.
 3. Open a terminal and navigate to the directory where the binary file is located.
 4. Run the binary file by executing the command `./abb_ia`. The TUI interface will appear.
-5. Follow the instructions on the application interface to do a search, create an audiobook, and upload it to the [Audiobookshelf server](https://www.audiobookshelf.org) if necessary. You can try searching for:
+5. Follow the instructions on the application interface to do a search, create an audiobook, and upload it to the [Audiobookshelf server](https://www.audiobookshelf.org) if necessary. <br/>
+   You can try searching for:
 
 - **Old Time Radio Researchers Group: Single Episodes**
-
 - **BBC Radio 4: Radio Drama** (make sure to check if the show is copyrighted).
+- **CBS Radio: Radio Mystery Theater**
 - **Boxcars711:***
 - **Greg Lauer:***
 - **Relic Radio:***
 - **Radio Memories Network:***
-- **CBC: Radio Mystery Theater**  
 
 6. Enjoy listening to an audiobook on your favorite device.
 
@@ -92,7 +92,7 @@ If you prefer to build the program from source, follow these instructions:
 - On some systems, you may not see a cursor in the input fields. This is because the color of the cursor in your terminal application settings is the same as the background color of the input field. To solve this issue, you can adjust the settings of your terminal program. You can either change the cursor color (so that it is different from the color of the input fields) or make the cursor blink.
 - On some Windows systems, the Audiobook builder has a problem launching ffmpeg (there is an issue with the input file path). If you encounter this problem, please enable DEBUG mode in the application settings, replicate the error, and file a GitHub Bug report by attaching the application log file.
 - Sometimes, when the application crashes, the terminal window may be filled with random characters and you won't see a cursor anymore. This happens because of a problem with the TUI framework that was used to create the application. To solve this issue, you can either reopen the terminal window or try running the `reset` command.
-- Downloading audiobooks using `abb_id` is incredibly easy and fast. This means that over time, you might collect hundreds of audiobooks with thousands of hours of content. However, this can be a problem because it would be practically impossible to listen to all of them in your lifetime. :-)
+- Downloading audiobooks using `abb_id` is incredibly easy and fast. This means that over time, you might collect hundreds of audiobooks with thousands of hours of content. However, this can be a problem because it would be practically impossible to listen to all of them in your lifetime. Congratulations!!! You are a data hoarder now! :-)
 
 ## Reporting Bugs through GitHub Issues
 
@@ -145,6 +145,6 @@ Since the copyrights for the majority of old-time radio shows have expired and m
 ## Todo
 - The Text to Speech (**TTS**) version of Audiobook Builder is coming soon. It will allow you to create audiobooks from .epub, fb2, and other formats of electronic books.
 
-## Join us on Discord
+## Join me on Discord
 https://discord.gg/ntYyJ7xfzX
 

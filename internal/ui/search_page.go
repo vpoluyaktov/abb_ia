@@ -33,6 +33,8 @@ type SearchPage struct {
 
 	resultSection *grid
 	resultTable   *table
+	urlSection    *grid
+	urlField      *tview.TextView
 
 	detailsSection  *grid
 	descriptionView *tview.TextView
@@ -48,7 +50,7 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.searchCondition.Title = config.Instance().GetDefaultTitle()
 
 	p.mainGrid = newGrid()
-	p.mainGrid.SetRows(9, -1, -1)
+	p.mainGrid.SetRows(9, -1, -1, 3)
 	p.mainGrid.SetColumns(0)
 
 	// search section
@@ -67,8 +69,8 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	f.SetButtonsAlign(tview.AlignRight)
 	p.searchSection.AddItem(f, 0, 0, 1, 1, 0, 0, true)
 	f = newForm()
-	p.SortBy = f.AddDropdown("Sort by:", utils.AddSpaces([]string{"Creator", "Title", "Date", "Size      "}), 1, func(o string, i int) { p.searchCondition.SortBy = p.mapSortBy(o) })
-	p.sortOrder = f.AddDropdown("Sort order:", utils.AddSpaces([]string{"Ascending", "Descending"}), 1, func(o string, i int) { p.searchCondition.SortOrder = p.mapSortOrder(o) })
+	p.SortBy = f.AddDropdown("Sort by:", utils.AddSpaces(config.Instance().GetSortByOptions()), utils.GetIndex(config.Instance().GetSortByOptions(), config.Instance().GetSortBy()), func(o string, i int) { p.searchCondition.SortBy = p.mapSortBy(o) })
+	p.sortOrder = f.AddDropdown("Sort order:", utils.AddSpaces(config.Instance().GetSortOrderOptions()), utils.GetIndex(config.Instance().GetSortOrderOptions(), config.Instance().GetSortOrder()), func(o string, i int) { p.searchCondition.SortOrder = p.mapSortOrder(o) })
 	p.searchSection.AddItem(f, 0, 1, 1, 1, 0, 0, true)
 	g := newGrid()
 	g.SetRows(-1, -1)
@@ -129,11 +131,26 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 
 	p.mainGrid.AddItem(p.detailsSection.Grid, 2, 0, 1, 1, 0, 0, true)
 
+	// URL section
+	p.urlSection = newGrid()
+	p.urlSection.SetRows(1)
+	p.urlSection.SetColumns(-1)
+	p.urlSection.SetBorder(true)
+	p.urlSection.SetTitle(" Internet Archive item url: ")
+	p.urlSection.SetTitleAlign(tview.AlignLeft)
+	p.urlField = tview.NewTextView()
+	p.urlSection.AddItem(p.urlField, 0, 0, 1, 1, 0, 0, false)
+	p.mainGrid.AddItem(p.urlSection.Grid, 3, 0, 1, 1, 0, 0, true)
+
 	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
 	ui.SetFocus(p.searchSection.Grid)
 
 	p.mainGrid.Focus(func(pr tview.Primitive) {
-		ui.SetFocus(p.searchSection.Grid)
+		if p.resultTable.GetRowCount() == 0 {
+			ui.SetFocus(p.searchSection.Grid)
+		} else {
+			ui.SetFocus(p.resultSection.Grid)
+		}
 	})
 
 	// screen navigation order
@@ -163,6 +180,8 @@ func (p *SearchPage) checkMQ() {
 
 func (p *SearchPage) dispatchMessage(m *mq.Message) {
 	switch dto := m.Dto.(type) {
+	case *dto.UpdateSearchConfigCommand:
+		p.updateSearchConfig(dto)
 	case *dto.IAItem:
 		p.updateResult(dto)
 	case *dto.SearchProgress:
@@ -205,6 +224,17 @@ func (p *SearchPage) clearEverything() {
 	p.author.SetText("")
 	p.title.SetText("")
 	p.clearSearchResults()
+	p.urlField.SetText("")
+}
+
+func (p *SearchPage) updateSearchConfig(c *dto.UpdateSearchConfigCommand) {
+	if p.author.GetText() == "" && p.title.GetText() == "" {
+		p.author.SetText(c.Config.GetDefaultAuthor())
+		p.title.SetText(c.Config.GetDefaultTitle())
+		p.SortBy.SetCurrentOption(utils.GetIndex(c.Config.GetSortByOptions(), c.Config.GetSortBy()))
+		p.sortOrder.SetCurrentOption(utils.GetIndex(c.Config.GetSortOrderOptions(), c.Config.GetSortOrder()))
+		ui.Draw()
+	}
 }
 
 func (p *SearchPage) lastRowEvent() {
@@ -230,17 +260,20 @@ func (p *SearchPage) updateTitle(sp *dto.SearchProgress) {
 
 func (p *SearchPage) updateDetails(row int, col int) {
 	if row > 0 && len(p.searchResult) > 0 && len(p.searchResult) >= row {
-		d := p.searchResult[row-1].Description
+		item := p.searchResult[row-1]
+		d := item.Description
 		p.descriptionView.SetText(d)
 		p.descriptionView.ScrollToBeginning()
 
 		p.filesTable.Clear()
 		p.filesTable.showHeader()
-		files := p.searchResult[row-1].AudioFiles
+		files := item.AudioFiles
 		for _, f := range files {
 			p.filesTable.appendRow(f.Name, f.Format, utils.SecondsToTime(f.Length), utils.BytesToHuman(f.Size))
 		}
 		p.filesTable.ScrollToBeginning()
+
+		p.urlField.SetText(" " + item.IaURL)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"abb_ia/internal/dto"
 	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 )
 
 type ConfigController struct {
@@ -40,6 +41,9 @@ func (c *ConfigController) updateConfig(cmd *dto.SaveConfigCommand) {
 	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
 
 	config.SaveConfig(&cmd.Config)
+
+	logger.SetLogLevel(logger.LogLevelType(utils.GetIndex(logger.LogLeves(), cmd.Config.GetLogLevel()) + 1))
+	c.mq.SendMessage(mq.ConfigController, mq.SearchPage, &dto.UpdateSearchConfigCommand{Config: cmd.Config}, true)
 
 	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
 	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)

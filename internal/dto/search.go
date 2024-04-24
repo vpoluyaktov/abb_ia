@@ -1,6 +1,9 @@
 package dto
 
-import "fmt"
+import (
+	"abb_ia/internal/config"
+	"fmt"
+)
 
 type SearchCondition struct {
 	Author    string
@@ -15,6 +18,14 @@ type SearchCommand struct {
 
 func (c *SearchCommand) String() string {
 	return fmt.Sprintf("SearchCommand: Author: %s, Title: %s", c.Condition.Author, c.Condition.Title)
+}
+
+type UpdateSearchConfigCommand struct {
+	Config config.Config
+}
+
+func (c *UpdateSearchConfigCommand) String() string {
+	return fmt.Sprintf("UpdateSearchConfigCommand: Creator: %s, Title: %s", c.Config.DefaultAuthor, c.Config.DefaultTitle)
 }
 
 type GetNextPageCommand struct {
