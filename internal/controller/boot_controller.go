@@ -10,6 +10,7 @@ import (
 	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
+	"fmt"
 )
 
 type BootController struct {
@@ -25,10 +26,15 @@ func NewBootController(dispatcher *mq.Dispatcher) *BootController {
 }
 
 func (c *BootController) checkMQ() {
-	m := c.mq.GetMessage(mq.BootController)
-	if m != nil {
-		c.dispatchMessage(m)
+	m, err := c.mq.GetMessage(mq.BootController)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for BootController: %v", err))
+		return
 	}
+	if m == nil {
+		return // No message available
+	}
+	c.dispatchMessage(m)
 }
 
 func (c *BootController) dispatchMessage(m *mq.Message) {
@@ -40,55 +46,70 @@ func (c *BootController) dispatchMessage(m *mq.Message) {
 	}
 }
 
-func (c *BootController) bootStrap(cmd *dto.BootstrapCommand) {
-
-	// detect operation system
+func (c *BootController) bootStrap(_ *dto.BootstrapCommand) {
+	// Detect operation system
 	os := runtime.GOOS
-	logger.Debug("Operation system detected: " + os)
+	logger.Debug(fmt.Sprintf("Operating system detected: %s", os))
+
 	switch os {
-	case "windows":
-	case "darwin":
-	case "linux":
+	case "windows", "darwin", "linux":
+		logger.Info(fmt.Sprintf("Starting application on %s", os))
 	default:
-		logger.Error("Unknown operation system detected: " + os)
+		logger.Error(fmt.Sprintf("Unsupported operating system: %s", os))
+		c.mq.SendMessage(mq.BootController, mq.SearchPage, &dto.Error{
+			Message: fmt.Sprintf("Unsupported operating system: %s", os),
+		}, mq.PriorityCritical)
+		return
 	}
 
-	// wait for all components to initialize
+	// Wait for all components to initialize
 	time.Sleep(3 * time.Second)
+
+	// Check dependencies and version
 	if c.checkFFmpeg() {
 		c.checkNewVersion()
+	} else {
+		logger.Error("Failed to verify FFmpeg installation")
 	}
 }
 
 func (c *BootController) checkFFmpeg() bool {
 	if !(utils.CommandExists("ffmpeg") && utils.CommandExists("ffprobe")) {
 		logger.Fatal("Bootstrap: ffmpeg or ffprobe command not found")
-		c.mq.SendMessage(mq.BootController, mq.SearchPage, &dto.FFMPEGNotFoundError{}, true)
+		c.mq.SendMessage(mq.BootController, mq.SearchPage, &dto.FFMPEGNotFoundError{}, mq.PriorityNormal)
 		return false
 	}
 	return true
 }
 
 func (c *BootController) checkNewVersion() {
-
-	if config.Instance().AppVersion() == "0.0.0" {
-		// this is local dev version. Don't check new version
-		return 
-	}
-	git := github.NewClient(config.Instance().GetRepoOwner(), config.Instance().GetRepoName())
-	latestVersion, err := git.GetLatestVersion()
-	if err != nil {
-		logger.Error("Can't check new version: " + err.Error())
+	appVersion := config.Instance().AppVersion()
+	if appVersion == "0.0.0" {
+		logger.Debug("Local development version detected, skipping version check")
 		return
 	}
 
-	result, err := github.CompareVersions(latestVersion, config.Instance().AppVersion())
+	git := github.NewClient(config.Instance().GetRepoOwner(), config.Instance().GetRepoName())
+	latestVersion, err := git.GetLatestVersion()
 	if err != nil {
-		logger.Error("Can not compare versions: " + err.Error())
+		logger.Error(fmt.Sprintf("Failed to check for new version: %v", err))
+		c.mq.SendMessage(mq.BootController, mq.SearchPage, &dto.Error{Message: "Failed to check for updates"}, mq.PriorityNormal)
+		return
+	}
+
+	result, err := github.CompareVersions(latestVersion, appVersion)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to compare versions %s and %s: %v", latestVersion, appVersion, err))
 		return
 	}
 
 	if result > 0 {
-		c.mq.SendMessage(mq.BootController, mq.SearchPage, &dto.NewAppVersionFound{CurrentVersion: config.Instance().AppVersion(), NewVersion: latestVersion}, true)
+		logger.Info(fmt.Sprintf("New version available: %s (current: %s)", latestVersion, appVersion))
+		c.mq.SendMessage(mq.BootController, mq.SearchPage, &dto.NewAppVersionFound{
+			CurrentVersion: appVersion,
+			NewVersion:    latestVersion,
+		}, mq.PriorityNormal)
+	} else {
+		logger.Debug(fmt.Sprintf("Application is up to date (version %s)", appVersion))
 	}
 }

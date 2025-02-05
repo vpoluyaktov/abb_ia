@@ -36,7 +36,11 @@ func NewUploadController(dispatcher *mq.Dispatcher) *UploadController {
 }
 
 func (c *UploadController) checkMQ() {
-	m := c.mq.GetMessage(mq.UploadController)
+	m, err := c.mq.GetMessage(mq.UploadController)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for UploadController: %v", err))
+		return
+	}
 	if m != nil {
 		c.dispatchMessage(m)
 	}
@@ -84,13 +88,9 @@ func (c *UploadController) absScan(cmd *dto.AbsScanCommand) {
 			logger.Error("Can't launch library scan on audiobookshelf server: " + err.Error())
 			return
 		}
-		if err != nil {
-			logger.Error("Can't launch library scan on audiobookshelf server: " + err.Error())
-			return
-		}
 		logger.Info("A scan launched for library " + libraryName + " on audiobookshelf server")
 	}
-	c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.ScanComplete{Audiobook: cmd.Audiobook}, true)
+	c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.ScanComplete{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 }
 
 func (c *UploadController) absUpload(cmd *dto.AbsUploadCommand) {
@@ -138,7 +138,7 @@ func (c *UploadController) absUpload(cmd *dto.AbsUploadCommand) {
 		}
 		c.stopFlag = true
 	}
-	c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.UploadComplete{Audiobook: cmd.Audiobook}, true)
+	c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.UploadComplete{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 }
 
 func (c *UploadController) updateFileUplodProgress(fileId int, fileName string, size int64, pos int64, percent int) {
@@ -152,7 +152,7 @@ func (c *UploadController) updateFileUplodProgress(fileId int, fileName string, 
 		}
 
 		// sent a message only if progress changed
-		c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.UploadFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
+		c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.UploadFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, mq.PriorityNormal)
 	}
 	c.filesUpload[fileId].fileId = fileId
 	c.filesUpload[fileId].fileSize = size
@@ -209,7 +209,7 @@ func (c *UploadController) updateTotalUploadProgress() {
 			speedH := utils.SpeedToHuman(speed)
 			etaH := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.UploadProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
+			c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.UploadProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, mq.PriorityNormal)
 		}
 		time.Sleep(mq.PullFrequency)
 	}

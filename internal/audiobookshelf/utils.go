@@ -1,6 +1,9 @@
 package audiobookshelf
 
-import "path/filepath"
+import (
+	"abb_ia/internal/utils"
+	"path/filepath"
+)
 
 // Calculate Audiobookshelf directory structure (see: https://www.audiobookshelf.org/docs#book-directory-structure)
 func GetDestignationPath(outputDir string, series string, author string) string {
@@ -8,7 +11,7 @@ func GetDestignationPath(outputDir string, series string, author string) string 
 	if series != "" {
 		destPath = filepath.Join(destPath, author+" - "+series)
 	}
-	return destPath
+	return utils.SanitizeFilePath(destPath)
 }
 
 func GetDestignationDir(series string, seriesNo string, title string, narrator string) string {
@@ -20,5 +23,5 @@ func GetDestignationDir(series string, seriesNo string, title string, narrator s
 	if narrator != "" {
 		abTitle += " {" + narrator + "}"
 	}
-	return abTitle
+	return utils.SanitizeFilePath(abTitle)
 }

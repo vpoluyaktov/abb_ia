@@ -38,7 +38,11 @@ func NewSearchController(dispatcher *mq.Dispatcher) *SearchController {
 }
 
 func (c *SearchController) checkMQ() {
-	m := c.mq.GetMessage(mq.SearchController)
+	m, err := c.mq.GetMessage(mq.SearchController)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for SearchController: %v", err))
+		return
+	}
 	if m != nil {
 		c.dispatchMessage(m)
 	}
@@ -57,8 +61,8 @@ func (c *SearchController) dispatchMessage(m *mq.Message) {
 
 func (c *SearchController) search(cmd *dto.SearchCommand) {
 	logger.Info(fmt.Sprintf("Searching for: %s - %s", cmd.Condition.Author, cmd.Condition.Title))
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, mq.PriorityNormal)
 	c.totalItemsFetched = 0
 	c.ia = ia_client.New(config.Instance().GetRowsPerPage(), config.Instance().IsUseMock(), config.Instance().IsSaveMock())
 	resp := c.ia.Search(cmd.Condition.Author, cmd.Condition.Title, "audio", cmd.Condition.SortBy, cmd.Condition.SortOrder)
@@ -69,20 +73,20 @@ func (c *SearchController) search(cmd *dto.SearchCommand) {
 	if err != nil {
 		logger.Error(mq.SearchController + ": Failed to fetch item details: " + err.Error())
 	}
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{Condition: cmd.Condition}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{Condition: cmd.Condition}, mq.PriorityNormal)
 	if itemsFetched == 0 {
 		logger.Info("Nothing found")
-		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.NothingFoundError{Condition: cmd.Condition}, false)
+		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.NothingFoundError{Condition: cmd.Condition}, mq.PriorityNormal)
 	} else {
 		logger.Info(fmt.Sprintf("Items fetched: %d", c.totalItemsFetched))
 	}
 }
 
 func (c *SearchController) getGetNextPage(cmd *dto.GetNextPageCommand) {
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, false)
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: "Fetching Internet Archive items..."}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, mq.PriorityNormal)
 	resp := c.ia.GetNextPage(cmd.Condition.Author, cmd.Condition.Title, "audio", cmd.Condition.SortBy, cmd.Condition.SortOrder)
 	if resp == nil {
 		logger.Error(mq.SearchController + ": Failed to perform IA search with condition: " + cmd.Condition.Author + " - " + cmd.Condition.Title)
@@ -91,12 +95,12 @@ func (c *SearchController) getGetNextPage(cmd *dto.GetNextPageCommand) {
 	if err != nil {
 		logger.Error(mq.SearchController + ": Failed to fetch item details: " + err.Error())
 	}
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
-	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{Condition: cmd.Condition}, false)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.SearchController, mq.Footer, &dto.UpdateStatus{Message: ""}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.SearchComplete{Condition: cmd.Condition}, mq.PriorityNormal)
 	if itemsFetched == 0 {
 		logger.Info("Last page reached")
-		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.LastPageMessage{Condition: cmd.Condition}, false)
+		c.mq.SendMessage(mq.SearchController, mq.SearchPage, &dto.LastPageMessage{Condition: cmd.Condition}, mq.PriorityNormal)
 	} else {
 		logger.Info(fmt.Sprintf("Items fetched: %d", c.totalItemsFetched))
 	}
@@ -225,8 +229,8 @@ func (c *SearchController) fetchDetails(resp *ia_client.SearchResponse) (int, er
 				itemsFetched++
 				c.totalItemsFetched++
 				sp := &dto.SearchProgress{ItemsTotal: itemsTotal, ItemsFetched: c.totalItemsFetched}
-				c.mq.SendMessage(mq.SearchController, mq.SearchPage, sp, false)
-				c.mq.SendMessage(mq.SearchController, mq.SearchPage, item, false)
+				c.mq.SendMessage(mq.SearchController, mq.SearchPage, sp, mq.PriorityNormal)
+				c.mq.SendMessage(mq.SearchController, mq.SearchPage, item, mq.PriorityNormal)
 			}
 		}
 		logger.Debug(mq.SearchController + " fetched first " + strconv.Itoa(c.totalItemsFetched) + " items from " + strconv.Itoa(itemsTotal) + " total")

@@ -1,8 +1,12 @@
 package ui
 
 import (
-	"abb_ia/internal/mq"
+	"fmt"
+
 	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
+	"abb_ia/internal/mq"
+
 	"github.com/vpoluyaktov/tview"
 )
 
@@ -40,7 +44,11 @@ func newHeader(dispatcher *mq.Dispatcher) *header {
 }
 
 func (h *header) checkMQ() {
-	m := h.mq.GetMessage(mq.Header)
+	m, err := h.mq.GetMessage(mq.Header)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for Header: %v", err))
+		return
+	}
 	if m != nil {
 		h.dispatchMessage(m)
 	}

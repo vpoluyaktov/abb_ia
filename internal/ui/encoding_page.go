@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
 
@@ -85,7 +86,11 @@ func newEncodingPage(dispatcher *mq.Dispatcher) *EncodingPage {
 }
 
 func (p *EncodingPage) checkMQ() {
-	m := p.mq.GetMessage(mq.EncodingPage)
+	m, err := p.mq.GetMessage(mq.EncodingPage)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for EncodingPage: %v", err))
+		return
+	}
 	if m != nil {
 		p.dispatchMessage(m)
 	}
@@ -131,9 +136,9 @@ func (p *EncodingPage) stopConfirmation() {
 }
 
 func (p *EncodingPage) stopEncoding() {
-	p.mq.SendMessage(mq.EncodingPage, mq.EncodingController, &dto.StopCommand{Process: "Encoding", Reason: "User request"}, true)
-	p.mq.SendMessage(mq.EncodingPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, true)
-	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, true)
+	p.mq.SendMessage(mq.EncodingPage, mq.EncodingController, &dto.StopCommand{Process: "Encoding", Reason: "User request"}, mq.PriorityHigh)
+	p.mq.SendMessage(mq.EncodingPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, mq.PriorityHigh)
+	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, mq.PriorityHigh)
 }
 
 func (p *EncodingPage) updateFileProgress(dp *dto.EncodingFileProgress) {
@@ -179,6 +184,6 @@ func (p *EncodingPage) updateTotalProgress(dp *dto.EncodingProgress) {
 }
 
 func (p *EncodingPage) encodingComplete(c *dto.EncodingComplete) {
-	p.mq.SendMessage(mq.EncodingPage, mq.ChaptersController, &dto.ChaptersCreate{Audiobook: c.Audiobook}, true)
-	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
+	p.mq.SendMessage(mq.EncodingPage, mq.ChaptersController, &dto.ChaptersCreate{Audiobook: c.Audiobook}, mq.PriorityHigh)
+	p.mq.SendMessage(mq.EncodingPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, mq.PriorityNormal)
 }

@@ -142,9 +142,8 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 	p.urlSection.AddItem(p.urlField, 0, 0, 1, 1, 0, 0, false)
 	p.mainGrid.AddItem(p.urlSection.Grid, 3, 0, 1, 1, 0, 0, true)
 
-	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
-	ui.SetFocus(p.searchSection.Grid)
-
+	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, mq.PriorityNormal)
+	// ui.SetFocus(p.searchSection.Grid)
 	p.mainGrid.Focus(func(pr tview.Primitive) {
 		if p.resultTable.GetRowCount() == 0 {
 			ui.SetFocus(p.searchSection.Grid)
@@ -172,7 +171,11 @@ func newSearchPage(dispatcher *mq.Dispatcher) *SearchPage {
 }
 
 func (p *SearchPage) checkMQ() {
-	m := p.mq.GetMessage(mq.SearchPage)
+	m, err := p.mq.GetMessage(mq.SearchPage)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for SearchPage: %v", err))
+		return
+	}
 	if m != nil {
 		p.dispatchMessage(m)
 	}
@@ -208,8 +211,8 @@ func (p *SearchPage) runSearch() {
 	p.isSearchRunning = true
 	p.clearSearchResults()
 	p.resultTable.showHeader()
-	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.SearchCommand{Condition: p.searchCondition}, false)
-	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.resultTable.Table}, true)
+	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.SearchCommand{Condition: p.searchCondition}, mq.PriorityNormal)
+	p.mq.SendMessage(mq.SearchPage, mq.TUI, &dto.SetFocusCommand{Primitive: p.resultTable.Table}, mq.PriorityHigh)
 }
 
 func (p *SearchPage) clearSearchResults() {
@@ -242,7 +245,7 @@ func (p *SearchPage) lastRowEvent() {
 		return
 	}
 	p.isSearchRunning = true
-	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.GetNextPageCommand{Condition: p.searchCondition}, false)
+	p.mq.SendMessage(mq.SearchPage, mq.SearchController, &dto.GetNextPageCommand{Condition: p.searchCondition}, mq.PriorityNormal)
 }
 
 func (p *SearchPage) updateResult(i *dto.IAItem) {
@@ -279,7 +282,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 
 // process Enter and DoubleClick on the result table
 func (p *SearchPage) itemSelected(row int, col int) {
-	if row > 0 && len(p.searchResult) > 0 && row < len(p.searchResult) {
+	if row > 0 && len(p.searchResult) > 0 && row <= len(p.searchResult) {
 		p.createBook()
 	}
 }
@@ -322,13 +325,13 @@ func (p *SearchPage) createBook() {
 }
 
 func (p *SearchPage) startDownload(ab *dto.Audiobook) {
-	p.mq.SendMessage(mq.SearchPage, mq.DownloadController, &dto.DownloadCommand{Audiobook: ab}, true)
-	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "DownloadPage"}, false)
+	p.mq.SendMessage(mq.SearchPage, mq.DownloadController, &dto.DownloadCommand{Audiobook: ab}, mq.PriorityHigh)
+	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "DownloadPage"}, mq.PriorityNormal)
 }
 
 func (p *SearchPage) updateConfig() {
-	p.mq.SendMessage(mq.SearchPage, mq.ConfigPage, &dto.DisplayConfigCommand{Config: config.Instance().GetCopy()}, true)
-	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ConfigPage"}, false)
+	p.mq.SendMessage(mq.SearchPage, mq.ConfigPage, &dto.DisplayConfigCommand{Config: config.Instance().GetCopy()}, mq.PriorityHigh)
+	p.mq.SendMessage(mq.SearchPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ConfigPage"}, mq.PriorityNormal)
 }
 
 func (p *SearchPage) showNothingFoundError(dto *dto.NothingFoundError) {
@@ -347,7 +350,7 @@ func (p *SearchPage) showLastPageMessage(dto *dto.LastPageMessage) {
 		p.resultSection.Grid, func() {})
 }
 
-func (p *SearchPage) showFFMPEGNotFoundError(dto *dto.FFMPEGNotFoundError) {
+func (p *SearchPage) showFFMPEGNotFoundError(_ *dto.FFMPEGNotFoundError) {
 	newMessageDialog(p.mq, "Error",
 		"This application requires the utilities [darkblue]ffmpeg[black] and [darkblue]ffprobe[black].\n"+
 			"Please install both [darkblue]ffmpeg[black] and [darkblue]ffprobe[black] by following the instructions provided on FFMPEG website\n"+

@@ -1,19 +1,47 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"abb_ia/cmd"
 	"abb_ia/internal/config"
 	"abb_ia/internal/logger"
+	"abb_ia/internal/monitoring"
+	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
 )
 
 // Min screen size for comfortable layout 45x125 characters
 func main() {
+	// Create a context that will be canceled on SIGINT or SIGTERM
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Setup signal handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		logger.Info("Shutdown signal received")
+		cancel()
+	}()
+
+	// Initialize configuration
 	config.Load()
+
+	// Initialize logger
+	logger.Init(config.Instance().GetLogFileName(), config.Instance().GetLogLevel())
+
+	// Initialize metrics collector
+	metricsCollector := monitoring.GetMetricsCollector()
+	metricsCollector.StartMetricsReporter(1 * time.Minute)
 
 	// command line arguments
 	logLevel := flag.String("log-level", "INFO", "Logging level")
@@ -30,6 +58,14 @@ func main() {
 		flag.Usage()
 		os.Exit(0)
 	}
+
+	// Create message dispatcher
+	dispatcher := mq.NewDispatcher()
+	defer func() {
+		if err := dispatcher.Shutdown(5 * time.Second); err != nil {
+			logger.Error(fmt.Sprintf("Error shutting down dispatcher: %v", err))
+		}
+	}()
 
 	// save runtime configuration
 	if searchCondition != "" {
@@ -49,6 +85,35 @@ func main() {
 		config.Instance().SetSaveMock(*saveMock)
 	}
 
-	logger.Init(config.Instance().GetLogFileName(), config.Instance().GetLogLevel())
+	// Create circuit breakers for external services if needed
+	// Example:
+	// archiveOrgCB := utils.NewCircuitBreaker("archive.org",
+	//	utils.WithFailureThreshold(3),
+	//	utils.WithResetTimeout(30*time.Second),
+	// )
+
+	// Start the application
+	startTime := time.Now()
+	metricsCollector.SetGauge("app_uptime_seconds", 0, monitoring.Labels{
+		"version": config.Instance().AppVersion(),
+	})
+
+	// Update uptime metric
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				metricsCollector.SetGauge("app_uptime_seconds",
+					time.Since(startTime).Seconds(),
+					monitoring.Labels{"version": config.Instance().AppVersion()})
+			}
+		}
+	}()
+
 	cmd.Execute()
 }

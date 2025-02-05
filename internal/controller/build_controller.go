@@ -48,7 +48,11 @@ func NewBuildController(dispatcher *mq.Dispatcher) *BuildController {
 }
 
 func (c *BuildController) checkMQ() {
-	m := c.mq.GetMessage(mq.BuildController)
+	m, err := c.mq.GetMessage(mq.BuildController)
+	if err != nil {
+		logger.Error("Failed to get message for BuildController: " + err.Error())
+		return
+	}
 	if m != nil {
 		c.dispatchMessage(m)
 	}
@@ -65,7 +69,7 @@ func (c *BuildController) dispatchMessage(m *mq.Message) {
 	}
 }
 
-func (c *BuildController) stopBuild(cmd *dto.StopCommand) {
+func (c *BuildController) stopBuild(_ *dto.StopCommand) {
 	c.stopFlag = true
 	logger.Info(fmt.Sprintf("Building the audiobook: %s - %s...", c.ab.Author, c.ab.Title))
 }
@@ -79,7 +83,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	// calculate output file names
 	for i := range c.ab.Parts {
 		part := &c.ab.Parts[i]
-		filePath := filepath.Join(c.ab.Config.GetTmpDir(), c.ab.Author+" - "+c.ab.Title)
+		filePath := utils.SanitizeFilePath(filepath.Join(c.ab.Config.GetTmpDir(), c.ab.Author+" - "+c.ab.Title))
 		if len(c.ab.Parts) > 1 {
 			filePath = filePath + fmt.Sprintf(", Part %02d", i+1)
 		}
@@ -89,9 +93,9 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 		c.files[i].totalDuration = part.Duration
 	}
 
-	c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
-	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: "Building audiobook..."}, false)
-	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: "Building audiobook..."}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, mq.PriorityNormal)
 
 	logger.Info(fmt.Sprintf("Building the audiobook: %s - %s...", c.ab.Author, c.ab.Title))
 
@@ -110,10 +114,10 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 	go c.updateTotalProgress()
 	jd.Start()
 
-	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.BuildController, mq.Footer, &dto.UpdateStatus{Message: ""}, mq.PriorityNormal)
 	if !c.stopFlag {
-		c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildComplete{Audiobook: cmd.Audiobook}, true)
+		c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.BuildComplete{Audiobook: cmd.Audiobook}, mq.PriorityNormal)
 	}
 	c.stopFlag = true
 }
@@ -313,7 +317,7 @@ func (c *BuildController) updateFileProgress(fileId int, l net.Listener) {
 			c.files[fileId].encodingSpeed = encodingSpeed
 			c.files[fileId].progress = percent
 			c.files[fileId].complete = complete
-			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.FileBuildProgress{FileId: fileId, FileName: c.files[fileId].fileName, Percent: percent}, true)
+			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.FileBuildProgress{FileId: fileId, FileName: c.files[fileId].fileName, Percent: percent}, mq.PriorityNormal)
 		}
 	}
 }
@@ -362,7 +366,7 @@ func (c *BuildController) updateTotalProgress() {
 			speedH := fmt.Sprintf("%.0fx", speed)
 			etaH := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.TotalBuildProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, true)
+			c.mq.SendMessage(mq.BuildController, mq.BuildPage, &dto.TotalBuildProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, mq.PriorityNormal)
 		}
 		time.Sleep(mq.PullFrequency)
 	}

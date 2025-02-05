@@ -45,7 +45,11 @@ func NewEncodingController(dispatcher *mq.Dispatcher) *EncodingController {
 }
 
 func (c *EncodingController) checkMQ() {
-	m := c.mq.GetMessage(mq.EncodingController)
+	m, err := c.mq.GetMessage(mq.EncodingController)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for EncodingController: %v", err))
+		return
+	}
 	if m != nil {
 		c.dispatchMessage(m)
 	}
@@ -62,7 +66,7 @@ func (c *EncodingController) dispatchMessage(m *mq.Message) {
 	}
 }
 
-func (c *EncodingController) stopEncoding(cmd *dto.StopCommand) {
+func (c *EncodingController) stopEncoding(_ *dto.StopCommand) {
 	c.stopFlag = true
 	logger.Debug(mq.EncodingController + ": Received StopEncoding command")
 }
@@ -74,9 +78,9 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	c.stopFlag = false
 	c.files = make([]fileEncode, len(c.ab.Mp3Files))
 
-	c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
-	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: "Re-encoding mp3 files..."}, false)
-	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, mq.PriorityHigh)
+	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: "Re-encoding mp3 files..."}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, mq.PriorityNormal)
 
 	logger.Info(fmt.Sprintf("Re-encoding mp3 files: %s - %s...", c.ab.Author, c.ab.Title))
 
@@ -94,10 +98,10 @@ func (c *EncodingController) startEncoding(cmd *dto.EncodeCommand) {
 	go c.updateTotalProgress()
 	jd.Start()
 
-	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.EncodingController, mq.Footer, &dto.UpdateStatus{Message: ""}, mq.PriorityNormal)
 	if !c.stopFlag {
-		c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingComplete{Audiobook: cmd.Audiobook}, true)
+		c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingComplete{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 	}
 	c.stopFlag = true
 }
@@ -188,7 +192,7 @@ func (c *EncodingController) updateFileProgress(fileId int, l net.Listener) {
 			c.files[fileId].encodingSpeed = encodingSpeed
 			c.files[fileId].progress = percent
 			c.files[fileId].complete = complete
-			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingFileProgress{FileId: fileId, FileName: c.files[fileId].fileName, Percent: percent}, true)
+			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingFileProgress{FileId: fileId, FileName: c.files[fileId].fileName, Percent: percent}, mq.PriorityHigh)
 		}
 	}
 }
@@ -237,7 +241,7 @@ func (c *EncodingController) updateTotalProgress() {
 			speedH := fmt.Sprintf("%.0fx", speed)
 			etaH := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, true)
+			c.mq.SendMessage(mq.EncodingController, mq.EncodingPage, &dto.EncodingProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Speed: speedH, ETA: etaH}, mq.PriorityHigh)
 		}
 		time.Sleep(mq.PullFrequency)
 	}
