@@ -44,5 +44,10 @@ func (m *Message) UnsupportedTypeError(reporter string) {
 	logger.Error(fmt.Sprintf("%s: Unsupported message type: %T, sent From: %s, To: %s", reporter, m.Dto, m.From, m.To))
 }
 
+// Size returns an approximate size of the message payload in bytes
+func (m *Message) Size() int {
+	return len(fmt.Sprintf("%+v", m.Dto))
+}
+
 // CallBackFunc is a function type for message handlers
 type CallBackFunc func(msg *Message)

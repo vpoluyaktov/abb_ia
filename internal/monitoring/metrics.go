@@ -3,6 +3,7 @@ package monitoring
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -36,14 +37,34 @@ type MetricsCollector struct {
 	metrics map[string]*Metric
 }
 
-// Global metrics collector instance
+// Global metrics collector instance and configuration
 var (
 	globalCollector *MetricsCollector
 	once           sync.Once
+	metricsEnabled bool = false // Metrics disabled by default
 )
+
+// DisableMetrics disables metrics collection
+func DisableMetrics() {
+	metricsEnabled = false
+	if globalCollector != nil {
+		globalCollector.ResetMetrics()
+	}
+}
+
+// EnableMetrics enables metrics collection
+func EnableMetrics() {
+	metricsEnabled = true
+}
 
 // GetMetricsCollector returns the global metrics collector instance
 func GetMetricsCollector() *MetricsCollector {
+	if !metricsEnabled {
+		return &MetricsCollector{
+			metrics: make(map[string]*Metric), // Initialize map even when disabled
+		}
+	}
+
 	once.Do(func() {
 		globalCollector = &MetricsCollector{
 			metrics: make(map[string]*Metric),
@@ -151,8 +172,37 @@ func (mc *MetricsCollector) StartMetricsReporter(interval time.Duration) {
 		for range ticker.C {
 			metrics := mc.GetAllMetrics()
 			for name, metric := range metrics {
-				logger.Debug(fmt.Sprintf("Metric report - Name: %s, Value: %v, Type: %s, Labels: %v, LastUpdated: %v",
-					name, metric.Value, metric.Type, metric.Labels, metric.LastUpdated.Format(time.RFC3339)))
+				// Format value based on metric type
+				var valueStr string
+				switch metric.Type {
+				case TimerMetric:
+					if d, ok := metric.Value.(time.Duration); ok {
+						valueStr = d.String()
+					}
+				case GaugeMetric:
+					if f, ok := metric.Value.(float64); ok {
+						valueStr = fmt.Sprintf("%.2f", f)
+					}
+				default:
+					valueStr = fmt.Sprintf("%v", metric.Value)
+				}
+
+				// Format labels
+				labelsStr := ""
+				if len(metric.Labels) > 0 {
+					labels := make([]string, 0, len(metric.Labels))
+					for k, v := range metric.Labels {
+						labels = append(labels, fmt.Sprintf("%s=%s", k, v))
+					}
+					labelsStr = fmt.Sprintf(" [%s]", strings.Join(labels, ", "))
+				}
+
+				logger.Debug(fmt.Sprintf("METRIC %s%s = %s (%s) @ %s",
+					name,
+					labelsStr,
+					valueStr,
+					metric.Type,
+					metric.LastUpdated.Format("15:04:05")))
 			}
 		}
 	}()

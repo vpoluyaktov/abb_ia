@@ -36,19 +36,28 @@ func main() {
 	// Initialize configuration
 	config.Load()
 
-	// Initialize logger
-	logger.Init(config.Instance().GetLogFileName(), config.Instance().GetLogLevel())
-
-	// Initialize metrics collector
-	metricsCollector := monitoring.GetMetricsCollector()
-	metricsCollector.StartMetricsReporter(1 * time.Minute)
-
 	// command line arguments
 	logLevel := flag.String("log-level", "INFO", "Logging level")
 	useMock := flag.Bool("mock-load", false, "Use mock data")
 	saveMock := flag.Bool("mock-save", false, "Save mock data")
 	help := flag.Bool("help", false, "Display usage information")
+	enableMetrics := flag.Bool("enable-metrics", false, "Enable metrics collection (disabled by default)")
 	flag.Parse()
+
+	// Initialize logger
+	logger.Init(config.Instance().GetLogFileName(), config.Instance().GetLogLevel())
+
+	// Initialize metrics collector
+	if *enableMetrics {
+		monitoring.EnableMetrics()
+		logger.Info("Metrics collection enabled")
+	} else {
+		logger.Info("Metrics collection disabled (default)")
+	}
+	metricsCollector := monitoring.GetMetricsCollector()
+	if *enableMetrics {
+		metricsCollector.StartMetricsReporter(1 * time.Minute)
+	}
 
 	// get IA search condition from command line if specified
 	searchCondition := flag.Arg(0)

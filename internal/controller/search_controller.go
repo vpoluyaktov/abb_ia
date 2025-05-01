@@ -148,7 +148,7 @@ func (c *SearchController) fetchDetails(resp *ia_client.SearchResponse) (int, er
 					length, lErr := utils.TimeToSeconds(metadata.Length)
 					if sErr != nil || lErr != nil {
 						logger.Error("Can't parse the file metadata: " + name)
-						return 0, fmt.Errorf("can't parse file metadata: " + name)
+						return 0, fmt.Errorf("can't parse file metadata: %s", name)
 					} else {
 						file := dto.AudioFile{}
 						file.Name = strings.TrimPrefix(name, "/")

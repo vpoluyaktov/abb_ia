@@ -43,6 +43,13 @@ func (d *Dispatcher) RegisterListener(recipient string, handler CallBackFunc) {
 	d.RegisterHandler(recipient, handler)
 }
 
+// DispatcherMetricsSnapshot represents a point-in-time snapshot of metrics without synchronization
+type DispatcherMetricsSnapshot struct {
+	MessagesSent      int64
+	MessagesProcessed int64
+	Errors            int64
+}
+
 // DispatcherMetrics tracks performance and usage metrics
 type DispatcherMetrics struct {
 	mu                sync.RWMutex
@@ -72,7 +79,7 @@ func NewDispatcher() *Dispatcher {
 	return d
 }
 
-// SendMessage sends a message with advanced features
+// SendMessage sends a message to a recipient
 func (d *Dispatcher) SendMessage(from string, to string, dto dto.Dto, priority MessagePriority) error {
 	msg := &Message{
 		From:       from,
@@ -100,8 +107,8 @@ func (d *Dispatcher) SendMessage(from string, to string, dto dto.Dto, priority M
 	select {
 	case ch <- msg:
 		d.incrementMetric(&d.metrics.messagesSent)
-		logger.Debug(fmt.Sprintf("Message sent - ID: %s, From: %s, To: %s, Priority: %v",
-			msg.MessageID, from, to, priority))
+		logger.Debug(fmt.Sprintf("Message sent - From: %s, To: %s, Type: %T, Priority: %v, Size: %d bytes",
+			from, to, msg.Dto, priority, msg.Size()))
 		return nil
 	default:
 		return fmt.Errorf("failed to send message to %s: channel full", to)
@@ -139,7 +146,7 @@ func (d *Dispatcher) processMessages(recipient string, ch chan *Message) {
 			}
 
 			if time.Now().After(msg.ExpiresAt) {
-				logger.Warn(fmt.Sprintf("Message expired, skipping processing - ID: %s", msg.MessageID))
+				logger.Warn(fmt.Sprintf("Message expired for recipient %s, skipping processing - ID: %s", recipient, msg.MessageID))
 				continue
 			}
 
@@ -150,7 +157,7 @@ func (d *Dispatcher) processMessages(recipient string, ch chan *Message) {
 					time.Sleep(time.Duration(msg.RetryCount*msg.RetryCount) * time.Second)
 					ch <- msg
 				} else {
-					logger.Error(fmt.Sprintf("Message processing failed after max retries - ID: %s, Error: %v", msg.MessageID, err))
+					logger.Error(fmt.Sprintf("Message processing failed for recipient %s after max retries - ID: %s, Error: %v", recipient, msg.MessageID, err))
 				}
 			} else {
 				d.incrementMetric(&d.metrics.messagesProcessed)
@@ -220,7 +227,7 @@ func (d *Dispatcher) collectMetrics() {
 		case <-ticker.C:
 			metrics := d.GetMetrics()
 			logger.Debug(fmt.Sprintf("Dispatcher metrics - Sent: %d, Processed: %d, Errors: %d",
-				metrics.messagesSent, metrics.messagesProcessed, metrics.errors))
+				metrics.MessagesSent, metrics.MessagesProcessed, metrics.Errors))
 		}
 	}
 }
@@ -231,10 +238,14 @@ func (d *Dispatcher) incrementMetric(metric *int64) {
 	d.metrics.mu.Unlock()
 }
 
-func (d *Dispatcher) GetMetrics() DispatcherMetrics {
+func (d *Dispatcher) GetMetrics() DispatcherMetricsSnapshot {
 	d.metrics.mu.RLock()
 	defer d.metrics.mu.RUnlock()
-	return *d.metrics
+	return DispatcherMetricsSnapshot{
+		MessagesSent:      d.metrics.messagesSent,
+		MessagesProcessed: d.metrics.messagesProcessed,
+		Errors:            d.metrics.errors,
+	}
 }
 
 // Shutdown gracefully shuts down the dispatcher
