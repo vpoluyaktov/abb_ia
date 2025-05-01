@@ -1,7 +1,10 @@
 package ui
 
 import (
+	"fmt"
+
 	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 
 	"github.com/vpoluyaktov/tview"
@@ -53,11 +56,15 @@ func (f *frame) switchToPage(name string) {
 	f.pages.SwitchToPage(name)
 	f.pages.SendToFront(name)
 	_, p := f.pages.GetFrontPage()
-	f.mq.SendMessage(mq.Frame, mq.TUI, &dto.SetFocusCommand{Primitive: p}, true)
+	f.mq.SendMessage(mq.Frame, mq.TUI, &dto.SetFocusCommand{Primitive: p}, mq.PriorityHigh)
 }
 
 func (f *frame) checkMQ() {
-	m := f.mq.GetMessage(mq.Frame)
+	m, err := f.mq.GetMessage(mq.Frame)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for Frame: %v", err))
+		return
+	}
 	if m != nil {
 		f.dispatchMessage(m)
 	}

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
 
 	"abb_ia/internal/config"
@@ -30,8 +31,6 @@ type ConfigPage struct {
 	sortByField      *tview.DropDown
 	sortOrderField   *tview.DropDown
 	rowsPerPage      *tview.InputField
-	useMockField     *tview.Checkbox
-	saveMockField    *tview.Checkbox
 	outputDir        *tview.InputField
 	copyToOutputDir  *tview.Checkbox
 	tmpDir           *tview.InputField
@@ -189,7 +188,11 @@ func newConfigPage(dispatcher *mq.Dispatcher) *ConfigPage {
 }
 
 func (p *ConfigPage) checkMQ() {
-	m := p.mq.GetMessage(mq.ConfigPage)
+	m, err := p.mq.GetMessage(mq.ConfigPage)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for ConfigPage: %v", err))
+		return
+	}
 	if m != nil {
 		p.dispatchMessage(m)
 	}
@@ -238,10 +241,10 @@ func (p *ConfigPage) displayConfig(c *dto.DisplayConfigCommand) {
 }
 
 func (p *ConfigPage) SaveConfig() {
-	p.mq.SendMessage(mq.ConfigPage, mq.ConfigController, &dto.SaveConfigCommand{Config: p.configCopy}, true)
-	p.mq.SendMessage(mq.ConfigPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	p.mq.SendMessage(mq.ConfigPage, mq.ConfigController, &dto.SaveConfigCommand{Config: p.configCopy}, mq.PriorityHigh)
+	p.mq.SendMessage(mq.ConfigPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, mq.PriorityNormal)
 }
 
 func (p *ConfigPage) Cancel() {
-	p.mq.SendMessage(mq.ConfigPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	p.mq.SendMessage(mq.ConfigPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, mq.PriorityNormal)
 }

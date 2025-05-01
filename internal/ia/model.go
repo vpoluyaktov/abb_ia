@@ -13,7 +13,7 @@ type SearchResponse struct {
 			Qin    string `json:"qin"`
 			Fields string `json:"fields"`
 			Wt     string `json:"wt"`
-			Rows   string `json:"rows"`
+			Rows   int    `json:"rows"`
 			Start  int    `json:"start"`
 		} `json:"params"`
 	} `json:"responseHeader"`

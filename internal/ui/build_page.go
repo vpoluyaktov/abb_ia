@@ -8,6 +8,7 @@ import (
 
 	"abb_ia/internal/audiobookshelf"
 	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
 
@@ -118,7 +119,11 @@ func newBuildPage(dispatcher *mq.Dispatcher) *BuildPage {
 }
 
 func (p *BuildPage) checkMQ() {
-	m := p.mq.GetMessage(mq.BuildPage)
+	m, err := p.mq.GetMessage(mq.BuildPage)
+	if err != nil {
+		logger.Error("Failed to get message for BuildPage: " + err.Error())
+		return
+	}
 	if m != nil {
 		p.dispatchMessage(m)
 	}
@@ -226,8 +231,8 @@ func (p *BuildPage) stopConfirmation() {
 
 func (p *BuildPage) stopBuild() {
 	// Stop the build here
-	p.mq.SendMessage(mq.BuildPage, mq.BuildController, &dto.StopCommand{Process: "Build", Reason: "User request"}, false)
-	p.mq.SendMessage(mq.ChaptersPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, true)
+	p.mq.SendMessage(mq.BuildPage, mq.BuildController, &dto.StopCommand{Process: "Build", Reason: "User request"}, mq.PriorityNormal)
+	p.mq.SendMessage(mq.ChaptersPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, mq.PriorityHigh)
 	p.switchToSearch()
 }
 
@@ -372,9 +377,9 @@ func (p *BuildPage) buildComplete(c *dto.BuildComplete) {
 	// copy the book to Output directory if needed
 	ab := c.Audiobook
 	if ab.Config.IsCopyToOutputDir() {
-		p.mq.SendMessage(mq.BuildPage, mq.CopyController, &dto.CopyCommand{Audiobook: ab}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.CopyController, &dto.CopyCommand{Audiobook: ab}, mq.PriorityHigh)
 	} else {
-		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.CopyComplete{Audiobook: ab}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.CopyComplete{Audiobook: ab}, mq.PriorityHigh)
 	}
 }
 
@@ -382,9 +387,9 @@ func (p *BuildPage) copyComplete(c *dto.CopyComplete) {
 	// upload the book to Audiobookshelf server if needed
 	ab := c.Audiobook
 	if ab.Config.IsUploadToAudiobookshef() {
-		p.mq.SendMessage(mq.BuildPage, mq.UploadController, &dto.AbsUploadCommand{Audiobook: ab}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.UploadController, &dto.AbsUploadCommand{Audiobook: ab}, mq.PriorityHigh)
 	} else {
-		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.UploadComplete{Audiobook: ab}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.UploadComplete{Audiobook: ab}, mq.PriorityHigh)
 	}
 }
 
@@ -392,25 +397,25 @@ func (p *BuildPage) uploadComplete(c *dto.UploadComplete) {
 	// launch Audiobookshelf library scan if needed
 	ab := c.Audiobook
 	if ab.Config.IsScanAudiobookshef() {
-		p.mq.SendMessage(mq.BuildPage, mq.UploadController, &dto.AbsScanCommand{Audiobook: c.Audiobook}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.UploadController, &dto.AbsScanCommand{Audiobook: c.Audiobook}, mq.PriorityHigh)
 	} else {
-		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.ScanComplete{Audiobook: ab}, true)
+		p.mq.SendMessage(mq.BuildPage, mq.BuildPage, &dto.ScanComplete{Audiobook: ab}, mq.PriorityHigh)
 	}
 }
 
 func (p *BuildPage) scanComplete(c *dto.ScanComplete) {
 	// clean up temporary directory
-	p.mq.SendMessage(mq.BuildPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: c.Audiobook}, true)
+	p.mq.SendMessage(mq.BuildPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: c.Audiobook}, mq.PriorityHigh)
 }
 
 func (p *BuildPage) cleanupComplete(c *dto.CleanupComplete) {
 	p.bookReadyMgs(c.Audiobook)
 }
 
-func (p *BuildPage) bookReadyMgs(ab *dto.Audiobook) {
+func (p *BuildPage) bookReadyMgs(_ *dto.Audiobook) {
 	newMessageDialog(p.mq, "Build Complete", "Audiobook has been created", p.buildSection.Grid, p.switchToSearch)
 }
 
 func (p *BuildPage) switchToSearch() {
-	p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	p.mq.SendMessage(mq.BuildPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, mq.PriorityNormal)
 }
