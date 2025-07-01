@@ -121,7 +121,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 func (c *BuildController) createFilesLists(ab *dto.Audiobook) {
 	for i := range ab.Parts {
 		part := &ab.Parts[i]
-		part.FListFile = filepath.Join(ab.OutputDir, fmt.Sprintf("Part %02d Files.txt", part.Number))
+		part.FListFile = filepath.Join(ab.OutputDir, fmt.Sprintf("Part %04d Files.txt", part.Number))
 		f, err := os.OpenFile(part.FListFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			logger.Error("Can't open FList file for writing: " + err.Error())
@@ -138,7 +138,7 @@ func (c *BuildController) createFilesLists(ab *dto.Audiobook) {
 func (c *BuildController) createMetadata(ab *dto.Audiobook) {
 	for i := range ab.Parts {
 		part := &ab.Parts[i]
-		part.MetadataFile = filepath.Join(ab.OutputDir, fmt.Sprintf("Part %02d Metadata.txt", part.Number))
+		part.MetadataFile = filepath.Join(ab.OutputDir, fmt.Sprintf("Part %04d Metadata.txt", part.Number))
 		f, err := os.OpenFile(part.MetadataFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			logger.Error("Can't open Metadata file for writing: " + err.Error())

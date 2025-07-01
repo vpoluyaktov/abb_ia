@@ -86,3 +86,11 @@ type RecalculatePartsCommand struct {
 func (c *RecalculatePartsCommand) String() string {
 	return fmt.Sprintf("RecalculatePartsCommand: %s", c.Audiobook.String())
 }
+
+type UseMP3NamesCommand struct {
+	Audiobook *Audiobook
+}
+
+func (c *UseMP3NamesCommand) String() string {
+	return fmt.Sprintf("UseMP3NamesCommand: %s", c.Audiobook.String())
+}
