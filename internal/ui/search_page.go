@@ -279,7 +279,7 @@ func (p *SearchPage) updateDetails(row int, col int) {
 
 // process Enter and DoubleClick on the result table
 func (p *SearchPage) itemSelected(row int, col int) {
-	if row > 0 && len(p.searchResult) > 0 && row < len(p.searchResult) {
+	if row > 0 && len(p.searchResult) > 0 && row <= len(p.searchResult) {
 		p.createBook()
 	}
 }

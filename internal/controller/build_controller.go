@@ -81,7 +81,7 @@ func (c *BuildController) startBuild(cmd *dto.BuildCommand) {
 		part := &c.ab.Parts[i]
 		filePath := filepath.Join(c.ab.Config.GetTmpDir(), c.ab.Author+" - "+c.ab.Title)
 		if len(c.ab.Parts) > 1 {
-			filePath = filePath + fmt.Sprintf(", Part %02d", i+1)
+			filePath = filePath + fmt.Sprintf(", Part %04d", i+1)
 		}
 		part.AACFile = filePath + ".aac"
 		part.M4BFile = filePath + ".m4b"
