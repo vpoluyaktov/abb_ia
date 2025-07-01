@@ -94,3 +94,12 @@ type UseMP3NamesCommand struct {
 func (c *UseMP3NamesCommand) String() string {
 	return fmt.Sprintf("UseMP3NamesCommand: %s", c.Audiobook.String())
 }
+
+// SortChaptersCommand represents a command to sort chapters by name
+type SortChaptersCommand struct {
+	Audiobook *Audiobook
+}
+
+func (c *SortChaptersCommand) String() string {
+	return fmt.Sprintf("SortChaptersCommand: %s", c.Audiobook.String())
+}

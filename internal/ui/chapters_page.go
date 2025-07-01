@@ -27,7 +27,7 @@ type ChaptersPage struct {
 	inputNarrator            *tview.InputField
 	inputCover               *tview.InputField
 	buttonCreateBook         *tview.Button
-	buttonCancel             *tview.Button
+	buttonCancel            *tview.Button
 	textAreaDescription      *tview.TextArea
 	inputSearchDescription   *tview.InputField
 	inputReplaceDescription  *tview.InputField
@@ -41,7 +41,9 @@ type ChaptersPage struct {
 	buttonChaptersReplace    *tview.Button
 	buttonChaptersUndo       *tview.Button
 	buttonChaptersJoin       *tview.Button
+	buttonChaptersSort       *tview.Button
 	buttonRecalculateParts   *tview.Button
+	buttonChaptersUseMP3Names *tview.Button
 	searchDescription        string
 	replaceDescription       string
 	searchChapters           string
@@ -57,7 +59,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.mq.RegisterListener(mq.ChaptersPage, p.dispatchMessage)
 
 	p.mainGrid = newGrid()
-	p.mainGrid.SetRows(9, -1, -1)
+	p.mainGrid.SetRows(9, -1, -2)
 	p.mainGrid.SetColumns(0)
 
 	// book info section
@@ -160,7 +162,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 
 	chaptersControls := newGrid()
 	chaptersControls.SetColumns(-1)
-	chaptersControls.SetRows(-2, -1)
+	chaptersControls.SetRows(-3, -1)
 	chaptersControls.SetBorder(true)
 
 	f6 := newForm()
@@ -170,8 +172,10 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.inputReplaceChapters = f6.AddInputField("Replace:", "", 20, nil, func(s string) { p.replaceChapters = s })
 	p.buttonChaptersReplace = f6.AddButton("Replace", p.searchReplaceChapters)
 	p.buttonChaptersUndo = f6.AddButton(" Undo  ", p.undoChapters)
+	p.buttonChaptersSort = f6.AddButton(" Sort by Numbers ", p.sortChapters)
+	p.buttonChaptersUseMP3Names = f6.AddButton(" Use MP3 Names ", p.useMP3Names)
 	p.buttonChaptersJoin = f6.AddButton(" Join Similar Chapters ", p.joinChapters)
-	f6.AddButton(" Use MP3 Names ", p.useMP3Names)
+
 	f6.SetButtonsAlign(tview.AlignRight)
 	f6.SetMouseDblClickFunc(func() {})
 	chaptersControls.AddItem(f6.Form, 0, 0, 1, 1, 0, 0, false)
@@ -180,7 +184,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	f7.SetBorder(false)
 	f7.SetHorizontal(true)
 	p.inputPartSize = f7.AddInputField("Part size (Mb): ", "", 6, acceptInt, func(s string) { p.partSize = s })
-	p.buttonRecalculateParts = f7.AddButton(" Recalculate Parts ", p.recalculateParts)
+	p.buttonRecalculateParts = f7.AddButton("Recalculate Parts", p.recalculateParts)
 	f7.SetButtonsAlign(tview.AlignRight)
 	chaptersControls.AddItem(f7.Form, 1, 0, 1, 1, 0, 0, false)
 
@@ -411,6 +415,16 @@ func (p *ChaptersPage) useMP3Names() {
 	} else {
 		p.chaptersUndoStack.Push(abCopy)
 		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.UseMP3NamesCommand{Audiobook: p.ab}, true)
+	}
+}
+
+func (p *ChaptersPage) sortChapters() {
+	abCopy, err := p.ab.GetCopy()
+	if err != nil {
+		logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
+	} else {
+		p.chaptersUndoStack.Push(abCopy)
+		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SortChaptersCommand{Audiobook: p.ab}, true)
 	}
 }
 
