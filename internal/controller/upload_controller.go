@@ -84,10 +84,6 @@ func (c *UploadController) absScan(cmd *dto.AbsScanCommand) {
 			logger.Error("Can't launch library scan on audiobookshelf server: " + err.Error())
 			return
 		}
-		if err != nil {
-			logger.Error("Can't launch library scan on audiobookshelf server: " + err.Error())
-			return
-		}
 		logger.Info("A scan launched for library " + libraryName + " on audiobookshelf server")
 	}
 	c.mq.SendMessage(mq.UploadController, mq.BuildPage, &dto.ScanComplete{Audiobook: cmd.Audiobook}, true)

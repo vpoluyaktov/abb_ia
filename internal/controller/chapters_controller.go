@@ -45,6 +45,8 @@ func (c *ChaptersController) dispatchMessage(m *mq.Message) {
 		go c.recalculateParts(dto)
 	case *dto.StopCommand:
 		go c.stopChapters(dto)
+	case *dto.UseMP3NamesCommand:
+		go c.useMP3Names(dto)
 	default:
 		m.UnsupportedTypeError(mq.ChaptersController)
 	}
@@ -205,4 +207,24 @@ func (c *ChaptersController) joinChapters(cmd *dto.JoinChaptersCommand) {
 func (c *ChaptersController) recalculateParts(cmd *dto.RecalculatePartsCommand) {
 	ab := cmd.Audiobook
 	c.createChapters(&dto.ChaptersCreate{Audiobook: ab})
+}
+
+// useMP3Names replaces chapter names with their corresponding MP3 file names
+func (c *ChaptersController) useMP3Names(cmd *dto.UseMP3NamesCommand) {
+	ab := cmd.Audiobook
+
+	for partNo, p := range ab.Parts {
+		for chapterNo := range p.Chapters {
+			chapter := &ab.Parts[partNo].Chapters[chapterNo]
+			// Since each chapter can have multiple files, we'll use the name of the first file
+			if len(chapter.Files) > 0 {
+				// Get just the filename without path and extension
+				baseName := filepath.Base(chapter.Files[0].FileName)
+				fileName := strings.TrimSuffix(baseName, filepath.Ext(baseName))
+				chapter.Name = fileName
+			}
+		}
+	}
+
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
 }

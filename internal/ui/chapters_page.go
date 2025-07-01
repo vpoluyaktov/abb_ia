@@ -171,6 +171,7 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 	p.buttonChaptersReplace = f6.AddButton("Replace", p.searchReplaceChapters)
 	p.buttonChaptersUndo = f6.AddButton(" Undo  ", p.undoChapters)
 	p.buttonChaptersJoin = f6.AddButton(" Join Similar Chapters ", p.joinChapters)
+	f6.AddButton(" Use MP3 Names ", p.useMP3Names)
 	f6.SetButtonsAlign(tview.AlignRight)
 	f6.SetMouseDblClickFunc(func() {})
 	chaptersControls.AddItem(f6.Form, 0, 0, 1, 1, 0, 0, false)
@@ -401,6 +402,16 @@ func (p *ChaptersPage) stopChapters() {
 	p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.StopCommand{Process: "Chapters", Reason: "User request"}, false)
 	p.mq.SendMessage(mq.ChaptersPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, true)
 	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+}
+
+func (p *ChaptersPage) useMP3Names() {
+	abCopy, err := p.ab.GetCopy()
+	if err != nil {
+		logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
+	} else {
+		p.chaptersUndoStack.Push(abCopy)
+		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.UseMP3NamesCommand{Audiobook: p.ab}, true)
+	}
 }
 
 func (p *ChaptersPage) buildBook() {
