@@ -3,12 +3,14 @@ package controller
 import (
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"abb_ia/internal/dto"
 	"abb_ia/internal/ffmpeg"
 	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
+	"abb_ia/internal/utils"
 )
 
 type ChaptersController struct {
@@ -47,6 +49,8 @@ func (c *ChaptersController) dispatchMessage(m *mq.Message) {
 		go c.stopChapters(dto)
 	case *dto.UseMP3NamesCommand:
 		go c.useMP3Names(dto)
+	case *dto.SortChaptersCommand:
+		go c.sortChapters(dto)
 	default:
 		m.UnsupportedTypeError(mq.ChaptersController)
 	}
@@ -203,10 +207,62 @@ func (c *ChaptersController) joinChapters(cmd *dto.JoinChaptersCommand) {
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
 }
 
-// Recalculate Parts using new PartSize
+// Recalculate Parts using new PartSize while preserving chapter information
 func (c *ChaptersController) recalculateParts(cmd *dto.RecalculatePartsCommand) {
 	ab := cmd.Audiobook
-	c.createChapters(&dto.ChaptersCreate{Audiobook: ab})
+
+	// Collect all chapters into a single slice
+	allChapters := []dto.Chapter{}
+	for _, part := range ab.Parts {
+		allChapters = append(allChapters, part.Chapters...)
+	}
+
+	// Clear existing parts and prepare for recalculation
+	ab.Parts = []dto.Part{}
+	var partNo int = 1
+	var partSize int64 = 0
+	var partDuration float64 = 0
+	var partChapters []dto.Chapter = []dto.Chapter{}
+	var offset float64 = 0
+
+	// Distribute chapters into parts based on size limits
+	for i, chapter := range allChapters {
+		// Update chapter timing
+		chapter.Start = offset
+		offset += chapter.Duration
+		chapter.End = offset
+
+		partSize += chapter.Size
+		partDuration += chapter.Duration
+		partChapters = append(partChapters, chapter)
+
+		// Create new part when size limit is reached or it's the last chapter
+		if partSize >= int64(ab.Config.GetMaxFileSizeMb())*1024*1024 || i == len(allChapters)-1 {
+			// Get format from the first file in the first chapter of the part
+			var format string
+			if len(partChapters) > 0 && len(partChapters[0].Files) > 0 {
+				filePath := filepath.Join(ab.OutputDir, partChapters[0].Files[0].FileName)
+				mp3, _ := ffmpeg.NewFFProbe(filePath)
+				format = mp3.Format()
+			}
+
+			part := dto.Part{
+				Number:   partNo,
+				Format:   format,
+				Size:     partSize,
+				Duration: partDuration,
+				Chapters: partChapters,
+			}
+			ab.Parts = append(ab.Parts, part)
+			partNo++
+			partSize = 0
+			partDuration = 0
+			partChapters = []dto.Chapter{}
+			offset = 0
+		}
+	}
+
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
 }
 
 // useMP3Names replaces chapter names with their corresponding MP3 file names
@@ -227,4 +283,34 @@ func (c *ChaptersController) useMP3Names(cmd *dto.UseMP3NamesCommand) {
 	}
 
 	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
+}
+
+// sortChapters sorts all chapters globally by their names and recalculates parts
+func (c *ChaptersController) sortChapters(cmd *dto.SortChaptersCommand) {
+	ab := cmd.Audiobook
+
+	// Collect all chapters into a single slice
+	allChapters := []dto.Chapter{}
+	for _, part := range ab.Parts {
+		allChapters = append(allChapters, part.Chapters...)
+	}
+
+	// Sort all chapters using natural sort
+	sort.SliceStable(allChapters, func(i, j int) bool {
+		return utils.CompareNaturalOrder(allChapters[i].Name, allChapters[j].Name)
+	})
+
+	// Update chapter numbers
+	for i := range allChapters {
+		allChapters[i].Number = i + 1
+	}
+
+	// Put all sorted chapters into a single part temporarily
+	ab.Parts = []dto.Part{{
+		Number:   1,
+		Chapters: allChapters,
+	}}
+
+	// Recalculate parts to maintain size limits
+	c.recalculateParts(&dto.RecalculatePartsCommand{Audiobook: ab})
 }
