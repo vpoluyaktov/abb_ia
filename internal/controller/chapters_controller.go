@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -27,7 +28,11 @@ func NewChaptersController(dispatcher *mq.Dispatcher) *ChaptersController {
 }
 
 func (c *ChaptersController) checkMQ() {
-	m := c.mq.GetMessage(mq.ChaptersController)
+	m, err := c.mq.GetMessage(mq.ChaptersController)
+	if err != nil {
+		logger.Error("Failed to get message for ChaptersController: " + err.Error())
+		return
+	}
 	if m != nil {
 		c.dispatchMessage(m)
 	}
@@ -56,7 +61,7 @@ func (c *ChaptersController) dispatchMessage(m *mq.Message) {
 	}
 }
 
-func (c *ChaptersController) stopChapters(cmd *dto.StopCommand) {
+func (c *ChaptersController) stopChapters(_ *dto.StopCommand) {
 	c.stopFlag = true
 	logger.Debug(mq.ChaptersController + ": Received StopChapters command")
 }
@@ -73,9 +78,9 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		}
 	}
 
-	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
-	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: "Calculating book parts and chapters..."}, false)
-	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, mq.PriorityHigh)
+	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: "Calculating book parts and chapters..."}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, mq.PriorityNormal)
 
 	// Split the book into parts
 	c.ab.Parts = []dto.Part{}
@@ -101,7 +106,7 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 		partDuration += mp3.Duration()
 		chapter := dto.Chapter{Number: chapterNo, Name: mp3.Title(), Size: mp3.Size(), Duration: mp3.Duration(), Start: offset, End: offset + mp3.Duration(), Files: chapterFiles}
 		partChapters = append(partChapters, chapter)
-		c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.AddChapterCommand{Chapter: &chapter}, true)
+		c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.AddChapterCommand{Chapter: &chapter}, mq.PriorityHigh)
 		offset += mp3.Duration()
 		chapterNo++
 		chapterFiles = []dto.Mp3File{}
@@ -121,10 +126,10 @@ func (c *ChaptersController) createChapters(cmd *dto.ChaptersCreate) {
 	c.ab.TotalSize = abSize
 	c.ab.TotalDuration = abDuration
 
-	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.ChaptersController, mq.Footer, &dto.UpdateStatus{Message: ""}, mq.PriorityNormal)
 	if !c.stopFlag {
-		c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.ChaptersReady{Audiobook: cmd.Audiobook}, true)
+		c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.ChaptersReady{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 	}
 	c.stopFlag = true
 }
@@ -140,7 +145,7 @@ func (c *ChaptersController) searchReplaceDescription(cmd *dto.SearchReplaceDesc
 
 	description := re.ReplaceAllString(ab.Description, replaceStr)
 	ab.Description = description
-	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshDescriptionCommand{Audiobook: cmd.Audiobook}, true)
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshDescriptionCommand{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 }
 
 func (c *ChaptersController) searchReplaceChapters(cmd *dto.SearchReplaceChaptersCommand) {
@@ -149,6 +154,7 @@ func (c *ChaptersController) searchReplaceChapters(cmd *dto.SearchReplaceChapter
 	replaceStr := cmd.ReplaceStr
 	re, err := regexp.Compile(searchStr)
 	if err != nil {
+		logger.Error(fmt.Sprintf("Invalid search pattern: %v", err))
 		return
 	}
 
@@ -160,7 +166,7 @@ func (c *ChaptersController) searchReplaceChapters(cmd *dto.SearchReplaceChapter
 			chapter.Name = strings.TrimSpace(title)
 		}
 	}
-	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 }
 
 // Join Chapters having the same name
@@ -204,7 +210,7 @@ func (c *ChaptersController) joinChapters(cmd *dto.JoinChaptersCommand) {
 		}
 		part.Chapters = chapters
 	}
-	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, true)
+	c.mq.SendMessage(mq.ChaptersController, mq.ChaptersPage, &dto.RefreshChaptersCommand{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 }
 
 // Recalculate Parts using new PartSize while preserving chapter information

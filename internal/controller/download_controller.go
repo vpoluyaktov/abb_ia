@@ -35,7 +35,11 @@ func NewDownloadController(dispatcher *mq.Dispatcher) *DownloadController {
 }
 
 func (c *DownloadController) checkMQ() {
-	m := c.mq.GetMessage(mq.DownloadController)
+	m, err := c.mq.GetMessage(mq.DownloadController)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for DownloadController: %v", err))
+		return
+	}
 	if m != nil {
 		c.dispatchMessage(m)
 	}
@@ -52,7 +56,7 @@ func (c *DownloadController) dispatchMessage(m *mq.Message) {
 	}
 }
 
-func (c *DownloadController) stopDownload(cmd *dto.StopCommand) {
+func (c *DownloadController) stopDownload(_ *dto.StopCommand) {
 	c.stopFlag = true
 	logger.Debug(mq.DownloadController + ": Received StopDownload command")
 }
@@ -60,8 +64,8 @@ func (c *DownloadController) stopDownload(cmd *dto.StopCommand) {
 func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	c.startTime = time.Now()
 
-	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: "Downloading mp3 files..."}, false)
-	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: "Downloading mp3 files..."}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, mq.PriorityNormal)
 
 	c.ab = cmd.Audiobook
 	item := c.ab.IAItem
@@ -78,7 +82,7 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 	logger.Info(fmt.Sprintf("Downloading IA item: %s - %s...", c.ab.Author, c.ab.Title))
 
 	// update Book info on UI
-	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, true)
+	c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DisplayBookInfoCommand{Audiobook: c.ab}, mq.PriorityHigh)
 
 	// download files
 	ia := ia_client.New(c.ab.Config.GetRowsPerPage(), c.ab.Config.IsUseMock(), c.ab.Config.IsSaveMock())
@@ -94,10 +98,10 @@ func (c *DownloadController) startDownload(cmd *dto.DownloadCommand) {
 
 	jd.Start()
 
-	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.DownloadController, mq.Footer, &dto.UpdateStatus{Message: ""}, mq.PriorityNormal)
 	if !c.stopFlag {
-		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, true)
+		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.DownloadComplete{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 	}
 	c.stopFlag = true
 }
@@ -113,7 +117,7 @@ func (c *DownloadController) updateFileProgress(fileId int, fileName string, siz
 		}
 
 		// sent a message only if progress changed
-		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.FileDownloadProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
+		c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.FileDownloadProgress{FileId: fileId, FileName: fileName, Percent: percent}, mq.PriorityNormal)
 	}
 	c.files[fileId].fileId = fileId
 	c.files[fileId].fileSize = size
@@ -171,7 +175,7 @@ func (c *DownloadController) updateTotalProgress() {
 			speedH := utils.SpeedToHuman(speed)
 			etaH := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.TotalDownloadProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
+			c.mq.SendMessage(mq.DownloadController, mq.DownloadPage, &dto.TotalDownloadProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, mq.PriorityNormal)
 		}
 		time.Sleep(mq.PullFrequency)
 	}

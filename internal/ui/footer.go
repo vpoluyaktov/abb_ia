@@ -1,8 +1,11 @@
 package ui
 
 import (
+	"fmt"
+
 	"abb_ia/internal/config"
 	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 
 	"github.com/vpoluyaktov/tview"
@@ -61,7 +64,11 @@ func newFooter(dispatcher *mq.Dispatcher) *footer {
 }
 
 func (f *footer) checkMQ() {
-	m := f.mq.GetMessage(mq.Footer)
+	m, err := f.mq.GetMessage(mq.Footer)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for Footer: %v", err))
+		return
+	}
 	if m != nil {
 		f.dispatchMessage(m)
 	}

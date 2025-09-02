@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"os"
 
 	"abb_ia/internal/dto"
@@ -21,7 +22,11 @@ func NewCleanupController(dispatcher *mq.Dispatcher) *CleanupController {
 }
 
 func (c *CleanupController) checkMQ() {
-	m := c.mq.GetMessage(mq.CleanupController)
+	m, err := c.mq.GetMessage(mq.CleanupController)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for CleanupController: %v", err))
+		return
+	}
 	if m != nil {
 		c.dispatchMessage(m)
 	}
@@ -55,6 +60,6 @@ func (c *CleanupController) cleanUp(cmd *dto.CleanupCommand, requestor string) {
 	}
 
 	if requestor == mq.BuildPage {
-		c.mq.SendMessage(mq.CleanupController, mq.BuildPage, &dto.CleanupComplete{Audiobook: cmd.Audiobook}, true)
+		c.mq.SendMessage(mq.CleanupController, mq.BuildPage, &dto.CleanupComplete{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 	}
 }

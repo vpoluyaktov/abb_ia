@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+
 	"abb_ia/internal/config"
 	"abb_ia/internal/dto"
 	"abb_ia/internal/logger"
@@ -20,7 +22,11 @@ func NewConfigController(dispatcher *mq.Dispatcher) *ConfigController {
 }
 
 func (c *ConfigController) checkMQ() {
-	m := c.mq.GetMessage(mq.ConfigController)
+	m, err := c.mq.GetMessage(mq.ConfigController)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for ConfigController: %v", err))
+		return
+	}
 	if m != nil {
 		c.dispatchMessage(m)
 	}
@@ -37,14 +43,14 @@ func (c *ConfigController) dispatchMessage(m *mq.Message) {
 
 func (c *ConfigController) updateConfig(cmd *dto.SaveConfigCommand) {
 	logger.Debug(mq.ConfigController + ": Received UpdateConfigCommand")
-	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.UpdateStatus{Message: "Saving new default configuration"}, false)
-	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.UpdateStatus{Message: "Saving new default configuration"}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, mq.PriorityNormal)
 
 	config.SaveConfig(&cmd.Config)
 
 	logger.SetLogLevel(logger.LogLevelType(utils.GetIndex(logger.LogLeves(), cmd.Config.GetLogLevel()) + 1))
-	c.mq.SendMessage(mq.ConfigController, mq.SearchPage, &dto.UpdateSearchConfigCommand{Config: cmd.Config}, true)
+	c.mq.SendMessage(mq.ConfigController, mq.SearchPage, &dto.UpdateSearchConfigCommand{Config: cmd.Config}, mq.PriorityHigh)
 
-	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.ConfigController, mq.Footer, &dto.UpdateStatus{Message: ""}, mq.PriorityNormal)
 }

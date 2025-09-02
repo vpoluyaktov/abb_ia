@@ -224,7 +224,11 @@ func newChaptersPage(dispatcher *mq.Dispatcher) *ChaptersPage {
 }
 
 func (p *ChaptersPage) checkMQ() {
-	m := p.mq.GetMessage(mq.ChaptersPage)
+	m, err := p.mq.GetMessage(mq.ChaptersPage)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for ChaptersPage: %v", err))
+		return
+	}
 	if m != nil {
 		p.dispatchMessage(m)
 	}
@@ -334,7 +338,7 @@ func (p *ChaptersPage) searchReplaceDescription() {
 			logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
 		} else {
 			p.descriptionUndoStack.Push(abCopy)
-			p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceDescriptionCommand{Audiobook: p.ab, SearchStr: p.searchDescription, ReplaceStr: p.replaceDescription}, true)
+			p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceDescriptionCommand{Audiobook: p.ab, SearchStr: p.searchDescription, ReplaceStr: p.replaceDescription}, mq.PriorityHigh)
 		}
 	}
 }
@@ -360,7 +364,7 @@ func (p *ChaptersPage) searchReplaceChapters() {
 			logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
 		} else {
 			p.chaptersUndoStack.Push(abCopy)
-			p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceChaptersCommand{Audiobook: p.ab, SearchStr: p.searchChapters, ReplaceStr: p.replaceChapters}, true)
+			p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.SearchReplaceChaptersCommand{Audiobook: p.ab, SearchStr: p.searchChapters, ReplaceStr: p.replaceChapters}, mq.PriorityHigh)
 		}
 	}
 }
@@ -371,7 +375,7 @@ func (p *ChaptersPage) joinChapters() {
 		logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
 	} else {
 		p.chaptersUndoStack.Push(abCopy)
-		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.JoinChaptersCommand{Audiobook: p.ab}, true)
+		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.JoinChaptersCommand{Audiobook: p.ab}, mq.PriorityHigh)
 	}
 }
 
@@ -382,7 +386,7 @@ func (p *ChaptersPage) recalculateParts() {
 		logger.Error("Can't create a copy of Audiobook struct: " + err.Error())
 	} else {
 		p.chaptersUndoStack.Push(abCopy)
-		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.RecalculatePartsCommand{Audiobook: p.ab}, true)
+		p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.RecalculatePartsCommand{Audiobook: p.ab}, mq.PriorityHigh)
 	}
 }
 
@@ -403,9 +407,9 @@ func (p *ChaptersPage) stopConfirmation() {
 }
 
 func (p *ChaptersPage) stopChapters() {
-	p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.StopCommand{Process: "Chapters", Reason: "User request"}, false)
-	p.mq.SendMessage(mq.ChaptersPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, true)
-	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	p.mq.SendMessage(mq.ChaptersPage, mq.ChaptersController, &dto.StopCommand{Process: "Chapters", Reason: "User request"}, mq.PriorityNormal)
+	p.mq.SendMessage(mq.ChaptersPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, mq.PriorityHigh)
+	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, mq.PriorityNormal)
 }
 
 func (p *ChaptersPage) useMP3Names() {
@@ -437,8 +441,8 @@ func (p *ChaptersPage) buildBook() {
 	p.ab.Narrator = p.inputNarrator.GetText()
 	_, p.ab.Genre = p.inputGenre.GetCurrentOption()
 
-	p.mq.SendMessage(mq.ChaptersPage, mq.BuildController, &dto.BuildCommand{Audiobook: p.ab}, true)
-	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, true)
+	p.mq.SendMessage(mq.ChaptersPage, mq.BuildController, &dto.BuildCommand{Audiobook: p.ab}, mq.PriorityHigh)
+	p.mq.SendMessage(mq.ChaptersPage, mq.Frame, &dto.SwitchToPageCommand{Name: "BuildPage"}, mq.PriorityHigh)
 }
 
 // Simple Undo stack implementation

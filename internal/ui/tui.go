@@ -1,11 +1,13 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"time"
 
 	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 
 	"github.com/vpoluyaktov/tview"
@@ -98,7 +100,11 @@ func (ui *TUI) Run() {
 }
 
 func (ui *TUI) checkMQ() {
-	m := ui.mq.GetMessage(mq.TUI)
+	m, err := ui.mq.GetMessage(mq.TUI)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for TUI: %v", err))
+		return
+	}
 	if m != nil {
 		ui.dispatchMessage(m)
 	}

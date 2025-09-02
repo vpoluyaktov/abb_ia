@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"abb_ia/internal/dto"
+	"abb_ia/internal/logger"
 	"abb_ia/internal/mq"
 	"abb_ia/internal/utils"
 
@@ -86,7 +87,11 @@ func newDownloadPage(dispatcher *mq.Dispatcher) *DownloadPage {
 }
 
 func (p *DownloadPage) checkMQ() {
-	m := p.mq.GetMessage(mq.DownloadPage)
+	m, err := p.mq.GetMessage(mq.DownloadPage)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for DownloadPage: %v", err))
+		return
+	}
 	if m != nil {
 		p.dispatchMessage(m)
 	}
@@ -132,9 +137,9 @@ func (p *DownloadPage) stopConfirmation() {
 }
 
 func (p *DownloadPage) stopDownload() {
-	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, &dto.StopCommand{Process: "Download", Reason: "User request"}, false)
-	p.mq.SendMessage(mq.DownloadPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, true)
-	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, false)
+	p.mq.SendMessage(mq.DownloadPage, mq.DownloadController, &dto.StopCommand{Process: "Download", Reason: "User request"}, mq.PriorityNormal)
+	p.mq.SendMessage(mq.DownloadPage, mq.CleanupController, &dto.CleanupCommand{Audiobook: p.ab}, mq.PriorityHigh)
+	p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "SearchPage"}, mq.PriorityNormal)
 }
 
 func (p *DownloadPage) updateFileProgress(dp *dto.FileDownloadProgress) {
@@ -182,11 +187,11 @@ func (p *DownloadPage) updateTotalProgress(dp *dto.TotalDownloadProgress) {
 func (p *DownloadPage) downloadComplete(c *dto.DownloadComplete) {
 	ab := c.Audiobook
 	if ab.Config.IsReEncodeFiles() {
-		p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, true)
-		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, false)
+		p.mq.SendMessage(mq.DownloadPage, mq.EncodingController, &dto.EncodeCommand{Audiobook: c.Audiobook}, mq.PriorityHigh)
+		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "EncodingPage"}, mq.PriorityNormal)
 	} else {
-		p.mq.SendMessage(mq.DownloadPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, true)
-		p.mq.SendMessage(mq.DownloadPage, mq.ChaptersController, &dto.ChaptersCreate{Audiobook: c.Audiobook}, true)
-		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, false)
+		p.mq.SendMessage(mq.DownloadPage, mq.ChaptersPage, &dto.DisplayBookInfoCommand{Audiobook: c.Audiobook}, mq.PriorityHigh)
+		p.mq.SendMessage(mq.DownloadPage, mq.ChaptersController, &dto.ChaptersCreate{Audiobook: c.Audiobook}, mq.PriorityHigh)
+		p.mq.SendMessage(mq.DownloadPage, mq.Frame, &dto.SwitchToPageCommand{Name: "ChaptersPage"}, mq.PriorityNormal)
 	}
 }

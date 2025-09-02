@@ -67,7 +67,11 @@ func NewCopyController(dispatcher *mq.Dispatcher) *CopyController {
 }
 
 func (c *CopyController) checkMQ() {
-	m := c.mq.GetMessage(mq.CopyController)
+	m, err := c.mq.GetMessage(mq.CopyController)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to get message for CopyController: %v", err))
+		return
+	}
 	if m != nil {
 		c.dispatchMessage(m)
 	}
@@ -103,8 +107,8 @@ func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 	}
 	c.ab.TotalSize = abSize
 
-	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: "Copying audiobook to the output directory..."}, false)
-	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, false)
+	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: "Copying audiobook to the output directory..."}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.SetBusyIndicator{Busy: true}, mq.PriorityNormal)
 
 	logger.Info(fmt.Sprintf("Copying the audiobook: %s - %s to %s/...", c.ab.Author, c.ab.Title, c.ab.Config.OutputDir))
 
@@ -117,15 +121,15 @@ func (c *CopyController) startCopy(cmd *dto.CopyCommand) {
 	go c.updateTotalCopyProgress()
 	jd.Start()
 
-	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, false)
-	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: ""}, false)
+	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.SetBusyIndicator{Busy: false}, mq.PriorityNormal)
+	c.mq.SendMessage(mq.CopyController, mq.Footer, &dto.UpdateStatus{Message: ""}, mq.PriorityNormal)
 	if !c.stopFlag {
-		c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyComplete{Audiobook: cmd.Audiobook}, true)
+		c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyComplete{Audiobook: cmd.Audiobook}, mq.PriorityHigh)
 	}
 	c.stopFlag = true
 }
 
-func (c *CopyController) stopCopy(cmd *dto.StopCommand) {
+func (c *CopyController) stopCopy(_ *dto.StopCommand) {
 	c.stopFlag = true
 	logger.Debug(mq.CopyController + ": Received StopCopy command")
 }
@@ -184,7 +188,7 @@ func (c *CopyController) updateFileCopyProgress(fileId int, fileName string, siz
 		}
 
 		// sent a message only if progress changed
-		c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, false)
+		c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyFileProgress{FileId: fileId, FileName: fileName, Percent: percent}, mq.PriorityNormal)
 	}
 	c.filesCopy[fileId].fileId = fileId
 	c.filesCopy[fileId].fileSize = size
@@ -241,7 +245,7 @@ func (c *CopyController) updateTotalCopyProgress() {
 			speedH := utils.SpeedToHuman(speed)
 			etaH := utils.SecondsToTime(eta)
 
-			c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, false)
+			c.mq.SendMessage(mq.CopyController, mq.BuildPage, &dto.CopyProgress{Elapsed: elapsedH, Percent: percent, Files: filesH, Bytes: bytesH, Speed: speedH, ETA: etaH}, mq.PriorityNormal)
 		}
 		time.Sleep(mq.PullFrequency)
 	}
